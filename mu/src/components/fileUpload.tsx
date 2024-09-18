@@ -303,7 +303,7 @@ const FileUpload: React.FC = () => {
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <button
-            className={`w-32  flex justify-center items-center 
+            className={`w-32 md:w-48  flex justify-center items-center 
       text-black dark:text-white text-neutral-700 mt-4 space-x-2
       hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% 
       p-2 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
