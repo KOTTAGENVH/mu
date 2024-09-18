@@ -52,10 +52,17 @@ export async function POST(req: Request) {
     }
     // Respond with success
     return NextResponse.json({ success: true, data: upload }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    } else {
+      return NextResponse.json(
+        { success: false, message: 'An unknown error occurred' },
+        { status: 500 }
+      );
+    }
   }
 }

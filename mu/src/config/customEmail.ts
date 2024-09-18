@@ -7,7 +7,7 @@ export const customEmail = async (
 ): Promise<boolean> => {
   console.log("sending email");
   try {
-    let mailTransporter = nodemailer.createTransport({
+    const mailTransporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.email,
@@ -18,7 +18,7 @@ export const customEmail = async (
     //Logo URL
     const logoUrl = `${process.env.LOGO_URL}`; 
 
-    let mailDetails = {
+    const mailDetails = {
       from: process.env.email,
       to: email,
       subject: subject,
