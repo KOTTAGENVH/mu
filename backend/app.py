@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify, send_file, after_this_request
 import os
 from dotenv import load_dotenv
 import importlib
+import time
+import random
 
 app = Flask(__name__)
 
@@ -42,15 +44,6 @@ def download_audio():
         # Load the appropriate Firebase configuration
         firebase_module = load_firebase_module(storage_number)
 
-        # Load cookies from environment variables
-        cookies = {
-            'www.googleadservices.com': os.getenv('COOKIE_1'),
-            'google.com': os.getenv('COOKIE_2'),
-            'www.google.com': os.getenv('COOKIE_3'),
-            'mi.com': os.getenv('COOKIE_4'),
-            # Add other cookies similarly if needed
-        }
-
         # Define the download options for audio
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -60,12 +53,17 @@ def download_audio():
                 'preferredcodec': 'mp3',
                 'preferredquality': '320',
             }],
-            'geo_bypass': True,  # Bypass geographic restriction
-            'cookiefile': 'cookies.txt',  # Save cookies if needed
-            'cookies': cookies,  # Pass the cookies dictionary
+            'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+             'geo_bypass': True, # Bypass geographic restriction
+             'ratelimit': '100K', # Download speed limit
         }
 
-        # Download the audio
+        # Add a random delay to simulate human-like behavior
+        time.sleep(random.uniform(3, 10))
+
+        # Download the audio using yt-dlp
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(link, download=True)
             filename = ydl.prepare_filename(info_dict)
