@@ -42,6 +42,15 @@ def download_audio():
         # Load the appropriate Firebase configuration
         firebase_module = load_firebase_module(storage_number)
 
+        # Load cookies from environment variables
+        cookies = {
+            'www.googleadservices.com': os.getenv('COOKIE_1'),
+            'google.com': os.getenv('COOKIE_2'),
+            'www.google.com': os.getenv('COOKIE_3'),
+            'mi.com': os.getenv('COOKIE_4'),
+            # Add other cookies similarly if needed
+        }
+
         # Define the download options for audio
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -51,7 +60,9 @@ def download_audio():
                 'preferredcodec': 'mp3',
                 'preferredquality': '320',
             }],
-             'geo_bypass': True, # Bypass geographic restriction
+            'geo_bypass': True,  # Bypass geographic restriction
+            'cookiefile': 'cookies.txt',  # Save cookies if needed
+            'cookies': cookies,  # Pass the cookies dictionary
         }
 
         # Download the audio
