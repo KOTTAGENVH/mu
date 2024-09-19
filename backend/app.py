@@ -3,8 +3,6 @@ from flask import Flask, request, jsonify, send_file, after_this_request
 import os
 from dotenv import load_dotenv
 import importlib
-import time
-import random
 
 app = Flask(__name__)
 
@@ -57,13 +55,9 @@ def download_audio():
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             },
              'geo_bypass': True, # Bypass geographic restriction
-             'ratelimit': '100K', # Download speed limit
         }
 
-        # Add a random delay to simulate human-like behavior
-        time.sleep(random.uniform(3, 10))
-
-        # Download the audio using yt-dlp
+        # Download the audio
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(link, download=True)
             filename = ydl.prepare_filename(info_dict)
