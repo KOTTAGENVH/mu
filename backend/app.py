@@ -6,6 +6,9 @@ import importlib
 
 app = Flask(__name__)
 
+# Load environment variables
+load_dotenv()
+
 # Function to dynamically load the Firebase configuration module
 def load_firebase_module(storage_number):
     if storage_number == 1:
@@ -24,7 +27,7 @@ def load_firebase_module(storage_number):
 @app.route('/download_audio', methods=['POST'])
 def download_audio():
     try:
-        # Get the video URL and storage selection number from the request
+        # Get the video URL, storage selection number, and token from the request
         link = request.json.get('link')
         storage_number = request.json.get('storage_number')
         token = request.json.get('token')
@@ -63,6 +66,15 @@ def download_audio():
         # Check if the file already exists in Firebase storage
         blob = bucket.blob(f'music/{os.path.basename(filename)}')
         if blob.exists():
+            @after_this_request
+            def remove_file(response):
+                try:
+                    os.remove(filename)
+                    app.logger.info(f"Successfully deleted file {filename}")
+                except Exception as error:
+                    app.logger.error(f"Error deleting file {filename}: {error}")
+                return response
+
             # If the file exists, return a message without uploading
             return jsonify({
                 'message': 'Audio already available',
@@ -77,11 +89,12 @@ def download_audio():
         # Get the public URL for the uploaded file
         firebase_url = blob.public_url
 
-        # Delete the file after serving it
+        # Register the file for removal after the request is completed
         @after_this_request
         def remove_file(response):
             try:
                 os.remove(filename)
+                app.logger.info(f"Successfully deleted file {filename}")
             except Exception as error:
                 app.logger.error(f"Error deleting file {filename}: {error}")
             return response
@@ -96,4 +109,4 @@ def download_audio():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5040)
+    app.run(host='0.0.0.0', port=5050)
