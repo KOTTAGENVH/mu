@@ -51,6 +51,7 @@ def download_audio():
                 'preferredcodec': 'mp3',
                 'preferredquality': '320',
             }],
+             'geo_bypass': True, # Bypass geographic restriction
         }
 
         # Download the audio
