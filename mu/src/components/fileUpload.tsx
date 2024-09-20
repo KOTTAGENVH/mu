@@ -108,6 +108,20 @@ const FileUpload: React.FC = () => {
       // Set loading state
       setLoading(true);
 
+      //Verify jwt cookie
+      const res = await fetch("/api/services/cookieChecker", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.message);
+        console.error("Error verifying cookie:", data.message);
+        setLoading(false);
+        setScanning(false);
+        return;
+      }
+
+      // Get a reference to the music directory in Firebase Storage
       const musicDirRef = ref(storage, "music/");
 
       // Check if the file already exists

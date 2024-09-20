@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { customEmail } from "@/config/customEmail";
+import { validateCookie } from "@/app/api/services/cookieValidator/route";
 
 // Handle the POST request for audio
 export async function POST(req: Request) {
@@ -10,6 +11,16 @@ export async function POST(req: Request) {
   try {
     const body = await req.json(); // Parse request body
     const { name, category, fileUrl, favourite } = body;
+
+    // Validate the cookie
+    const validationResult = await validateCookie(req);
+    if (!validationResult.valid) {
+      console.log("Validation failed: ", validationResult.error);
+      return NextResponse.json(
+        { success: false, message: validationResult.error },
+        { status: 401 }
+      );
+    }
 
     // Check for required fields
     if (!name || !category || !fileUrl) {
@@ -36,7 +47,7 @@ export async function POST(req: Request) {
       favourite,
     });
 
-    //Check if upload was created
+    // Check if upload was created
     if (!upload) {
       return NextResponse.json(
         { success: false, message: "Upload not created" },
