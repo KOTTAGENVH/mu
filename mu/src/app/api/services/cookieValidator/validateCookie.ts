@@ -1,6 +1,5 @@
 import { verify, JwtPayload } from 'jsonwebtoken';
 import { parse } from 'cookie';
-import { NextResponse } from 'next/server';
 
 interface CookieValidationResult {
   valid: boolean;
@@ -8,7 +7,7 @@ interface CookieValidationResult {
   decoded?: string | JwtPayload;
 }
 
-async function validateCookie(req: Request): Promise<CookieValidationResult> {
+export async function validateCookie(req: Request): Promise<CookieValidationResult> {  
   try {
     const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || 'Mu-Auth';
     const secret = process.env.NEXT_PUBLIC_JWT_SECRET;
@@ -36,18 +35,4 @@ async function validateCookie(req: Request): Promise<CookieValidationResult> {
   }
 }
 
-// Define the API handler (in this case, it will respond to POST requests)
-export async function POST(req: Request) {
-  const validationResult = await validateCookie(req);
 
-  if (!validationResult.valid) {
-    return NextResponse.json(
-      { success: false, error: validationResult.error },
-      { status: 401 }  // Unauthorized
-    );
-  }
-
-  return NextResponse.json(
-    { success: true, decoded: validationResult.decoded }
-  );
-}

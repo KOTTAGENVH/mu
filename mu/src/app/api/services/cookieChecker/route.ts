@@ -1,5 +1,5 @@
 //To validate Cookie via api due to internal Api issue in Next.js
-import { validateCookie } from "../cookieValidator/route";
+import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {

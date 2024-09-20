@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { customEmail } from "@/config/customEmail";
-import { validateCookie } from "@/app/api/services/cookieValidator/route";
+import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 
 // Handle the POST request for audio
 export async function POST(req: Request) {
