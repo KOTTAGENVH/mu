@@ -1,10 +1,14 @@
 import yt_dlp
 from flask import Flask, request, jsonify, send_file, after_this_request
+from flask_cors import CORS 
 import os
 from dotenv import load_dotenv
 import importlib
 
 app = Flask(__name__)
+
+# Enable CORS for specific origins
+CORS(app, origins=["http://localhost:3000", "http://localhost:3001"])
 
 # Load environment variables
 load_dotenv()

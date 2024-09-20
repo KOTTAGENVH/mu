@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { name, category, fileUrl, favourite } = body;
 
     // Check for required fields
-    if (!name || !category || !fileUrl || !favourite) {
+    if (!name || !category || !fileUrl) {
       return NextResponse.json(
         { success: false, message: "All fields are required" },
         { status: 400 }
