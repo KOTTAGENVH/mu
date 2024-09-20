@@ -47,7 +47,7 @@ function UrlUpload() {
       })
       
       //Check if the response is successful
-      if (response.status === 200) {
+      if ('status' in response && response.status === 200) {
         const data = response as ResponseInterface;
         setFirebaseUrl(data.data.firebase_url);
         setName(data.data.song_title);
