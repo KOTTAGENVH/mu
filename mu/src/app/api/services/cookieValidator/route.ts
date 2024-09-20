@@ -1,5 +1,6 @@
 import { verify, JwtPayload } from 'jsonwebtoken';
 import { parse } from 'cookie';
+import { NextResponse } from 'next/server';
 
 interface CookieValidationResult {
   valid: boolean;
@@ -7,7 +8,7 @@ interface CookieValidationResult {
   decoded?: string | JwtPayload;
 }
 
-export async function validateCookie(req: Request): Promise<CookieValidationResult> {
+async function validateCookie(req: Request): Promise<CookieValidationResult> {
   try {
     const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || 'Mu-Auth';
     const secret = process.env.NEXT_PUBLIC_JWT_SECRET;
@@ -16,7 +17,7 @@ export async function validateCookie(req: Request): Promise<CookieValidationResu
       return { valid: false, error: 'JWT SECRET is not set in environment variables' };
     }
 
-    const cookieHeader = req.headers.get('cookie'); 
+    const cookieHeader = req.headers.get('cookie');
     if (!cookieHeader) {
       return { valid: false, error: 'No cookies present' };
     }
@@ -33,4 +34,20 @@ export async function validateCookie(req: Request): Promise<CookieValidationResu
     console.error(error);
     return { valid: false, error: 'Invalid or expired token' };
   }
+}
+
+// Define the API handler (in this case, it will respond to POST requests)
+export async function POST(req: Request) {
+  const validationResult = await validateCookie(req);
+
+  if (!validationResult.valid) {
+    return NextResponse.json(
+      { success: false, error: validationResult.error },
+      { status: 401 }  // Unauthorized
+    );
+  }
+
+  return NextResponse.json(
+    { success: true, decoded: validationResult.decoded }
+  );
 }
