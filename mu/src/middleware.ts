@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Check if the token is expired
-  const tokenExpiration = request.cookies.get('tokenExpiration'); // Assume tokenExpiration is a separate cookie holding expiration timestamp
+  const tokenExpiration = request.cookies.get('tokenExpiration'); 
   const currentTime = new Date().getTime();
 
   if (tokenExpiration && Number(tokenExpiration) < currentTime) {
