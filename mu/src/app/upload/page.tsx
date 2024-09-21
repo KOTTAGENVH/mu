@@ -25,7 +25,7 @@ function Page() {
 
   return (
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-auto">
-      <Header icon={faArrowCircleLeft} btnNav="/" text="Audio Upload" />
+      <Header icon={faArrowCircleLeft} btnNav="/home" text="Audio Upload" />
       <div
         className={`flex flex-col h-5/6 ${
           !click ? "justify-center items-center" : ""
