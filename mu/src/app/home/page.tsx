@@ -1,4 +1,5 @@
 "use client";
+import AudioPlayer from '@/components/audioPlayer';
 // import AdSense from '@/components/adsterra';
 import Drawer from '@/components/drawer';
 import IframeComp from '@/components/iframeComp';
@@ -10,6 +11,7 @@ function Page() {
      <Drawer />
      <div className='flex flex-row flex-wrap  h-96 w-screen'>
       <IframeComp/>
+      <AudioPlayer/>
       </div>
     </div>
   )
