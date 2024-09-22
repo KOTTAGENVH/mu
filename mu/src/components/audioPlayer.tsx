@@ -189,11 +189,6 @@ const AudioPlayer: React.FC = () => {
     setFavourite((prev) => !prev);
   };
 
-  //Filter Category
-  const handleFilterCategory = async (category: string) => {
-    setCategory(category);
-  };
-
   useEffect(() => {
     if (isFavourite) {
       // Filter the audioList for only favourites

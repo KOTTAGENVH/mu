@@ -9,7 +9,7 @@ import {
 import { motion } from "framer-motion";
 import { useModal } from "@/contextApi/modalOpen";
 import EditModal from "./editModal";
-import { a } from "framer-motion/client";
+
 
 interface Audio {
   _id: string;
