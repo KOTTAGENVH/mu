@@ -59,20 +59,37 @@ const AudioPlayer: React.FC = () => {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
-      audioRef.current.addEventListener("ended", handleNext);
+      audioRef.current.addEventListener("loadedmetadata", () => {
+        setDuration(audioRef.current?.duration || 0);
+      });
+      audioRef.current.addEventListener("ended", () => {
+        handleNext(); // Play the next song when the current one ends
+      });
     }
+
     return () => {
       if (audioRef.current) {
         audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
         audioRef.current.removeEventListener("ended", handleNext);
+        audioRef.current.removeEventListener("loadedmetadata", () => {
+          setDuration(audioRef.current?.duration || 0);
+        });
       }
     };
   }, [currentAudioIndex]);
 
   const playAudio = () => {
-    if (audioRef.current) {
+    if (
+      audioRef.current &&
+      audioList.length > 0 &&
+      audioList[currentAudioIndex]?.fileUrl
+    ) {
       audioRef.current.play();
       setIsPlaying(true);
+    } else {
+      console.error(
+        "Cannot play audio: invalid audio source or empty audio list."
+      );
     }
   };
 
@@ -83,19 +100,46 @@ const AudioPlayer: React.FC = () => {
     }
   };
 
+  // Play the previous song or restart the current song if it has played for more than 5 seconds
   const handlePrev = () => {
-    setCurrentAudioIndex((prevIndex) =>
-      prevIndex === 0 ? audioList.length - 1 : prevIndex - 1
-    );
+    if (audioRef.current && typeof audioRef.current.currentTime === "number") {
+      if (audioRef.current.currentTime > 5) {
+        audioRef.current.currentTime = 0;
+      } else {
+        setCurrentAudioIndex((prevIndex) =>
+          prevIndex === 0 ? audioList.length - 1 : prevIndex - 1
+        );
+      }
+  
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load(); 
+          if (isPlaying) {
+            audioRef.current.play(); 
+          }
+        }
+      }, 0);
+    }
   };
 
+  // Play the next song or shuffle the songs if the shuffle button is enabled
   const handleNext = () => {
     if (isShuffling) {
-      setCurrentAudioIndex(Math.floor(Math.random() * audioList.length));
+      setCurrentAudioIndex(Math.floor(Math.random() * audioList.length)); // Play a random song
     } else {
+
       setCurrentAudioIndex((prevIndex) =>
         prevIndex === audioList.length - 1 ? 0 : prevIndex + 1
       );
+
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load();
+          if (isPlaying) {
+            audioRef.current.play();
+          }
+        }
+      }, 0);
     }
   };
 
@@ -160,9 +204,13 @@ const AudioPlayer: React.FC = () => {
         height={100}
         className="rounded-3xl w-full h-60"
       />
-      {audioList.length > 0 && (
-        <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />
-      )}
+      {audioList.length > 0 &&
+        (console.log("audioList", audioList),
+        console.log(
+          "audioList[currentAudioIndex]",
+          audioList[currentAudioIndex]
+        ),
+        (<audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />))}
       <div className="flex flex-row items-center w-full mt-4">
         <span>{formatTime(currentTime)}</span>
         <input
