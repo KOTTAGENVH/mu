@@ -58,11 +58,10 @@ const handleAbout = () => {
     }
   };
   return (
-    <div
-      className={`fixed top-0 left-0 w-28 h-full bg-white bg-opacity-50 backdrop-blur-lg border border-opacity-20 shadow-lg text-white transform 
-        -translate-x-0
-       transition-transform duration-300 ease-in-out flex flex-col z-50`}
-    >
+<div
+  className={`fixed top-0 left-0 w-28 h-full bg-white bg-opacity-10 backdrop-blur-xl  shadow-lg text-white 
+    transition-transform duration-300 ease-in-out transform translate-x-0 flex flex-col z-50`}
+>
       <div className="p-4 flex-grow">
         <div className="flex items-center justify-center flex-1  flex-shrink-0 m-4">
           <Image

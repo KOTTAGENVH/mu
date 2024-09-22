@@ -6,7 +6,7 @@ function IframeComp() {
   const { scene } = useTheme();
   
   return (
-    <div className="rouded-3xl h-96 ml-40 mt-10 mb-6 mr-6 w-2/5 h-full">
+    <div className="rouded-3xl h-96  mb-4  w-2/5 mr-12">
       {scene === 0 && (
         <Iframe
           url={
