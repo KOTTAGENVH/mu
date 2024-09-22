@@ -90,7 +90,12 @@ function AudioList() {
             className="text-black dark:text-white w-full h-10 p-4 rounded-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none dark:bg-slate-950 bg-slate-300"
             onChange={(e) => setSearch(e.target.value)}
           />
-          {currentItems.map((audio) => (
+          {currentItems.length === 0 && (
+            <div className="text-center text-black dark:text-white">
+              No audio found
+            </div>
+          )} 
+          {currentItems.length > 0 && currentItems?.map((audio) => (
             <OneAudioView
               key={audio._id}
               idPass={audio._id}
