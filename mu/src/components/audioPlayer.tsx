@@ -286,13 +286,6 @@ const AudioPlayer: React.FC = () => {
           </div>
         </div>
       )}
-      <Image
-        src="/disc_tech.jpg"
-        alt="Audio Player"
-        width={100}
-        height={100}
-        className="rounded-3xl w-full h-60"
-      />
       {audioList.length > 0 && (
         <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />
       )}
