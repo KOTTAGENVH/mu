@@ -3,6 +3,9 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/contextApi/iframContext";
+import { CurrentPlayProvider } from "@/contextApi/currentPlay";
+import { ModalProvider } from "@/contextApi/modalOpen";
+import { PlayContextProvider } from "@/contextApi/toPlay";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,7 +33,24 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        {/* Ban inspect elements */}
+        {/* <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.addEventListener("contextmenu", function(event) {
+                event.preventDefault();
+                alert("Inspect Elements Not Allowed!");
+              });
+            `,
+          }}
+        /> */}
+        <ModalProvider>
+          <CurrentPlayProvider>
+            <PlayContextProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </PlayContextProvider>
+          </CurrentPlayProvider>
+        </ModalProvider>
         <Script
           src={process.env.NEXT_PUBLIC_ADSTERRA_SRC}
           strategy="lazyOnload"
