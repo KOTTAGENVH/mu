@@ -10,7 +10,6 @@ import {
   faShuffle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Image from "next/image";
 import { useCurrentPlay } from "@/contextApi/currentPlay";
 import { useToPlay } from "@/contextApi/toPlay";
 
