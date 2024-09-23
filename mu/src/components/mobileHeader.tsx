@@ -46,10 +46,10 @@ function MobileHeader() {
             <button className="flex text-black dark:text-white items-center text-neutral-700 m-4 space-x-2 hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% ... p-2 rounded-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none">
               <FontAwesomeIcon
                 icon={faRightFromBracket}
-                className="w-4 h-4 md:w-6 md:h-6"
+                className="w-4 h-4 md:w-6 md:h-6 text-red-500"
                 onClick={handleButtonClick}
               />
-              <span className="text-sm md:text-lg">Back</span>
+              <span className="text-sm md:text-lg">Logout</span>
             </button>
           </motion.div>
         </div>
