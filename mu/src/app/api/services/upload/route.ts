@@ -10,7 +10,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json(); // Parse request body
-    let { name, category, fileUrl, favourite } = body;
+    const {category, fileUrl, favourite } = body;
+    let {name} = body;
 
     // Remove inverted commas from the name
     name = name.replace(/["“”]/g, "");
