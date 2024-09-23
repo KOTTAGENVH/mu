@@ -3,8 +3,8 @@ import AudioList from "@/components/audioList";
 import AudioPlayer from "@/components/audioPlayer";
 import Drawer from "@/components/drawer";
 import IframeComp from "@/components/iframeComp";
-import LoginHeader from "@/components/loginHeader";
 import MobileAudioList from "@/components/mobileAudioList";
+import MobileHeader from "@/components/mobileHeader";
 import MobilePlayerModal from "@/components/mobilePlayerModal";
 import { useToPlay } from "@/contextApi/toPlay";
 import React, { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ function Page() {
 
   return (
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-y-auto">
-      {!isDesktop && <LoginHeader/>}
+      {!isDesktop && <MobileHeader/>}
       {isDesktop && <Drawer />}
       {isDesktop && (
         <>
