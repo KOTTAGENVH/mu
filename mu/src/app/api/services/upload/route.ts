@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     let {name} = body;
 
     // Remove inverted commas from the name
-    name = name.replace(/["“”]/g, "");
+    name = name.replace(/[^a-zA-Z]/g, "");
 
     // Validate the cookie
     const validationResult = await validateCookie(req);
