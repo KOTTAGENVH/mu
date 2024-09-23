@@ -5,10 +5,14 @@ import Drawer from "@/components/drawer";
 import IframeComp from "@/components/iframeComp";
 import LoginHeader from "@/components/loginHeader";
 import MobileAudioList from "@/components/mobileAudioList";
+import MobilePlayerModal from "@/components/mobilePlayerModal";
+import { useToPlay } from "@/contextApi/toPlay";
 import React, { useEffect, useState } from "react";
 
 function Page() {
   const [isDesktop, setIsDesktop] = useState(false);
+
+  const { id } = useToPlay();
 
   // Function to check the window width
   const updateMedia = () => {
@@ -38,6 +42,7 @@ function Page() {
         </>
       )}
         {!isDesktop && <MobileAudioList/>}
+        {!isDesktop && id !== "" && <MobilePlayerModal />}
     </div>
   );
 }

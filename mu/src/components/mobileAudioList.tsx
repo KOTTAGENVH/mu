@@ -81,7 +81,7 @@ function MobileAudioList() {
   };
 
   return (
-    <div className="flex justify-center items-center w-screen h-auto">
+    <div className="flex justify-center items-center w-screen h-auto overflow-y-auto">
         <div className="w-full h-full flex flex-col justify-between overflow-y-auto p-4">
           <input
             type="text"
