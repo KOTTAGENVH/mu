@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://mu.nowenkottage.com
+
+# Sitemaps
+Sitemap: https://mu.nowenkottage.com/sitemap.xml
