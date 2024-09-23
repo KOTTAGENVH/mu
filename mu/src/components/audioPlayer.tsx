@@ -251,7 +251,7 @@ const AudioPlayer: React.FC = () => {
   }, [currentAudioIndex]);
 
   useEffect(() => {
-    if (!audioList){
+    if (!audioList) {
       return;
     }
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
@@ -260,7 +260,7 @@ const AudioPlayer: React.FC = () => {
   }, [currentAudioIndex, audioList, toggleId]);
 
   useEffect(() => {
-    if (!audioList){
+    if (!audioList) {
       return;
     }
     const index = audioList.findIndex((audio) => audio._id === id);
@@ -298,6 +298,21 @@ const AudioPlayer: React.FC = () => {
         <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />
       )}
 
+      {/** Audio name */}
+      {isPlaying && (
+        <div className="flex flex-row items-center w-auto mt-4 justify-center">
+          <div className="overflow-hidden whitespace-nowrap">
+            <span className="w-screen animate-marquee inline-block text-black dark:text-white">
+              Audio: {audioList[currentAudioIndex]?.name}
+            </span>
+            <span className="w-screen animate-marquee inline-block ml-4 text-black dark:text-white">
+              Category: {audioList[currentAudioIndex]?.category}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Seek bar */}
       <div className="flex flex-row items-center w-full mt-4">
         <span>{formatTime(currentTime)}</span>
         <input
