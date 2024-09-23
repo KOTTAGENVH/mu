@@ -4,6 +4,7 @@ import AudioPlayer from "@/components/audioPlayer";
 import Drawer from "@/components/drawer";
 import IframeComp from "@/components/iframeComp";
 import LoginHeader from "@/components/loginHeader";
+import MobileAudioList from "@/components/mobileAudioList";
 import React, { useEffect, useState } from "react";
 
 function Page() {
@@ -36,6 +37,7 @@ function Page() {
           </div>
         </>
       )}
+        {!isDesktop && <MobileAudioList/>}
     </div>
   );
 }
