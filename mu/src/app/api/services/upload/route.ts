@@ -10,7 +10,10 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json(); // Parse request body
-    const { name, category, fileUrl, favourite } = body;
+    let { name, category, fileUrl, favourite } = body;
+
+    // Remove inverted commas from the name
+    name = name.replace(/["“”]/g, "");
 
     // Validate the cookie
     const validationResult = await validateCookie(req);
@@ -22,26 +25,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check for name field
-    if (!name) {
+    // Check for required fields
+    if (!name || !category || !fileUrl) {
       return NextResponse.json(
-        { success: false, message: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    // Check for category field
-    if (!category) {
-      return NextResponse.json(
-        { success: false, message: "Category is required" },
-        { status: 400 }
-      );
-    }
-
-    // Check for fileUrl field
-    if (!fileUrl) {
-      return NextResponse.json(
-        { success: false, message: "File Url is required" },
+        { success: false, message: "All fields are required" },
         { status: 400 }
       );
     }
