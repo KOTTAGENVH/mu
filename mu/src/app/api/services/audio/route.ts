@@ -3,6 +3,8 @@ import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { customEmail } from "@/config/customEmail";
+import { storage1 } from "@/config/firebase1";
+import { ref, deleteObject } from "@firebase/storage";
 
 // Handle the GET request for audio
 export async function GET(req: Request) {
@@ -174,6 +176,39 @@ export async function DELETE(req: Request) {
     }
 
     const { _id } = await req.json();
+
+    //Delete the audio from firebase Storage
+    const audioDetail = await Upload.findById(_id);
+    if (!audioDetail) {
+      return NextResponse.json(
+        { success: false, message: "Audio not found" },
+        { status: 404 }
+      );
+    }
+
+    //Extract File Path From Firebase
+    const extractFilePathFromUrl = (fileUrl: string) => {
+      const bucketName = "muaudio1.appspot.com";
+      const pathStart = fileUrl.indexOf(bucketName) + bucketName.length + 1;
+
+      const filePath = fileUrl.substring(pathStart);
+
+      return decodeURIComponent(filePath);
+    };
+
+    // Extract the file path from the fileUrl
+    const filePath = extractFilePathFromUrl(audioDetail.fileUrl);
+
+    //Delete the audio from firebase Storage
+    const audioRef = ref(storage1, filePath);
+    await deleteObject(audioRef).catch((error) => {
+      console.error("Error deleting the audio file:", error);
+      return NextResponse.json(
+        { success: false, message: "Error deleting the audio file" },
+        { status: 500 }
+      );
+    });
+
     const audio = await Upload.findByIdAndDelete(_id);
     if (!audio) {
       return NextResponse.json(

@@ -22,10 +22,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check for required fields
-    if (!name || !category || !fileUrl) {
+    // Check for name field
+    if (!name) {
       return NextResponse.json(
-        { success: false, message: "All fields are required" },
+        { success: false, message: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check for category field
+    if (!category) {
+      return NextResponse.json(
+        { success: false, message: "Category is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check for fileUrl field
+    if (!fileUrl) {
+      return NextResponse.json(
+        { success: false, message: "File Url is required" },
         { status: 400 }
       );
     }
@@ -71,7 +87,7 @@ export async function POST(req: Request) {
       );
     } else {
       return NextResponse.json(
-        { success: false, message: 'An unknown error occurred' },
+        { success: false, message: "An unknown error occurred" },
         { status: 500 }
       );
     }

@@ -251,12 +251,18 @@ const AudioPlayer: React.FC = () => {
   }, [currentAudioIndex]);
 
   useEffect(() => {
+    if (!audioList){
+      return;
+    }
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
       toggleId(audioList[currentAudioIndex]._id);
     }
   }, [currentAudioIndex, audioList, toggleId]);
 
   useEffect(() => {
+    if (!audioList){
+      return;
+    }
     const index = audioList.findIndex((audio) => audio._id === id);
     if (index !== -1) {
       setCurrentAudioIndex(index);
@@ -265,8 +271,11 @@ const AudioPlayer: React.FC = () => {
   }, [id, audioList]);
 
   useEffect(() => {
+    if (!audioList || audioList.length === 0) {
+      return setCurrentAudioIndex(-1);
+    }
     // Validate currentAudioIndex on list update
-    if (audioList.length > 0 && currentAudioIndex >= audioList.length) {
+    if (audioList?.length > 0 && currentAudioIndex >= audioList?.length) {
       setCurrentAudioIndex(0); // Reset to a valid index
     }
   }, [audioList]);
@@ -285,9 +294,10 @@ const AudioPlayer: React.FC = () => {
           </div>
         </div>
       )}
-      {audioList.length > 0 && (
+      {audioList && audioList.length > 0 && (
         <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />
       )}
+
       <div className="flex flex-row items-center w-full mt-4">
         <span>{formatTime(currentTime)}</span>
         <input

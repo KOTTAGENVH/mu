@@ -65,7 +65,7 @@ function AudioList() {
   // Calculate the index of the first and last item to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = audioList.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = audioList?.slice(indexOfFirstItem, indexOfLastItem);
 
   // Handle page navigation
   const nextPage = () => {
@@ -90,12 +90,12 @@ function AudioList() {
             className="text-black dark:text-white w-full h-10 p-4 rounded-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none dark:bg-slate-950 bg-slate-300"
             onChange={(e) => setSearch(e.target.value)}
           />
-          {currentItems.length === 0 && (
+          {currentItems?.length === 0 && (
             <div className="text-center text-black dark:text-white">
               No audio found
             </div>
           )} 
-          {currentItems.length > 0 && currentItems?.map((audio) => (
+          {currentItems?.length > 0 && currentItems?.map((audio) => (
             <OneAudioView
               key={audio._id}
               idPass={audio._id}
@@ -132,7 +132,7 @@ function AudioList() {
               className="m-4 p-2 text-black dark:text-white rounded-3xl shadow-lg shadow-cyan-900/50 
           dark:shadow-cyan-500/50 hover:shadow-none"
             >
-              Page {currentPage} of {Math.ceil(audioList.length / itemsPerPage)}
+              Page {currentPage} of {Math.ceil(audioList?.length / itemsPerPage)}
             </span>
 
             <motion.div
@@ -148,7 +148,7 @@ function AudioList() {
             shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none`}
                 onClick={nextPage}
                 disabled={
-                  currentPage === Math.ceil(audioList.length / itemsPerPage)
+                  currentPage === Math.ceil(audioList?.length / itemsPerPage)
                 }
               >
                 <FontAwesomeIcon
