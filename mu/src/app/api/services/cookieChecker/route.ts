@@ -1,4 +1,3 @@
-//To validate Cookie via api due to internal Api issue in Next.js
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { NextResponse } from "next/server";
 
