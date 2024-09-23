@@ -57,7 +57,7 @@ git clone https://github.com/KOTTAGENVH/converter-exchange
 
 - Navigate to backend
   ```
-  cd mu/backend
+  cd backend
   ```
 - Install Dependencies
 ```
