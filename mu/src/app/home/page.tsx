@@ -3,8 +3,7 @@ import AudioList from "@/components/audioList";
 import AudioPlayer from "@/components/audioPlayer";
 import Drawer from "@/components/drawer";
 import IframeComp from "@/components/iframeComp";
-import MobileHeader from "@/components/mobileHeader";
-import { faHome } from "@fortawesome/free-solid-svg-icons";
+import LoginHeader from "@/components/loginHeader";
 import React, { useEffect, useState } from "react";
 
 function Page() {
@@ -24,7 +23,7 @@ function Page() {
 
   return (
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-y-auto">
-      {!isDesktop && <MobileHeader icon={faHome} btnNav="/home" text="Home" />}
+      {!isDesktop && <LoginHeader/>}
       {isDesktop && <Drawer />}
       {isDesktop && (
         <>
