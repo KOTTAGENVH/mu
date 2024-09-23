@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+"use client";
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -18,16 +19,35 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "MU-Audio",
-  description: "Your Audio Player",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isCurrentlyDesktop = window.innerWidth > 1000;
+
+      if (isDesktop !== isCurrentlyDesktop) {
+        setIsDesktop(isCurrentlyDesktop);
+      }
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isDesktop]);
+
+  useEffect(() => {
+    console.log("desktop state updated:", isDesktop);
+  }, [isDesktop]);
+
   return (
     <html lang="en">
       <body
@@ -51,10 +71,12 @@ export default function RootLayout({
             </PlayContextProvider>
           </CurrentPlayProvider>
         </ModalProvider>
-        <Script
-          src={process.env.NEXT_PUBLIC_ADSTERRA_SRC}
-          strategy="lazyOnload"
-        />
+        {isDesktop && (
+          <Script
+            src={process.env.NEXT_PUBLIC_ADSTERRA_SRC}
+            strategy="lazyOnload"
+          />
+        )}
       </body>
     </html>
   );
