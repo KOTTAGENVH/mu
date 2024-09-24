@@ -118,6 +118,7 @@ function MobilePlayerModal() {
     if (audioRef.current) {
       audioRef.current.pause(); // Pause the current audio
       audioRef.current.currentTime = 0; // Reset the current time
+      audioRef.current.removeEventListener("canplaythrough", handleAutoPlay); // Clean up the old listener
     }
 
     let nextIndex = currentAudioIndex + 1; // Increment index to move to the next song
@@ -132,22 +133,21 @@ function MobilePlayerModal() {
     setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.load(); // Load the next audio
-        const onCanPlayThrough = async () => {
-          if (isPlaying) {
-            try {
-              await audioRef.current?.play();
-            } catch (error) {
-              console.error("Error playing audio:", error);
-            }
-          }
-          audioRef.current?.removeEventListener(
-            "canplaythrough",
-            onCanPlayThrough
-          );
-        };
-        audioRef.current.addEventListener("canplaythrough", onCanPlayThrough);
+        audioRef.current.addEventListener("canplaythrough", handleAutoPlay);
       }
     }, 0);
+  };
+
+  const handleAutoPlay = async () => {
+    if (audioRef.current && isPlaying) {
+      try {
+        await audioRef.current.play();
+        audioRef.current.removeEventListener("canplaythrough", handleAutoPlay); // Ensure listener is removed after playing
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        alert("Error playing audio");
+      }
+    }
   };
 
   const toggleShuffle = () => {
