@@ -44,17 +44,13 @@ export default function RootLayout({
     };
   }, [isDesktop]);
 
-  useEffect(() => {
-    console.log("desktop state updated:", isDesktop);
-  }, [isDesktop]);
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* Ban inspect elements */}
-        <script
+        {/* <script
           dangerouslySetInnerHTML={{
             __html: `
               document.addEventListener("contextmenu", function(event) {
@@ -63,7 +59,7 @@ export default function RootLayout({
               });
             `,
           }}
-        />
+        /> */}
         <ModalProvider>
           <CurrentPlayProvider>
             <PlayContextProvider>

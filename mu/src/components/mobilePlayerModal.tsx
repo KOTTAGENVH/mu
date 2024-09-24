@@ -120,26 +120,32 @@ function MobilePlayerModal() {
       audioRef.current.currentTime = 0; // Reset the current time
     }
 
+    let nextIndex = currentAudioIndex + 1; // Increment index to move to the next song
     if (isShuffling) {
-      setCurrentAudioIndex(Math.floor(Math.random() * audioList.length)); // Play a random song
-    } else {
-      setCurrentAudioIndex((prevIndex) =>
-        prevIndex === audioList.length - 1 ? 0 : prevIndex + 1
-      );
+      nextIndex = Math.floor(Math.random() * audioList.length); // Shuffle play: select a random index
+    } else if (nextIndex >= audioList.length) {
+      nextIndex = 0; // Loop back to the first song if at the end of the list
     }
 
-    setTimeout(async () => {
+    setCurrentAudioIndex(nextIndex);
+
+    setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.load(); // Load the next audio
-        audioRef.current.addEventListener("canplaythrough", async () => {
-          if (isPlaying && audioRef.current) {
+        const onCanPlayThrough = async () => {
+          if (isPlaying) {
             try {
-              await audioRef.current?.play(); // Use optional chaining to play audio if not null
+              await audioRef.current?.play();
             } catch (error) {
               console.error("Error playing audio:", error);
             }
           }
-        });
+          audioRef.current?.removeEventListener(
+            "canplaythrough",
+            onCanPlayThrough
+          );
+        };
+        audioRef.current.addEventListener("canplaythrough", onCanPlayThrough);
       }
     }, 0);
   };
@@ -190,11 +196,11 @@ function MobilePlayerModal() {
   };
 
   //Handle modal Close
-const handleClose = () => {
-  toggleId("");
-  pauseAudio();
-  window.location.reload();
-}
+  const handleClose = () => {
+    toggleId("");
+    pauseAudio();
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (isFavourite) {
