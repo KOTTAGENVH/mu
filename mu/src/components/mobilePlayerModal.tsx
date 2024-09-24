@@ -116,16 +116,16 @@ function MobilePlayerModal() {
   // Play the next song or shuffle the songs if the shuffle button is enabled
   const handleNext = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause(); // Pause the current audio
-      audioRef.current.currentTime = 0; // Reset the current time
-      audioRef.current.removeEventListener("canplaythrough", handleAutoPlay); // Clean up the old listener
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.removeEventListener("canplaythrough", handleAutoPlay);
     }
 
-    let nextIndex = currentAudioIndex + 1; // Increment index to move to the next song
+    let nextIndex = currentAudioIndex + 1;
     if (isShuffling) {
-      nextIndex = Math.floor(Math.random() * audioList.length); // Shuffle play: select a random index
+      nextIndex = Math.floor(Math.random() * audioList.length);
     } else if (nextIndex >= audioList.length) {
-      nextIndex = 0; // Loop back to the first song if at the end of the list
+      nextIndex = 0;
     }
 
     setCurrentAudioIndex(nextIndex);
