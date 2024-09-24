@@ -1,5 +1,5 @@
 #  Mu
->Simple audio player. (Not for commercial use)
+>Simple web based audio player. (Not for commercial use)
 >>
 ## Hosted Link(Frontend): https://mu.nowenkottage.com
 >>
