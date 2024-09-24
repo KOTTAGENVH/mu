@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   faChevronLeft,
@@ -114,7 +114,7 @@ function MobilePlayerModal() {
   };
 
   // Play the next song or shuffle the songs if the shuffle button is enabled
-  const handleNext = async () => {
+  const handleNext = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause(); // Pause the current audio
       audioRef.current.currentTime = 0; // Reset the current time
@@ -136,7 +136,7 @@ function MobilePlayerModal() {
         audioRef.current.addEventListener("canplaythrough", handleAutoPlay);
       }
     }, 0);
-  };
+  }, [currentAudioIndex, audioList.length, isShuffling]);
 
   const handleAutoPlay = async () => {
     if (audioRef.current && isPlaying) {
@@ -284,6 +284,16 @@ function MobilePlayerModal() {
       setCurrentAudioIndex(0); // Reset to a valid index
     }
   }, [audioList]);
+
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    if (audioElement) {
+      const playNextSong = () => handleNext();
+      audioElement.addEventListener("ended", playNextSong);
+
+      return () => audioElement.removeEventListener("ended", playNextSong);
+    }
+  }, [handleNext]);
 
   return (
     <div className="h-max fixed bottom-0 left-0 w-full bg-white bg-opacity-10 backdrop-blur-xl shadow-lg p-4 rounded-tr-3xl rounded-tl-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none p-4 justify-center items-center">
