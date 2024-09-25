@@ -19,6 +19,8 @@ function Page() {
           "Content-Type": "application/json",
         },
       });
+      const data = await response.json();
+      console.log("data", data);
       // Check if the response contains a token
       if (response.ok) {
         alert(`Check Email!`);
