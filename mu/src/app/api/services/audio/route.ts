@@ -73,8 +73,13 @@ export async function PUT(req: Request) {
       );
     }
 
+    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    if (!email) {
+      throw new Error("EMAIL environment variable is not set.");
+    }
+
     await customEmail(
-      "nowenportfolio@gmail.com",
+      email,
       `Favourite status of ${audio.name} has been updated`,
       `The favourite status of ${audio.name} has been updated to ${audio.favourite}`
     );
@@ -139,8 +144,13 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    if (!email) {
+      throw new Error("EMAIL environment variable is not set.");
+    }
+
     await customEmail(
-      "nowenportfolio@gmail.com",
+      email,
       `Audio ${audio.name} has been updated`,
       `The audio ${audio.name} has been updated`
     );
@@ -217,8 +227,13 @@ export async function DELETE(req: Request) {
       );
     }
 
+    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    if (!email) {
+      throw new Error("EMAIL environment variable is not set.");
+    }
+
     await customEmail(
-      "nowenportfolio@gmail.com",
+      email,
       `Audio ${audio.name} has been deleted`,
       `The audio ${audio.name} has been deleted`
     );

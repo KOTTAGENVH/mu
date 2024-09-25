@@ -1,12 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import LoginHeader from "@/components/loginHeader";
 import { useRouter } from "next/navigation";
 
 function Page() {
-  const [token, setToken] = useState("");
-  const [genratedToken, setGenratedToken] = useState("");
   const [isLoading, setLoading] = useState(false);
 
   const router = useRouter();
@@ -15,17 +13,16 @@ function Page() {
   const handleGenerateToken = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/services/generateToken", {
+      const response = await fetch("/api/services/generateURLToken", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
       });
+
       // Check if the response contains a token
       if (response.ok) {
-        const data = await response.json();
-        setGenratedToken(data.token);
-        alert(`Token generated!`);
+        alert(`Check Email!`);
         setLoading(false);
       } else {
         alert(`Error generating token`);
@@ -38,51 +35,63 @@ function Page() {
   };
 
   //Validate token
-  const handleValidateToken = async () => {
-    try {
-      setLoading(true);
-      if (token === genratedToken && token !== "") {
+  useEffect(() => {
+    const validateAndGenerateToken = async () => {
+      // Check URL for token
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+
+      if (token) {
         try {
-          const response = await fetch("/api/services/cookierGenerator", {
+          // Validate token
+          const response = await fetch("/api/services/validateURLToken", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ genratedToken }),
+            body: JSON.stringify({ token }),
           });
-          if (!response.ok) {
-            throw new Error("Error in generating cookie");
-          } 
-
           if (response.ok) {
-            alert(`Token Valid!`);
-            setLoading(false);
-            setToken("");
-            setGenratedToken("");
-            router.push("/home");
+            // Generate token
+            const responseGenerator = await fetch(
+              "/api/services/cookierGenerator",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ token }),
+              }
+            );
+
+            if (responseGenerator.ok) {
+              alert("Token validated!");
+              router.push(`/home`);
+            } else {
+              alert("Error generating token");
+            }
+          } else {
+            const data = await response.json();
+            alert("Error validating token" + data.message);
           }
         } catch (error) {
-          alert(`Error in generating cookie`);
-          setLoading(false);
-          setToken("");
-          setGenratedToken("");
-          console.error(error);
-          return;
+          console.error("Error during token validation/generation:", error);
         }
       } else {
-        alert(`Token Invalid!`);
-        setLoading(false);
-        setToken("");
-        setGenratedToken("");
+        // Check if token is in cookie
+        const cookieToken = document.cookie
+          .split(";")
+          .find((c) => c.trim().startsWith("token="));
+
+        if (cookieToken) {
+          // Redirect to login page
+          router.push(`/login`);
+        }
       }
-    } catch (error) {
-      alert(`Error validating token`);
-      setLoading(false);
-      setToken("");
-      setGenratedToken("");
-      console.error(error);
-    }
-  };
+    };
+
+    validateAndGenerateToken();
+  }, [router]);
 
   return (
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-auto">
@@ -102,33 +111,6 @@ function Page() {
       <div
         className={`flex flex-col h-5/6  w-screen justify-center items-center `}
       >
-        <div className="flex flex-row">
-          <input
-            className="w-4/5 h-9 md:h-11 mt-4 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none p-2 rounded-tl-3xl rounded-bl-3xl text-black"
-            type="text"
-            placeholder="Enter Token"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-          />
-          <motion.div
-            className="box"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <button
-              className={`w-32 md:w-48 h-9 md:h-11 flex justify-center items-center 
-      text-black dark:text-white text-neutral-700 mr-4 mt-4 space-x-2
-      hover:bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-      p-2 rounded-tr-3xl rounded-br-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none`}
-              onClick={handleValidateToken}
-            >
-              <span className="text-sm md:text-lg">Validate</span>
-            </button>
-          </motion.div>
-        </div>
         <motion.div
           className="box"
           whileHover={{ scale: 1.1 }}

@@ -10,8 +10,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json(); // Parse request body
-    const {category, fileUrl, favourite } = body;
-    let {name} = body;
+    const { category, fileUrl, favourite } = body;
+    let { name } = body;
 
     // Remove inverted commas from the name
     name = name.replace(/[^a-zA-Z]/g, "");
@@ -58,9 +58,13 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     } else {
+      const email = process.env.NEXT_PUBLIC_EMAIL || "";
+      if (!email) {
+        throw new Error("EMAIL environment variable is not set.");
+      }
       // Send email
       await customEmail(
-        "nowenportfolio@gmail.com",
+        email,
         "Welcome to MU",
         `You have successfully uploaded ${name} to MU.`
       );
