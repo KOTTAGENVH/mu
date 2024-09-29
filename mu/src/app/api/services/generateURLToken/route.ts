@@ -6,8 +6,9 @@ import { sign } from "jsonwebtoken";
 const MAX_AGE = 60 * 60 * 24; // 24 hours in seconds
 
 //Generate a link to the user for login
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const { ip } = await req.json();
     const secret = process.env.NEXT_PUBLIC_JWT_SECRET || "";
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");
@@ -21,10 +22,14 @@ export async function POST() {
       throw new Error("SUBJECT environment variable is not set.");
     }
 
-    const token = sign({ 
-      email, 
-      subject
-    }, secret, { expiresIn: MAX_AGE });
+    const token = sign(
+      {
+        email,
+        subject,
+      },
+      secret,
+      { expiresIn: MAX_AGE }
+    );
 
     const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "";
     if (!cookieName) {
@@ -38,7 +43,7 @@ export async function POST() {
     await customEmail(
       email,
       "Token for MU",
-      `Please click on the link to login: ${loginLink}`
+      `Please click on the link to login: ${loginLink} @${ip}`
     );
 
     // Return the token in the response
