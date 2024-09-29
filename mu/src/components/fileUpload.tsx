@@ -35,54 +35,54 @@ const FileUpload: React.FC = () => {
   };
 
   // Function to scan the file for viruses
-  const scanFileForViruses = async (file: File): Promise<boolean> => {
-    const formData = new FormData();
-    formData.append("file", file);
+  // const scanFileForViruses = async (file: File): Promise<boolean> => {
+  //   const formData = new FormData();
+  //   formData.append("file", file);
 
-    //Api key for VirusTotal
-    const apiKey = process.env.NEXT_PUBLIC_VIRUS_TOTAL_API_KEY;
-    if (!apiKey) {
-      alert("VirusTotal API key not found.");
-      return false;
-    }
+  //   //Api key for VirusTotal
+  //   const apiKey = process.env.NEXT_PUBLIC_VIRUS_TOTAL_API_KEY;
+  //   if (!apiKey) {
+  //     alert("VirusTotal API key not found.");
+  //     return false;
+  //   }
 
-    const response = await fetch("https://www.virustotal.com/api/v3/files", {
-      method: "POST",
-      headers: {
-        "x-apikey": apiKey,
-      },
-      body: formData,
-    });
+  //   const response = await fetch("https://www.virustotal.com/api/v3/files", {
+  //     method: "POST",
+  //     headers: {
+  //       "x-apikey": apiKey,
+  //     },
+  //     body: formData,
+  //   });
 
-    const result = await response.json();
-    if (!response.ok) {
-      alert("Error uploading to VirusTotal. Please try again later.");
-      console.error("Error uploading to VirusTotal:", result);
-      return false;
-    }
+  //   const result = await response.json();
+  //   if (!response.ok) {
+  //     alert("Error uploading to VirusTotal. Please try again later.");
+  //     console.error("Error uploading to VirusTotal:", result);
+  //     return false;
+  //   }
 
-    const analysisId = result.data.id;
+  //   const analysisId = result.data.id;
 
-    return new Promise((resolve) => {
-      const checkAnalysis = async () => {
-        const analysisResponse = await fetch(
-          `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
-          {
-            headers: {
-              "x-apikey": apiKey,
-            },
-          }
-        );
-        const analysisResult = await analysisResponse.json();
-        if (analysisResult.data.attributes.status === "completed") {
-          resolve(analysisResult.data.attributes.stats.malicious === 0);
-        } else {
-          setTimeout(checkAnalysis, 2000);
-        }
-      };
-      checkAnalysis();
-    });
-  };
+  //   return new Promise((resolve) => {
+  //     const checkAnalysis = async () => {
+  //       const analysisResponse = await fetch(
+  //         `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
+  //         {
+  //           headers: {
+  //             "x-apikey": apiKey,
+  //           },
+  //         }
+  //       );
+  //       const analysisResult = await analysisResponse.json();
+  //       if (analysisResult.data.attributes.status === "completed") {
+  //         resolve(analysisResult.data.attributes.stats.malicious === 0);
+  //       } else {
+  //         setTimeout(checkAnalysis, 2000);
+  //       }
+  //     };
+  //     checkAnalysis();
+  //   });
+  // };
 
   // Function to handle file upload
   const uploadFile = async (file: File) => {
@@ -99,12 +99,12 @@ const FileUpload: React.FC = () => {
       }
       // Scan the file for viruses
       setScanning(true);
-      const isSafe = await scanFileForViruses(file);
-      setScanning(false);
-      if (!isSafe) {
-        alert("The file contains viruses and cannot be uploaded.");
-        return;
-      }
+      // const isSafe = await scanFileForViruses(file);
+      // setScanning(false);
+      // if (!isSafe) {
+      //   alert("The file contains viruses and cannot be uploaded.");
+      //   return;
+      // }
       // Set loading state
       setLoading(true);
 
