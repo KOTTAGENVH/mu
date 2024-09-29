@@ -135,6 +135,7 @@ const FileUpload: React.FC = () => {
         alert("File already exists.");
         setLoading(false);
         setScanning(false);
+        setMp3Files([])
         return;
       }
       // Upload the file to Firebase Storage
@@ -152,6 +153,7 @@ const FileUpload: React.FC = () => {
           // Handle upload error
           console.error("Upload failed:", error);
           setLoading(false);
+          setMp3Files([])
           alert("An error occurred while uploading the image.");
         },
         async () => {
@@ -176,14 +178,21 @@ const FileUpload: React.FC = () => {
             if (!res.ok) {
               alert(data.message);
               console.error("Error uploading to MongoDB:", data.message);
+              setLoading(false);
+              setMp3Files([])
             } else {
               alert("File uploaded successfully.");
+              setLoading(false);
+              setMp3Files([])
             }
           } catch (error) {
             console.error("Error getting download URL:", error);
             alert("An error occurred while uploading the image.");
+            setLoading(false);
+            setMp3Files([])
           }
           setLoading(false);
+          setMp3Files([])
         }
       );
     } catch (error) {
@@ -191,6 +200,7 @@ const FileUpload: React.FC = () => {
       alert("An error occurred while uploading the file.");
       setLoading(false);
       setScanning(false);
+      setMp3Files([])
     }
   };
 
