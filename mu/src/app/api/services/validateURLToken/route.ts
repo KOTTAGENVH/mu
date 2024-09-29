@@ -8,7 +8,9 @@ export async function POST(req: Request) {
     const secret = process.env.NEXT_PUBLIC_JWT_SECRET || "";
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
     const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
-    const { token } = await req.json();
+    const { token, ip } = await req.json();
+
+
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");
     }
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
     await customEmail(
       email,
       "Token Validated MU",
-      `Token validated at ${tokenValidatedAt}`
+      `Token validated at ${tokenValidatedAt} & ip @ ${ip}`
     );
     return NextResponse.json({ success: true, decoded });
   } catch (error: unknown) {
