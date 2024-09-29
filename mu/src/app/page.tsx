@@ -13,11 +13,17 @@ function Page() {
   const handleGenerateToken = async () => {
     try {
       setLoading(true);
+      // Fetch client's IP address
+      const ipResponse = await fetch("https://api.ipify.org?format=json");
+      const ipData = await ipResponse.json();
+      const clientIp = ipData.ip;
+
       const response = await fetch("/api/services/generateURLToken", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ ip: clientIp }),
       });
 
       // Check if the response contains a token
@@ -43,13 +49,18 @@ function Page() {
 
       if (token) {
         try {
+          // Fetch client's IP address
+          const ipResponse = await fetch("https://api.ipify.org?format=json");
+          const ipData = await ipResponse.json();
+          const clientIp = ipData.ip;
+
           // Validate token
           const response = await fetch("/api/services/validateURLToken", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, ip: clientIp }),
           });
           if (response.ok) {
             // Generate token
