@@ -39,6 +39,15 @@ const AudioPlayer: React.FC = () => {
   const { toggleId } = useCurrentPlay();
   const { id } = useToPlay();
 
+  // Fisher-Yates Shuffle Algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
   // Fetch audio from the API
   const fetchAudio = async () => {
     try {
@@ -51,7 +60,9 @@ const AudioPlayer: React.FC = () => {
         },
       });
       const data = await res.json();
-      setAudioList(data.uploads);
+      const uploads: Audio[] = data.uploads as Audio[];
+      const shuffledUploads = shuffleArray(uploads);
+      setAudioList(shuffledUploads);
       setDefaultAudioList(data.uploads);
       setLoading(false);
     } catch (error) {
