@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import { useModal } from "@/contextApi/modalOpen";
 import EditModal from "./editModal";
 
-
 interface Audio {
   _id: string;
   name: string;
@@ -26,6 +25,15 @@ function AudioList() {
   const itemsPerPage = 3;
   const { Modal } = useModal();
 
+  // Fisher-Yates Shuffle Algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
   // Fetch audio from the API
   const fetchAudio = async () => {
     try {
@@ -37,7 +45,9 @@ function AudioList() {
         },
       });
       const data = await res.json();
-      setAudioList(data.uploads);
+      const uploads: Audio[] = data.uploads as Audio[];
+      const shuffledUploads = shuffleArray(uploads);
+      setAudioList(shuffledUploads);
     } catch (error) {
       console.error("Error fetching audio:", error);
     }
@@ -94,16 +104,17 @@ function AudioList() {
             <div className="text-center text-black dark:text-white">
               No audio found
             </div>
-          )} 
-          {currentItems?.length > 0 && currentItems?.map((audio) => (
-            <OneAudioView
-              key={audio._id}
-              idPass={audio._id}
-              name={audio.name}
-              category={audio.category}
-              favourite={audio.favourite}
-            />
-          ))}
+          )}
+          {currentItems?.length > 0 &&
+            currentItems?.map((audio) => (
+              <OneAudioView
+                key={audio._id}
+                idPass={audio._id}
+                name={audio.name}
+                category={audio.category}
+                favourite={audio.favourite}
+              />
+            ))}
 
           {/* Pagination controls */}
           <div className="w-auto flex flex-row justify-center items-center p-2 m-4">
@@ -132,7 +143,8 @@ function AudioList() {
               className="m-4 p-2 text-black dark:text-white rounded-3xl shadow-lg shadow-cyan-900/50 
           dark:shadow-cyan-500/50 hover:shadow-none"
             >
-              Page {currentPage} of {Math.ceil(audioList?.length / itemsPerPage)}
+              Page {currentPage} of{" "}
+              {Math.ceil(audioList?.length / itemsPerPage)}
             </span>
 
             <motion.div
