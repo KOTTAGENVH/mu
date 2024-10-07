@@ -63,7 +63,7 @@ const AudioPlayer: React.FC = () => {
       const uploads: Audio[] = data.uploads as Audio[];
       const shuffledUploads = shuffleArray(uploads);
       setAudioList(shuffledUploads);
-      setDefaultAudioList(shuffledUploads);
+      setDefaultAudioList(data.uploads);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching audio:", error);
