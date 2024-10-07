@@ -61,8 +61,7 @@ const AudioPlayer: React.FC = () => {
       });
       const data = await res.json();
       const uploads: Audio[] = data.uploads as Audio[];
-      const shuffledUploads = shuffleArray(uploads);
-      setAudioList(shuffledUploads);
+      setAudioList(uploads);
       setDefaultAudioList(data.uploads);
       setLoading(false);
     } catch (error) {
@@ -131,25 +130,29 @@ const AudioPlayer: React.FC = () => {
     }
 
     if (isShuffling) {
-      setCurrentAudioIndex(Math.floor(Math.random() * audioList.length)); // Play a random song
+      //Play song based on fisher-yates shuffle algorithm
+      const shuffledList = shuffleArray([...audioList]);
+      const nextIndex = shuffledList.findIndex(
+        (audio) => audio._id === audioList[currentAudioIndex]._id
+      );
+      setCurrentAudioIndex(nextIndex);
     } else {
+      //Tun off shuffle
       setCurrentAudioIndex((prevIndex) =>
         prevIndex === audioList.length - 1 ? 0 : prevIndex + 1
-      );
+      );     
     }
 
     setTimeout(async () => {
       if (audioRef.current) {
         audioRef.current.load(); // Load the next audio
-        audioRef.current.addEventListener("canplaythrough", async () => {
-          if (isPlaying && audioRef.current) {
-            try {
-              await audioRef.current?.play(); // Use optional chaining to play audio if not null
-            } catch (error) {
-              console.error("Error playing audio:", error);
-            }
+        if (isPlaying) {
+          try {
+            await audioRef.current.play(); // Play the next audio if isPlaying is true
+          } catch (error) {
+            console.error("Error playing audio:", error);
           }
-        });
+        }
       }
     }, 0);
   };
@@ -246,7 +249,7 @@ const AudioPlayer: React.FC = () => {
         setDuration(audioRef.current?.duration || 0);
       });
       audioRef.current.addEventListener("ended", () => {
-        handleNext(); // Play the next song when the current one ends
+        handleNext(); 
       });
     }
 
