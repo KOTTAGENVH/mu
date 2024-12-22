@@ -198,7 +198,35 @@ export async function DELETE(req: Request) {
 
     //Extract File Path From Firebase
     const extractFilePathFromUrl = (fileUrl: string) => {
-      const bucketName = "muaudio1.appspot.com";
+      const bucketNames = [
+        process.env.NEXT_PUBLIC_BUCKET1,
+        process.env.NEXT_PUBLIC_BUCKET2,
+        process.env.NEXT_PUBLIC_BUCKET3,
+        process.env.NEXT_PUBLIC_BUCKET4,
+        process.env.NEXT_PUBLIC_BUCKET5,
+      ];
+
+      // Ensures all environment variables are defined!
+      for (const bucket of bucketNames) {
+        if (!bucket) {
+          throw new Error(
+            `Bucket environment variable is not set properly. Bucket value is undefined.`
+          );
+        }
+      }
+
+      // Find the bucket in the URL
+      let bucketName = "";
+      for (const bucket of bucketNames) {
+        if (fileUrl.includes(bucket!)) {
+          bucketName = bucket!;
+          break;
+        }
+      }
+
+      if (!bucketName) {
+        throw new Error("Bucket not found in the file URL");
+      }
       const pathStart = fileUrl.indexOf(bucketName) + bucketName.length + 1;
 
       const filePath = fileUrl.substring(pathStart);
