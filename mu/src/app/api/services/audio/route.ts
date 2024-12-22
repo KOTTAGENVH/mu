@@ -1,10 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { customEmail } from "@/config/customEmail";
 import { storage1 } from "@/config/firebase1";
-import { ref, deleteObject } from "@firebase/storage";
+import { ref, deleteObject, StorageError } from "@firebase/storage";
+import { storage2 } from "@/config/firebase2";
+import { storage3 } from "@/config/firebase3";
+import { storage4 } from "@/config/firebase4";
+import { storage5 } from "@/config/firebase5";
 
 // Handle the GET request for audio
 export async function GET(req: Request) {
@@ -187,7 +192,7 @@ export async function DELETE(req: Request) {
 
     const { _id } = await req.json();
 
-    //Delete the audio from firebase Storage
+    // Fetch audio details
     const audioDetail = await Upload.findById(_id);
     if (!audioDetail) {
       return NextResponse.json(
@@ -196,7 +201,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    //Extract File Path From Firebase
+    // Helper: Extract File Path From Firebase URL
     const extractFilePathFromUrl = (fileUrl: string) => {
       const bucketNames = [
         process.env.NEXT_PUBLIC_BUCKET1,
@@ -205,56 +210,70 @@ export async function DELETE(req: Request) {
         process.env.NEXT_PUBLIC_BUCKET4,
         process.env.NEXT_PUBLIC_BUCKET5,
       ];
-
-      // Ensures all environment variables are defined!
+    
       for (const bucket of bucketNames) {
         if (!bucket) {
-          throw new Error(
-            `Bucket environment variable is not set properly. Bucket value is undefined.`
-          );
+          throw new Error("Bucket environment variable is not set properly.");
+        }
+        if (fileUrl.includes(bucket)) {
+          const pathStart = fileUrl.indexOf(`${bucket}/o/`) + `${bucket}/o/`.length;
+          const encodedFilePath = fileUrl.substring(pathStart).split("?")[0]; // Remove query params
+          const filePath = decodeURIComponent(encodedFilePath); // Decode %2F to /
+          return { bucketName: bucket, filePath };
         }
       }
+    
+      throw new Error("Bucket not found in the file URL");
+    };
+    
 
-      // Find the bucket in the URL
-      let bucketName = "";
-      for (const bucket of bucketNames) {
-        if (fileUrl.includes(bucket!)) {
-          bucketName = bucket!;
-          break;
-        }
+    // Extract bucket name and file path
+    const { bucketName, filePath } = extractFilePathFromUrl(audioDetail.fileUrl);
+
+    // Helper: Map bucket name to storage instance
+    const getStorageInstance = (bucketName: string) => {
+      const storageMap: Record<string, any> = {
+        [process.env.NEXT_PUBLIC_BUCKET1!]: storage1,
+        [process.env.NEXT_PUBLIC_BUCKET2!]: storage2,
+        [process.env.NEXT_PUBLIC_BUCKET3!]: storage3,
+        [process.env.NEXT_PUBLIC_BUCKET4!]: storage4,
+        [process.env.NEXT_PUBLIC_BUCKET5!]: storage5,
+      };
+
+      const storageInstance = storageMap[bucketName];
+      if (!storageInstance) {
+        throw new Error(`No storage instance mapped for bucket: ${bucketName}`);
       }
-
-      if (!bucketName) {
-        throw new Error("Bucket not found in the file URL");
-      }
-      const pathStart = fileUrl.indexOf(bucketName) + bucketName.length + 1;
-
-      const filePath = fileUrl.substring(pathStart);
-
-      return decodeURIComponent(filePath);
+      return storageInstance;
     };
 
-    // Extract the file path from the fileUrl
-    const filePath = extractFilePathFromUrl(audioDetail.fileUrl);
+    // Get the storage instance
+    const storageInstance = getStorageInstance(bucketName);
 
-    //Delete the audio from firebase Storage
-    const audioRef = ref(storage1, filePath);
-    await deleteObject(audioRef).catch((error) => {
-      console.error("Error deleting the audio file:", error);
-      return NextResponse.json(
-        { success: false, message: "Error deleting the audio file" },
-        { status: 500 }
-      );
-    });
+    // Reference to the file in storage
+    const audioRef = ref(storageInstance, filePath);
 
+    // Attempt to delete the file
+    try {
+      await deleteObject(audioRef);
+    } catch (error) {
+      if (error instanceof StorageError && error.code === "storage/object-not-found") {
+        console.warn(`File not found: ${filePath}`);
+      } else {
+        throw error; // Rethrow if it's a different error
+      }
+    }
+
+    // Delete the database record
     const audio = await Upload.findByIdAndDelete(_id);
     if (!audio) {
       return NextResponse.json(
-        { success: false, message: "Audio not found" },
+        { success: false, message: "Audio not found in the database" },
         { status: 404 }
       );
     }
 
+    // Send email notification
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
@@ -268,16 +287,16 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true, message: "Audio deleted" });
   } catch (error: unknown) {
+    console.error("Error handling DELETE request:", error);
     if (error instanceof Error) {
       return NextResponse.json(
         { success: false, message: error.message },
         { status: 500 }
       );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 }
-      );
     }
+    return NextResponse.json(
+      { success: false, message: "An unknown error occurred" },
+      { status: 500 }
+    );
   }
 }
