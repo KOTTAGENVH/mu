@@ -15,7 +15,6 @@ export async function POST(req: Request) {
     }
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
     const email2 = process.env.NEXT_PUBLIC_EMAIL2 || "";
-    const overallEmail = email + "," + email2;
     const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
@@ -43,7 +42,7 @@ export async function POST(req: Request) {
 
     // Send the token to the user via email
     await customEmail(
-      overallEmail,
+      [email2, email],
       "Token for MU",
       `Please click on the link to login: ${loginLink} @${ip}`
     );
