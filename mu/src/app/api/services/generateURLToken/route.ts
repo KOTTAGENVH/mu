@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       throw new Error("JWT_SECRET environment variable is not set.");
     }
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    const email2 = process.env.NEXT_PUBLIC_EMAIL2 || "";
+    const overallEmail = email + "," + email2;
     const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
 
     const token = sign(
       {
-        email,
+        overallEmail,
         subject,
       },
       secret,

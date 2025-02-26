@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 export const customEmail = async (
-  email: string,
+  email: string | string[],
   subject: string,
   body: string
 ): Promise<boolean> => {
@@ -18,9 +18,11 @@ export const customEmail = async (
     //Logo URL
     const logoUrl = `${process.env.LOGO_URL}`; 
 
+    const toEmails = Array.isArray(email) ? email.join(", ") : email;
+
     const mailDetails = {
       from: process.env.email,
-      to: email,
+      to: toEmails,
       subject: subject,
       html: `
             <div>
