@@ -108,12 +108,12 @@ function Page() {
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-auto">
       <LoginHeader />
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center rounded-3xl">
+        <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center">
           <div
             className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full dark:border-cyan-500 border-cyan-500"
             role="status"
           >
-            <span className="visually-hidden text-black dark:text-white">
+            <span className="visually-hidden text-black dark:text-white text-4xl">
               Loading...
             </span>
           </div>
