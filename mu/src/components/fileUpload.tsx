@@ -14,6 +14,7 @@ import {
   ref,
   uploadBytesResumable,
 } from "@firebase/storage";
+import Loader from "./loader";
 
 const FileUpload: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -416,16 +417,7 @@ const FileUpload: React.FC = () => {
           onClick={handleClick}
         >
           {isLoading || isScanning ? (
-            <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center rounded-3xl">
-              <div
-                className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full dark:border-cyan-500 border-cyan-500"
-                role="status"
-              >
-                <span className="visually-hidden text-black dark:text-white">
-                  Loading...
-                </span>
-              </div>
-            </div>
+            <Loader/>
           ) : (
             <>
               {mp3Files.length == 0 && (
