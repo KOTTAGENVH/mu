@@ -14,6 +14,7 @@
     "@firebase/storage": "^0.13.1",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@tanstack/react-query": "^5.69.0",
     "axios": "^1.7.7",
     "cookie": "^0.6.0",
     "dotenv": "^16.4.5",
@@ -21,13 +22,12 @@
     "jose": "^5.9.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.3",
-    "next": "14.2.11",
+    "next": "^15.2.3",
     "next-sitemap": "^4.2.3",
     "nodemailer": "^6.9.15",
-    "react": "^18",
-    "react-dom": "^18",
-    "react-iframe": "^1.8.5",
-    "react-query": "^3.39.3"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-iframe": "^1.8.5"
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",
