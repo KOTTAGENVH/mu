@@ -12,6 +12,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCurrentPlay } from "@/contextApi/currentPlay";
 import { useToPlay } from "@/contextApi/toPlay";
+import Loader from "./loader";
 
 interface Audio {
   _id: string;
@@ -297,16 +298,7 @@ const AudioPlayer: React.FC = () => {
   return (
     <div className="rounded-3xl h-max  mb-4 w-2/5 bg-white bg-opacity-10 backdrop-blur-xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none p-4 justify-center items-center">
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center rounded-3xl">
-          <div
-            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full dark:border-cyan-500 border-cyan-500"
-            role="status"
-          >
-            <span className="visually-hidden text-black dark:text-white">
-              Loading...
-            </span>
-          </div>
-        </div>
+        <Loader/>
       )}
       {audioList && audioList.length > 0 && (
         <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} />

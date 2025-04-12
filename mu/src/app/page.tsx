@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import LoginHeader from "@/components/loginHeader";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/loader";
 
 function Page() {
   const [isLoading, setLoading] = useState(false);
@@ -105,19 +106,10 @@ function Page() {
   }, [router]);
 
   return (
-    <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-auto">
+    <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-hidden">
       <LoginHeader />
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center rounded-3xl">
-          <div
-            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full dark:border-cyan-500 border-cyan-500"
-            role="status"
-          >
-            <span className="visually-hidden text-black dark:text-white">
-              Loading...
-            </span>
-          </div>
-        </div>
+        <Loader/>
       )}
       <div
         className={`flex flex-col h-5/6  w-screen justify-center items-center `}
