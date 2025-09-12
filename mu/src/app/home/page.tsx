@@ -1,10 +1,7 @@
 "use client";
 import AudioList from "@/components/audioList";
-import AudioPlayer from "@/components/audioPlayer";
-import Drawer from "@/components/drawer";
-import IframeComp from "@/components/iframeComp";
 import MobileAudioList from "@/components/mobileAudioList";
-import MobileHeader from "@/components/mobileHeader";
+import Header from "@/components/header";
 import MobilePlayerModal from "@/components/mobilePlayerModal";
 import { useToPlay } from "@/contextApi/toPlay";
 import React, { useEffect, useState } from "react";
@@ -28,13 +25,11 @@ function Page() {
 
   return (
     <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-y-auto">
-      {!isDesktop && <MobileHeader/>}
-      {isDesktop && <Drawer />}
+<Header/>
       {isDesktop && (
         <>
           <div className="hidden md:flex flex-row flex-wrap  h-4/6 w-auto ml-40 justify-center items-center mr-4">
-            <IframeComp />
-            <AudioPlayer />
+            {/* <AudioPlayer /> */}
           </div>
           <div className="hidden md:block h-4/6 w-auto ml-40 justify-center items-center mr-8">
             <AudioList />
