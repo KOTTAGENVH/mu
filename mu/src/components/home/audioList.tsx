@@ -44,7 +44,7 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
   }, [search]);
 
     const pushUpstream = useCallback((list: AudioNorm[]) => {
-    // AudioNorm is compatible with Audio; strip helpers when passing up if you prefer:
+    // AudioNorm is compatible with Audio
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const base: Audio[] = list.map(({ nameLc, categoryLc, ...rest }) => rest);
     onLoaded?.(base);

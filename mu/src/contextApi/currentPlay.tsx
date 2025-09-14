@@ -32,8 +32,6 @@ export const CurrentPlayProvider: React.FC<{ children: ReactNode }> = ({
 
   // Toggle function to set the id passed
   const toggleId = useCallback((newId: string, shouldPause: boolean) => {
-    // Schedule updates after the current render to avoid
-    // "Cannot update a component while rendering a different component" warnings.
     if (pendingTimerRef.current !== null) {
       clearTimeout(pendingTimerRef.current);
       pendingTimerRef.current = null;

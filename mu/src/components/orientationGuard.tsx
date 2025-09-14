@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-/**
- * Shows a full-screen overlay on mobile devices when in landscape orientation,
- * nudging the user to rotate back to portrait. This does not hard-lock orientation
- * (browsers don't allow that), but provides a UX guard.
- */
+
 export default function OrientationGuard() {
   const [show, setShow] = useState(false);
 

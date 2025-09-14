@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { customEmail } from "@/config/customEmail";
-import { ref, deleteObject, StorageError } from "@firebase/storage";
+import { ref, deleteObject, StorageError, type FirebaseStorage } from "@firebase/storage";
 import { storage5 } from "@/config/firebase5";
 
 // Handle the GET request for audio
@@ -223,11 +222,11 @@ export async function DELETE(req: Request) {
     const { bucketName, filePath } = extractFilePathFromUrl(audioDetail.fileUrl);
 
     // Helper: Map bucket name to storage instance
-    const getStorageInstance = (bucketName: string) => {
-      const storageMap: Record<string, any> = {
-        [process.env.BUCKET5!]: storage5,
+    const getStorageInstance = (bucketName: string): FirebaseStorage => {
+      const storageMap: Record<string, FirebaseStorage> = {
+        [process.env.BUCKET5!]: storage5 as FirebaseStorage,
       };
-
+    
       const storageInstance = storageMap[bucketName];
       if (!storageInstance) {
         throw new Error(`No storage instance mapped for bucket: ${bucketName}`);
