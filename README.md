@@ -1,4 +1,4 @@
-#Welcome to MU 2.0
+#Welcome to MU 2.0 (New UI and enhance ment in several features)
 >>
 >A web based audio player.
 >>
