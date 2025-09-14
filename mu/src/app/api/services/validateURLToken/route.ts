@@ -6,8 +6,8 @@ import { JwtPayload, verify } from "jsonwebtoken";
 export async function POST(req: Request) {
   try {
     const secret = process.env.JWT_SECRET || "";
-    const email = process.env.NEXT_PUBLIC_EMAIL || "";
-    const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
+    const email = process.env.EMAIL || "";
+    const subject = process.env.SUBJECT || "";
     const { token, ip } = await req.json();
 
 
