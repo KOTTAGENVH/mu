@@ -12,8 +12,8 @@ export async function POST(req: Request) {
     const MAX_AGE = 60 * 60 * 24 * 2;
 
     //Token
-    const secret = process.env.NEXT_PUBLIC_JWT_SECRET || "";
-    const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "";
+    const secret = process.env.JWT_SECRET || "";
+    const cookieName = process.env.COOKIE_NAME || "";
 
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");

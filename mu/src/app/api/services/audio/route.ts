@@ -1,14 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { customEmail } from "@/config/customEmail";
-import { storage1 } from "@/config/firebase1";
-import { ref, deleteObject, StorageError } from "@firebase/storage";
-import { storage2 } from "@/config/firebase2";
-import { storage3 } from "@/config/firebase3";
-import { storage4 } from "@/config/firebase4";
+import { ref, deleteObject, StorageError, type FirebaseStorage } from "@firebase/storage";
 import { storage5 } from "@/config/firebase5";
 
 // Handle the GET request for audio
@@ -204,11 +199,7 @@ export async function DELETE(req: Request) {
     // Helper: Extract File Path From Firebase URL
     const extractFilePathFromUrl = (fileUrl: string) => {
       const bucketNames = [
-        process.env.NEXT_PUBLIC_BUCKET1,
-        process.env.NEXT_PUBLIC_BUCKET2,
-        process.env.NEXT_PUBLIC_BUCKET3,
-        process.env.NEXT_PUBLIC_BUCKET4,
-        process.env.NEXT_PUBLIC_BUCKET5,
+        process.env.BUCKET5,
       ];
     
       for (const bucket of bucketNames) {
@@ -231,15 +222,11 @@ export async function DELETE(req: Request) {
     const { bucketName, filePath } = extractFilePathFromUrl(audioDetail.fileUrl);
 
     // Helper: Map bucket name to storage instance
-    const getStorageInstance = (bucketName: string) => {
-      const storageMap: Record<string, any> = {
-        [process.env.NEXT_PUBLIC_BUCKET1!]: storage1,
-        [process.env.NEXT_PUBLIC_BUCKET2!]: storage2,
-        [process.env.NEXT_PUBLIC_BUCKET3!]: storage3,
-        [process.env.NEXT_PUBLIC_BUCKET4!]: storage4,
-        [process.env.NEXT_PUBLIC_BUCKET5!]: storage5,
+    const getStorageInstance = (bucketName: string): FirebaseStorage => {
+      const storageMap: Record<string, FirebaseStorage> = {
+        [process.env.BUCKET5!]: storage5 as FirebaseStorage,
       };
-
+    
       const storageInstance = storageMap[bucketName];
       if (!storageInstance) {
         throw new Error(`No storage instance mapped for bucket: ${bucketName}`);

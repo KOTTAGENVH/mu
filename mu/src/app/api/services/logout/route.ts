@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { serialize } from 'cookie';
 
 export async function GET() {
-  const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || 'Mu-Auth';
+  const cookieName = process.env.COOKIE_NAME || 'Mu-Auth';
 
   // Set the cookie with an expired date to remove it
   const expiredCookie = serialize(cookieName, '', {

@@ -1,62 +1,119 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { motion } from "framer-motion";
+import { faAdd, faAddressCard, faHouse, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
-interface HeaderProps {
-  icon: IconProp;
-  btnNav: string;
-  text: string;
-}
-function Header({ icon, btnNav, text }: HeaderProps) {
+
+function Header() {
   const router = useRouter();
+  const pathname = usePathname();
 
-  const handleLogoClick = () => {
-    router.push("/");
+  // Handle home click
+  const handleHome = () => {
+    router.push("/home");
   };
 
-  const handleButtonClick = () => {
-    router.push(btnNav);
+  //Handle add click
+  const handleAdd = () => {
+    router.push("/upload");
+  }
+
+  // Handle about click
+  const handleAbout = () => {
+    window.open("https://www.nowenkottage.com");
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API to remove the cookie
+      const response = await fetch("/api/services/logout", {
+        method: "GET",
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        router.push("/");
+      } else {
+        alert("Logout failed");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+      alert("An error occurred while logging out. Please try again.");
+    }
   };
 
   return (
-    <div className="sticky top-0 flex justify-center">
-      <nav className="flex items-center justify-between  bg-white bg-opacity-30 dark:bg-opacity-10 backdrop-blur-md p-2 w-4/5 m-4 rounded-full shadow-lg shadow-cyan-900/50 dark:shadow-cyan-100/20 hover:shadow-none">
-        <div className="flex items-center flex-shrink-0 text-white md:mr-6">
-          <motion.div
-            className="box"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <button className="flex text-black dark:text-white items-center text-neutral-700 m-4 space-x-2 hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% ... p-2 rounded-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 hover:shadow-none">
-              <FontAwesomeIcon
-                icon={icon}
-                className="w-4 h-4 md:w-6 md:h-6"
-                onClick={handleButtonClick}
-              />
-              <span className="text-sm md:text-lg">Back</span>
-            </button>
-          </motion.div>
-        </div>
-        <div
-          className="flex items-center justify-center flex-1  flex-shrink-0 cursor-pointer"
-          onClick={handleLogoClick}
-        >
+    <div className="fixed top-0 left-0 w-full z-50">
+      <nav className="flex items-center justify-center md:justify-between py-2 mx-4 px-3 lg:mx-16 lg:px-6 w-auto mt-4 mb-4">
+        <div className="hidden md:block w-auto h-auto">
           <Image
             src="/mu.png"
             alt="MU"
-            width={60}
-            height={100}
-            className="w-12 h-12 md:w-20 md:h-20 rounded-3xl"
+            width={48}
+            height={48}
+            className="md:w-12 md:h-12 rounded-full cursor-pointer"
+            onClick={handleHome}
           />
+
         </div>
-        <h1 className="text-sm md:text-xl font-bold text-black dark:text-white subpixel-antialiased p-1 md:p-4 text-center">
-          {text}
-        </h1>
+        <div className="flex items-center md:items-end flex-shrink-0  w-auto h-auto" >
+          {pathname?.includes("/upload") && (
+            <button
+              title="Home"
+              className={`w-auto flex justify-center 
+            items-center text-black dark:text-white text-neutral-700
+            mt-4  mb-4 space-x-2 
+            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
+              onClick={handleHome}
+            >
+              <FontAwesomeIcon
+                icon={faHouse}
+                className={`w-4 h-4 text-black dark:text-white`}
+              />
+            </button>
+          )}
+          <button
+            title="Add"
+            className={`w-auto flex justify-center 
+            items-center text-black dark:text-white text-neutral-700
+            mt-4  mb-4 space-x-2 
+            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
+            onClick={handleAdd}
+          >
+            <FontAwesomeIcon
+              icon={faAdd}
+              className={`w-4 h-4 text-black dark:text-white`}
+            />
+          </button>
+          <button
+            title="About"
+            className={`w-auto flex justify-center 
+            items-center text-black dark:text-white text-neutral-700
+            mt-4  mb-4 space-x-2 
+            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
+            onClick={handleAbout}
+          >
+            <FontAwesomeIcon
+              icon={faAddressCard}
+              className={`w-4 h-4 text-black dark:text-white`}
+            />
+          </button>
+          <button
+            title="Logout"
+            className={`w-auto flex justify-center 
+            items-center text-black dark:text-white text-neutral-700
+            mt-4  mb-4 space-x-2 
+            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700`}
+            onClick={handleLogout}
+          >
+            <FontAwesomeIcon
+              icon={faRightFromBracket}
+              className={`w-4 h-4 text-red-500 dark:text-red-400`}
+            />
+          </button>
+        </div>
       </nav>
     </div>
   );

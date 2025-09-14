@@ -9,12 +9,12 @@ const MAX_AGE = 60 * 60 * 24; // 24 hours in seconds
 export async function POST(req: Request) {
   try {
     const { ip } = await req.json();
-    const secret = process.env.NEXT_PUBLIC_JWT_SECRET || "";
+    const secret = process.env.JWT_SECRET || "";
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");
     }
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
-    const email2 = process.env.NEXT_PUBLIC_EMAIL2 || "";
+    const email2 = process.env.EMAIL2 || "";
     const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       { expiresIn: MAX_AGE }
     );
 
-    const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "";
+    const cookieName = process.env.COOKIE_NAME || "";
     if (!cookieName) {
       throw new Error("COOKIE_NAME environment variable is not set.");
     }

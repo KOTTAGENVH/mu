@@ -6,7 +6,7 @@ function Loader() {
 
     return (
         <div
-            className={`h-full min-w-full flex items-center justify-center dark:bg-slate-950 bg-slate-300 overflow-hidden`}
+            className={`h-full min-w-full flex items-center justify-center bg-transparent overflow-hidden`}
         >
             <div role="status" className="flex flex-col items-center gap-4">
                 <svg

@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 export async function middleware(request: NextRequest) {
   console.log('Middleware is running');
 
-  const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || 'Mu-Auth';
+  const cookieName = process.env.COOKIE_NAME || 'Mu-Auth';
   const cookie = request.cookies.get(cookieName);
 
   const email = process.env.NEXT_PUBLIC_EMAIL || '';
@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  const secret = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET); // Encode secret for jose
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET); // Encode secret for jose
 
   // Verify the token
   try {

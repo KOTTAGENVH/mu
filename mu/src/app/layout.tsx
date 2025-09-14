@@ -1,78 +1,32 @@
-"use client";
-import { useEffect, useState } from "react";
-import Script from "next/script";
-import localFont from "next/font/local";
 import "./globals.css";
-import { ThemeProvider } from "@/contextApi/iframContext";
-import { CurrentPlayProvider } from "@/contextApi/currentPlay";
-import { ModalProvider } from "@/contextApi/modalOpen";
-import { PlayContextProvider } from "@/contextApi/toPlay";
+import type { Metadata, Viewport } from "next";
+import Providers from "./providers";
+import OrientationGuard from "@/components/orientationGuard";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+export const metadata: Metadata = {
+  title: "MU-Audio",
+  description: "Audio Player by Nowen Kottage",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
+};
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const [isDesktop, setIsDesktop] = useState(false);
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
-  useEffect(() => {
-    const handleResize = () => {
-      const isCurrentlyDesktop = window.innerWidth > 1000;
-
-      if (isDesktop !== isCurrentlyDesktop) {
-        setIsDesktop(isCurrentlyDesktop);
-      }
-    };
-
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isDesktop]);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {/* Ban inspect elements */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.addEventListener("contextmenu", function(event) {
-                event.preventDefault();
-                alert("Inspect Elements Not Allowed!");
-              });
-            `,
-          }}
-        />
-        <ModalProvider>
-          <CurrentPlayProvider>
-            <PlayContextProvider>
-              <ThemeProvider>{children}</ThemeProvider>
-            </PlayContextProvider>
-          </CurrentPlayProvider>
-        </ModalProvider>
-        {isDesktop && (
-          <Script
-            src={process.env.NEXT_PUBLIC_ADSTERRA_SRC}
-            strategy="lazyOnload"
-          />
-        )}
+      <body>
+        <Providers>
+          <OrientationGuard />
+          {children}
+        </Providers>
       </body>
     </html>
   );
