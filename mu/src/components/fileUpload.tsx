@@ -272,9 +272,8 @@ const FileUpload: React.FC = () => {
       text-black dark:text-white text-neutral-700 mt-4 space-x-2
       hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% 
       p-2 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none md:rounded-none rounded-br-3xl rounded-tr-3xl ${
-        storage === storage2 ? "bg-red-500" : ""
-      }`}
+      hover:shadow-none md:rounded-none rounded-br-3xl rounded-tr-3xl ${storage === storage2 ? "bg-red-500" : ""
+              }`}
             onClick={() => setStorage(storage2)}
           >
             <span className="text-sm md:text-lg">Storage 2</span>
@@ -292,9 +291,8 @@ const FileUpload: React.FC = () => {
       text-black dark:text-white text-neutral-700 mt-4 space-x-2
       hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% 
       p-2 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none md:rounded-none rounded-bl-3xl rounded-tl-3xl ${
-        storage === storage3 ? "bg-red-500" : ""
-      }`}
+      hover:shadow-none md:rounded-none rounded-bl-3xl rounded-tl-3xl ${storage === storage3 ? "bg-red-500" : ""
+              }`}
             onClick={() => setStorage(storage3)}
           >
             <span className="text-sm md:text-lg">Storage 3</span>
@@ -312,9 +310,8 @@ const FileUpload: React.FC = () => {
       text-black dark:text-white text-neutral-700 mt-4 space-x-2
       hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% 
       p-2 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none md:rounded-none rounded-br-3xl rounded-tr-3xl ${
-        storage === storage4 ? "bg-red-500" : ""
-      }`}
+      hover:shadow-none md:rounded-none rounded-br-3xl rounded-tr-3xl ${storage === storage4 ? "bg-red-500" : ""
+              }`}
             onClick={() => setStorage(storage4)}
           >
             <span className="text-sm md:text-lg">Storage 4</span>
@@ -332,9 +329,8 @@ const FileUpload: React.FC = () => {
       text-black dark:text-white text-neutral-700 mt-4 space-x-2
       hover:bg-gradient-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% 
       p-2 shadow-lg shadow-cyan-900/50 dark:shadow-cyan-500/50 
-      hover:shadow-none  rounded-br-3xl rounded-tr-3xl ${
-        storage === storage5 ? "bg-red-500" : ""
-      }`}
+      hover:shadow-none  rounded-br-3xl rounded-tr-3xl ${storage === storage5 ? "bg-red-500" : ""
+              }`}
             onClick={() => setStorage(storage5)}
           >
             <span className="text-sm md:text-lg">Storage 5</span>
@@ -383,6 +379,7 @@ const FileUpload: React.FC = () => {
           <option value="Classic">Classic</option>
           <option value="LK">LK</option>
           <option value="FreeStyle">Free Style</option>
+          <option value="MemoryLane">Memory Lane</option>
         </select>
         <motion.div
           className="box"
@@ -401,9 +398,8 @@ const FileUpload: React.FC = () => {
           >
             <FontAwesomeIcon
               icon={faHeart}
-              className={`w-4 h-4 ${
-                isFavourite ? "text-red-500" : "text-black dark:text-white"
-              }`}
+              className={`w-4 h-4 ${isFavourite ? "text-red-500" : "text-black dark:text-white"
+                }`}
             />
           </button>
         </motion.div>
@@ -417,7 +413,7 @@ const FileUpload: React.FC = () => {
           onClick={handleClick}
         >
           {isLoading || isScanning ? (
-            <Loader/>
+            <Loader />
           ) : (
             <>
               {mp3Files.length == 0 && (

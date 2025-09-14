@@ -14,6 +14,11 @@ function Header() {
     router.push("/home");
   };
 
+  //Handle add click
+  const handleAdd = () => {
+    router.push("/upload");
+  }
+
   // Handle about click
   const handleAbout = () => {
     window.open("https://www.nowenkottage.com");
@@ -41,20 +46,21 @@ function Header() {
   return (
     <div className="fixed top-0 left-0 w-full z-50">
       <nav className="flex items-center justify-center md:justify-between py-2 mx-4 px-3 lg:mx-16 lg:px-6 w-auto mt-4 mb-4">
-        <div className="w-auto h-auto">
+        <div className="hidden md:block w-auto h-auto">
           <Image
             src="/mu.png"
             alt="MU"
             width={48}
             height={48}
-            className="hidden md:block md:w-12 md:h-12 rounded-full cursor-pointer"
+            className="md:w-12 md:h-12 rounded-full cursor-pointer"
+            onClick={handleHome}
           />
 
         </div>
-        <div className="flex items-end flex-shrink-0  w-auto h-auto" >
+        <div className="flex items-center md:items-end flex-shrink-0  w-auto h-auto" >
           <button
             title="Home"
-            className={`w-auto flex justify-end 
+            className={`w-auto flex justify-center 
             items-center text-black dark:text-white text-neutral-700
             mt-4  mb-4 space-x-2 
             p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
@@ -67,11 +73,11 @@ function Header() {
           </button>
           <button
             title="Add"
-            className={`w-auto flex justify-end 
+            className={`w-auto flex justify-center 
             items-center text-black dark:text-white text-neutral-700
             mt-4  mb-4 space-x-2 
             p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-            onClick={handleHome}
+            onClick={handleAdd}
           >
             <FontAwesomeIcon
               icon={faAdd}
@@ -80,7 +86,7 @@ function Header() {
           </button>
           <button
             title="About"
-            className={`w-auto flex justify-end 
+            className={`w-auto flex justify-center 
             items-center text-black dark:text-white text-neutral-700
             mt-4  mb-4 space-x-2 
             p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
@@ -93,7 +99,7 @@ function Header() {
           </button>
           <button
             title="Logout"
-            className={`w-auto flex justify-end 
+            className={`w-auto flex justify-center 
             items-center text-black dark:text-white text-neutral-700
             mt-4  mb-4 space-x-2 
             p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700`}

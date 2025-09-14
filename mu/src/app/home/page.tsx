@@ -1,43 +1,33 @@
 "use client";
-import AudioList from "@/components/audioList";
-import MobileAudioList from "@/components/mobileAudioList";
+import AudioList from "@/components/home/audioList";
 import Header from "@/components/header";
-import MobilePlayerModal from "@/components/mobilePlayerModal";
-import { useToPlay } from "@/contextApi/toPlay";
-import React, { useEffect, useState } from "react";
+import AudioPlayerModal from "@/components/home/audioPlayerModal";
+import React, { useState } from "react";
+
+export type Audio = {
+  _id: string;
+  name: string;
+  category: string;
+  fileUrl: string;
+  favourite: boolean;
+};
 
 function Page() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  const { id } = useToPlay();
-
-  // Function to check the window width
-  const updateMedia = () => {
-    setIsDesktop(window.innerWidth >= 768);
-  };
-
-  useEffect(() => {
-    updateMedia();
-    window.addEventListener("resize", updateMedia);
-
-    return () => window.removeEventListener("resize", updateMedia);
-  }, []);
-
+    const [audios, setAudios] = useState<Audio[]>([]);
   return (
-    <div className="h-screen w-screen dark:bg-slate-950 bg-slate-300 overflow-y-auto">
-<Header/>
-      {isDesktop && (
-        <>
-          <div className="hidden md:flex flex-row flex-wrap  h-4/6 w-auto ml-40 justify-center items-center mr-4">
-            {/* <AudioPlayer /> */}
-          </div>
-          <div className="hidden md:block h-4/6 w-auto ml-40 justify-center items-center mr-8">
-            <AudioList />
-          </div>
-        </>
-      )}
-        {!isDesktop && <MobileAudioList/>}
-        {!isDesktop && id !== "" && <MobilePlayerModal />}
+   <div
+      className="
+        min-h-screen w-full
+        flex flex-col
+        bg-slate-300 dark:bg-slate-950
+        overflow-y-auto
+        supports-[height:100dvh]:min-h-[100dvh]
+        supports-[height:100svh]:min-h-[100svh]
+      "
+    >
+      <Header />
+      <AudioList onLoaded={setAudios} />
+      <AudioPlayerModal audios={audios} />
     </div>
   );
 }

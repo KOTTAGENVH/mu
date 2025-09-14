@@ -1,15 +1,17 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-// Define the type for the theme context state
+// Define the type for the current play context state
 interface CurrentPlayContextType {
   id: string;
-  toggleId: (id: string) => void;
+  pause: boolean;
+  toggleId: (id: string, shouldPause: boolean) => void;
 }
 // Create the context with default values
 const CurrentPlayContext = createContext<CurrentPlayContextType>({
   id: "",
-  toggleId: () => {},
+  pause: true,
+  toggleId: () => { },
 });
 
 // Create a provider component
@@ -17,18 +19,20 @@ export const CurrentPlayProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [id, setId] = useState("");
+  const [pause, setPause] = useState(true);
 
   // Toggle function to set the id passed
-  const toggleId = (newId: string) => {
-    setId(newId);
+  const toggleId = (newId: string, shouldPause: boolean) => {
+    setId((prev) => (prev === newId ? prev : newId));
+    setPause(shouldPause);
   };
 
   return (
-    <CurrentPlayContext.Provider value={{ id, toggleId }}>
+    <CurrentPlayContext.Provider value={{ id, pause, toggleId }}>
       {children}
     </CurrentPlayContext.Provider>
   );
 };
 
-// Custom hook to use the theme context
+// Custom hook to use the current play context
 export const useCurrentPlay = () => useContext(CurrentPlayContext);

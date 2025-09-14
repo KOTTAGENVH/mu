@@ -24,4 +24,15 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  /* Hide scrollbars utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar { /* Chrome, Safari */
+    display: none;
+  }
 }
+
+html, body, #__next { height: 100%; }
+
