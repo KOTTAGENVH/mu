@@ -23,6 +23,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        {/* Ban inspect elements */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.addEventListener("contextmenu", function(event) {
+                event.preventDefault();
+                alert("Inspect Elements Not Allowed!");
+              });
+            `,
+          }}
+        />
         <Providers>
           <OrientationGuard />
           {children}
