@@ -84,12 +84,13 @@ npm run dev
 
 ## Desktop View
 
+
 ><img width="1432" height="813" alt="Screenshot 2025-09-15 at 01 42 43" src="https://github.com/user-attachments/assets/b5ada5df-1d72-4fef-9764-748b5677cfa6" />
 >>
-><img width="1434" alt="Screenshot 2024-09-23 at 16 38 10" src="https://github.com/user-attachments/assets/5c348c92-d7d1-4619-b834-65ea26357a3f">
+><img width="1432" height="813" alt="Screenshot 2025-09-15 at 01 56 22" src="https://github.com/user-attachments/assets/5f0785ca-6d1e-422f-bf0f-ee49fb05a024" />
 
 ## Mobile View
 
 ><img width="805" height="813" alt="Screenshot 2025-09-15 at 01 42 15" src="https://github.com/user-attachments/assets/1080f539-138d-47db-9fd9-66cfe4c6772c" />
 >>
-><img width="434" alt="Screenshot 2024-09-23 at 16 36 44" src="https://github.com/user-attachments/assets/f89b2911-f3b1-40cd-a212-931ec347fde1">
+><img width="650" height="813" alt="Screenshot 2025-09-15 at 01 56 49" src="https://github.com/user-attachments/assets/6b64df0e-fbfb-4e38-bee6-f6fdfd92913d" />
