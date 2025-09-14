@@ -294,16 +294,12 @@ const handleAudio = async () => {
     void el.play().catch(() => {});
     return;
   }
-  const m3u8 = await res.text();
+  const { id } = await res.json();
 
-  // Create a blob URL and set as src
-  const blob = new Blob([m3u8], { type: "application/vnd.apple.mpegurl" });
-  const url = URL.createObjectURL(blob);
+  const url = `/api/hls/${id}.m3u8`;
   setHlsSrc(url);
 
-  // IMPORTANT: once we switch to HLS, the element itself will manage the sequence;
-  // our old onended-next logic should not interfere.
-  el.src = url;
+ el.src = url;
   el.load();
   void el.play().catch(() => {});
 };
