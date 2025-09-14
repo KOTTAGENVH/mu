@@ -59,5 +59,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/home', '/upload'],
+  matcher: [, '/upload'],
+  //'/home'
 };
