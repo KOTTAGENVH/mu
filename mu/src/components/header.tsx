@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAdd, faAddressCard, faHouse, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 
 function Header() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // Handle home click
   const handleHome = () => {
@@ -58,19 +59,21 @@ function Header() {
 
         </div>
         <div className="flex items-center md:items-end flex-shrink-0  w-auto h-auto" >
-          <button
-            title="Home"
-            className={`w-auto flex justify-center 
+          {pathname?.includes("/upload") && (
+            <button
+              title="Home"
+              className={`w-auto flex justify-center 
             items-center text-black dark:text-white text-neutral-700
             mt-4  mb-4 space-x-2 
             p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-            onClick={handleHome}
-          >
-            <FontAwesomeIcon
-              icon={faHouse}
-              className={`w-4 h-4 text-black dark:text-white`}
-            />
-          </button>
+              onClick={handleHome}
+            >
+              <FontAwesomeIcon
+                icon={faHouse}
+                className={`w-4 h-4 text-black dark:text-white`}
+              />
+            </button>
+          )}
           <button
             title="Add"
             className={`w-auto flex justify-center 

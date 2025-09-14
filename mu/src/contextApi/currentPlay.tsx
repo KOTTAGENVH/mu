@@ -1,5 +1,13 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 
 // Define the type for the current play context state
 interface CurrentPlayContextType {
@@ -20,12 +28,32 @@ export const CurrentPlayProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [id, setId] = useState("");
   const [pause, setPause] = useState(true);
+  const pendingTimerRef = useRef<number | null>(null);
 
   // Toggle function to set the id passed
-  const toggleId = (newId: string, shouldPause: boolean) => {
-    setId((prev) => (prev === newId ? prev : newId));
-    setPause(shouldPause);
-  };
+  const toggleId = useCallback((newId: string, shouldPause: boolean) => {
+    // Schedule updates after the current render to avoid
+    // "Cannot update a component while rendering a different component" warnings.
+    if (pendingTimerRef.current !== null) {
+      clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+    }
+    pendingTimerRef.current = window.setTimeout(() => {
+      pendingTimerRef.current = null;
+      setId(newId);
+      setPause(shouldPause);
+    }, 0);
+  }, []);
+
+  // Cleanup any pending scheduled update on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingTimerRef.current !== null) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <CurrentPlayContext.Provider value={{ id, pause, toggleId }}>

@@ -5,7 +5,7 @@ import { JwtPayload, verify } from "jsonwebtoken";
 //Validate Cookie from passed token
 export async function POST(req: Request) {
   try {
-    const secret = process.env.NEXT_PUBLIC_JWT_SECRET || "";
+    const secret = process.env.JWT_SECRET || "";
     const email = process.env.NEXT_PUBLIC_EMAIL || "";
     const subject = process.env.NEXT_PUBLIC_SUBJECT || "";
     const { token, ip } = await req.json();

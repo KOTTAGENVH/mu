@@ -9,8 +9,8 @@ interface CookieValidationResult {
 
 export async function validateCookie(req: Request): Promise<CookieValidationResult> {  
   try {
-    const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || 'Mu-Auth';
-    const secret = process.env.NEXT_PUBLIC_JWT_SECRET;
+    const cookieName = process.env.COOKIE_NAME || 'Mu-Auth';
+    const secret = process.env.JWT_SECRET;
 
     if (!secret) {
       return { valid: false, error: 'JWT SECRET is not set in environment variables' };

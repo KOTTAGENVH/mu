@@ -3,11 +3,9 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import LoginHeader from "@/components/login/loginHeader";
 import { useRouter } from "next/navigation";
-import { Inter, Roboto } from "next/font/google";
 import LoginFooter from "@/components/login/loginFooter";
+import { inter, roboto } from "./fonts";
 
-const inter = Inter({ subsets: ['latin'], weight: ['700'] });
-const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700'] });
 
 function Page() {
   const [isLoading, setLoading] = useState(false);
@@ -26,7 +24,6 @@ function Page() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("ip address not found : ", data.ip);
         setLoading(false);
         return data.ip;
       }
@@ -56,19 +53,12 @@ function Page() {
         setIsStarting(false);
         return;
       }
-      // Fetch client's IP address
-      const ipresponse = await fetch("/api/services/validateURLToken", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ipAddress }),
-      });
-
       const response = await fetch("/api/services/generateURLToken", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ip: ipresponse }),
+        body: JSON.stringify({ ip: ipAddress }),
       });
 
       // Check if the response contains a token
@@ -107,13 +97,6 @@ function Page() {
             setIsStarting(false);
             return;
           }
-          // Fetch client's IP address
-          const ipData = await fetch("/api/services/validateURLToken", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ipAddress }),
-          });
-          const clientIp = ipData;
 
           // Validate token
           const response = await fetch("/api/services/validateURLToken", {
@@ -121,7 +104,7 @@ function Page() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ token, ip: clientIp }),
+            body: JSON.stringify({ token, ip: ipAddress }),
           });
           if (response.ok) {
             // Generate token
@@ -167,12 +150,8 @@ function Page() {
 
   return (
     <div className="relative min-h-screen w-full bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex flex-col overflow-hidden">
-      {/* Background overlay with image */}
       <div className="pointer-events-none absolute inset-0 opacity-30 bg-[url('/login_bg.jpg')] bg-cover bg-center bg-no-repeat" />
-      {/* Gradient overlay */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/60" />
-
-      {/* Foreground content */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <LoginHeader />
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-6">
@@ -195,8 +174,11 @@ function Page() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
             className="relative"
+            onClick={handleGenerateToken}
           >
-            <div className="relative p-6 md:p-8 rounded-2xl flex flex-col items-center">
+            <div className="relative p-6 md:p-8 rounded-2xl flex flex-col items-center"
+            onClick={handleGenerateToken}
+            >
               <motion.button
                 onClick={handleGenerateToken}
                 disabled={isLoading || isStarting}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCurrentPlay } from "@/contextApi/currentPlay";
 import { ChevronLeft, ChevronRight, Filter, Pause, Play, Repeat, Shuffle } from "lucide-react";
-import { Inter, Roboto } from "next/font/google";
+import { inter, roboto } from "@/app/fonts";
 
 interface Audio {
   _id: string;
@@ -11,10 +11,6 @@ interface Audio {
   fileUrl: string;
   favourite: boolean;
 }
-
-const inter = Inter({ subsets: ['latin'], weight: ['700'] });
-const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700'] });
-
 
 function AudioPlayerModal({ audios = [] }: { audios?: Audio[] }) {
   const [audioList, setAudioList] = useState<Audio[]>([]);
@@ -27,76 +23,16 @@ function AudioPlayerModal({ audios = [] }: { audios?: Audio[] }) {
   const [isFavourite, setFavourite] = useState(false);
   const [isCategory, setCategory] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Track actual player height to let audio list size around it
-  const playerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<HTMLDivElement | null>(null);  // Track actual player height to let audio list size around it
   const [isFilterOpen, setFilterOpen] = useState(false);
   const filterBtnRef = useRef<HTMLButtonElement | null>(null);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
-  // Lightweight metadata preloading cache following least-recently-used eviction
-  const preloadedAudiosRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const preloadedAudiosRef = useRef<Map<string, HTMLAudioElement>>(new Map());   // Lightweight metadata preloading cache following least-recently-used eviction
   const preloadedOrderRef = useRef<string[]>([]);
-  // Track in-flight fetch to allow abort on unmount/navigation
-  const fetchAbortRef = useRef<AbortController | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);   // Track in-flight fetch to allow abort on unmount/navigation
   const PRELOAD_LIMIT = 6; // keep memory usage bounded
   const { toggleId, pause, id } = useCurrentPlay();
   const toggleFilterMenu = () => setFilterOpen((v) => !v);
-  // keep a blob URL for current playlist
-const [hlsSrc, setHlsSrc] = useState<string | null>(null);
-
-// cache durations we discover
-const durationsRef = useRef<Map<string, number>>(new Map());
-
-// ensure we know a track's duration (load metadata if needed)
-async function ensureDuration(url: string): Promise<number> {
-  const cached = durationsRef.current.get(url);
-  if (cached && cached > 0) return cached;
-  // try to reuse your preloadedAudiosRef cache first
-  const cachedEl = preloadedAudiosRef.current.get(url);
-  if (cachedEl && cachedEl.duration && isFinite(cachedEl.duration) && cachedEl.duration > 0) {
-    durationsRef.current.set(url, cachedEl.duration);
-    return cachedEl.duration;
-  }
-  // lightweight metadata probe
-  await new Promise<void>((resolve) => {
-    const a = new Audio();
-    a.preload = "metadata";
-    a.src = url;
-    const done = () => {
-      if (a.duration && isFinite(a.duration) && a.duration > 0) {
-        durationsRef.current.set(url, a.duration);
-      } else {
-        durationsRef.current.set(url, 0.1); // tiny fallback if browser hides duration
-      }
-      cleanup();
-      resolve();
-    };
-    const cleanup = () => {
-      a.removeEventListener("loadedmetadata", done);
-      a.removeEventListener("error", done);
-      try { a.src = ""; a.load(); } catch {}
-    };
-    a.addEventListener("loadedmetadata", done);
-    a.addEventListener("error", done);
-  });
-  return durationsRef.current.get(url) ?? 0.1;
-}
-
-// Build the ordered list of URLs we want to play (from current filters/shuffle/index)
-function computePlayOrder(): Audio[] {
-  const list = [...audioList];
-  if (isShuffling && list.length > 1) {
-    // simple shuffle keeping current track first
-    const curr = list[currentAudioIndex];
-    const rest = list.filter((_, i) => i !== currentAudioIndex);
-    for (let i = rest.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [rest[i], rest[j]] = [rest[j], rest[i]];
-    }
-    return [curr, ...rest];
-  }
-  // non-shuffle: start from current index, wrap around
-  return list.slice(currentAudioIndex).concat(list.slice(0, currentAudioIndex));
-}
 
 
   const categories = [
@@ -249,60 +185,27 @@ function computePlayOrder(): Audio[] {
   };
 
   // Play/pause toggle handler
-const handleAudio = async () => {
-  const el = audioRef.current;
-  if (!el) return;
-
-  if (!pause) {
-    // currently playing -> pause
-    pauseAudio();
-    return;
-  }
-
-  // starting playback
-  toggleId(audioList[currentAudioIndex]?._id || "", false);
-
-  // If we already have an HLS src for this run, just play
-  if (hlsSrc) {
-    void el.play().catch(() => {});
-    return;
-  }
-
-  // Build HLS playlist for current filtered list + shuffle/current index
-  const order = computePlayOrder();
-  if (order.length === 0) return;
-
-  // Make sure we know durations (important for valid HLS)
-  const tracks = [];
-  for (const a of order) {
-    const d = await ensureDuration(a.fileUrl);
-    tracks.push({
-      url: a.fileUrl,
-      title: a.name,
-      duration: d || 0.1,
-    });
-  }
-
-  // POST to playlist builder
-  const res = await fetch("/api/hls", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tracks }),
-  });
-  if (!res.ok) {
-    // fallback: normal single-file mode
-    void el.play().catch(() => {});
-    return;
-  }
-  const { id } = await res.json();
-
-  const url = `/api/hls/${id}.m3u8`;
-  setHlsSrc(url);
-
- el.src = url;
-  el.load();
-  void el.play().catch(() => {});
-};
+  const handleAudio = () => {
+    if (!pause) {
+      pauseAudio();
+    } else {
+      // Mark as playing in global state
+      toggleId(audioList[currentAudioIndex]?._id || "", false);
+      // Also try to play immediately within the user gesture to satisfy autoplay policies
+      const el = audioRef.current;
+      if (el) {
+        void el.play().catch((err: unknown) => {
+          const name = typeof err === "object" && err && "name" in err ? String((err as { name: unknown }).name) : "";
+          const msg = String(err);
+          if (name === "AbortError") return; // ignore race conditions
+          if (name === "NotAllowedError") return; // autoplay blocked until interaction
+          if (/user didn't interact with the document/i.test(msg)) return; // Chrome-specific wording
+          if (/interrupted by a new load request/i.test(msg)) return;
+          console.error("Error playing audio:", err);
+        });
+      }
+    }
+  };
 
   // Filter favourite
   useEffect(() => {
@@ -422,7 +325,7 @@ const handleAudio = async () => {
     if (pause) {
       try {
         el.pause();
-      } catch {}
+      } catch { }
       return () => {
         cancelled = true;
       };
@@ -488,48 +391,11 @@ const handleAudio = async () => {
     };
   }, []);
 
-  useEffect(() => {
-  const el = audioRef.current;
-  if (!el) return;
-
-  const onLoaded = () => setDuration(el.duration || 0);
-  const onDurationChange = () => setDuration(el.duration || 0);
-
-  const onEnded = () => {
-    if (hlsSrc) {
-      // In HLS mode, the browser will advance inside the playlist. No-op.
-      return;
-    }
-    handleNextRef.current();
-  };
-
-  setCurrentTime(el.currentTime || 0);
-  setDuration(el.duration || 0);
-  el.addEventListener("timeupdate", handleTimeUpdate);
-  el.addEventListener("loadedmetadata", onLoaded);
-  el.addEventListener("durationchange", onDurationChange);
-  el.addEventListener("ended", onEnded);
-  return () => {
-    el.removeEventListener("timeupdate", handleTimeUpdate);
-    el.removeEventListener("loadedmetadata", onLoaded);
-    el.removeEventListener("durationchange", onDurationChange);
-    el.removeEventListener("ended", onEnded);
-  };
-}, [audioList, currentAudioIndex, hlsSrc]);
-
-
   return (
     <div ref={playerRef} className="fixed bottom-0 left-0 w-full bg-white/5 backdrop-blur-2xl border-t border-white/10 shadow-2xl">
-  {(audioList.length > 0) && (
-  <audio
-    ref={audioRef}
-    preload="metadata"
-    playsInline
-    // if we built an HLS playlist, use it; else fall back to the current file
-    src={hlsSrc ?? audioList[currentAudioIndex]?.fileUrl}
-  />
-)}
-
+      {audioList.length > 0 && (
+        <audio preload="metadata" ref={audioRef} src="/test.mp3" />
+      )}
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="flex flex-col space-y-4">
           <div className="text-center sm:text-left">
@@ -594,8 +460,6 @@ const handleAudio = async () => {
                 bg-white/10 hover:bg-white/20 active:bg-white/30
                 backdrop-blur-md
                 text-black dark:text-white
-                transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-xl"
               onClick={toggleShuffle}
             >
@@ -612,8 +476,6 @@ const handleAudio = async () => {
                 bg-white/10 hover:bg-white/20 active:bg-white/30
                 backdrop-blur-md
                 text-black dark:text-white
-                transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-xl"
               onClick={handlePrev}
             >
@@ -625,8 +487,6 @@ const handleAudio = async () => {
                 bg-white/10 hover:bg-white/20 active:bg-white/30
                 backdrop-blur-md
                 text-black dark:text-white
-                transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-xl"
               onClick={handleAudio}
             >
@@ -642,8 +502,6 @@ const handleAudio = async () => {
                 bg-white/10 hover:bg-white/20 active:bg-white/30
                 backdrop-blur-md border border-white/10
                 text-black dark:text-white
-                transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-xl"
               onClick={handleNext}
             >
@@ -655,8 +513,6 @@ const handleAudio = async () => {
                 bg-white/10 hover:bg-white/20 active:bg-white/30
                 backdrop-blur-md border border-white/10
                 text-black dark:text-white
-                transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-xl"
               onClick={toggleLoop}
             >
@@ -690,7 +546,13 @@ const handleAudio = async () => {
                         Filter Categories
                       </h3>
                     </div>
-                    <div className="max-h-64 overflow-y-auto p-2">
+                    <div className="max-h-64 overflow-y-auto p-2            [&::-webkit-scrollbar]:w-2
+                      [&::-webkit-scrollbar-track]:rounded-none
+      [&::-webkit-scrollbar-track]:bg-bg-gradient-one
+      [&::-webkit-scrollbar-thumb]:rounded-none
+      [&::-webkit-scrollbar-thumb]:bg-bg-gradient-six
+      dark:[&::-webkit-scrollbar-track]:bg-neutral-700
+      dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500">
                       {categories.map((cat) => {
                         const isActive =
                           (cat === "All" && isCategory === "") ||
@@ -744,8 +606,6 @@ const handleAudio = async () => {
                   bg-white/10 hover:bg-white/20 active:bg-white/30
                   backdrop-blur-md border border-white/10
                   text-black dark:text-white
-                  transition-all duration-200 ease-out
-                  hover:scale-105 active:scale-95
                   shadow-lg hover:shadow-xl"
                 onClick={toggleFilterMenu}
               >

@@ -1,9 +1,6 @@
+import { inter, roboto } from "@/app/fonts";
 import { useModal } from "@/contextApi/modalOpen";
-import { Inter, Roboto } from "next/font/google";
 import React, { useState, useEffect } from "react";
-
-const inter = Inter({ subsets: ['latin'], weight: ['700'] });
-const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700'] });
 
 function EditModal() {
   const { id, name, category, toggleModal } = useModal();
