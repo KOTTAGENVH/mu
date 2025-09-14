@@ -7,8 +7,8 @@ export async function middleware(request: NextRequest) {
   const cookieName = process.env.COOKIE_NAME || 'Mu-Auth';
   const cookie = request.cookies.get(cookieName);
 
-  const email = process.env.NEXT_PUBLIC_EMAIL || '';
-  const subject = process.env.NEXT_PUBLIC_SUBJECT || '';
+  const email = process.env.EMAIL || '';
+  const subject = process.env.SUBJECT || '';
 
   // Check if email and subject are set
   if (!email) {

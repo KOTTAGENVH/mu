@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     } else {
-      const email = process.env.NEXT_PUBLIC_EMAIL || "";
+      const email = process.env.EMAIL || "";
       if (!email) {
         throw new Error("EMAIL environment variable is not set.");
       }

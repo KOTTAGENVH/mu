@@ -73,7 +73,7 @@ export async function PUT(req: Request) {
       );
     }
 
-    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    const email = process.env.EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
     }
@@ -144,7 +144,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    const email = process.env.EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
     }
@@ -261,7 +261,7 @@ export async function DELETE(req: Request) {
     }
 
     // Send email notification
-    const email = process.env.NEXT_PUBLIC_EMAIL || "";
+    const email = process.env.EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
     }
