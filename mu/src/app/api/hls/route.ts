@@ -1,12 +1,8 @@
 // app/api/hls/route.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-type Track = { url: string; title?: string; duration: number; discontinuity?: boolean };
-
-// simple in-memory store (reset on server restart)
-const STORE = new Map<string, string>();
-const makeId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+import type { Track } from "./store";
+import { putM3U8, makeId } from "./store";
 
 export async function POST(req: NextRequest) {
   const { tracks, targetDuration } = (await req.json()) as { tracks: Track[]; targetDuration?: number };
@@ -32,7 +28,7 @@ export async function POST(req: NextRequest) {
   lines.push("#EXT-X-ENDLIST");
 
   const id = makeId();
-  STORE.set(id, lines.join("\n"));
+  putM3U8(id, lines.join("\n"));
   return NextResponse.json({ id });
 }
 
@@ -40,7 +36,10 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const body = STORE.get(id);
+  // Deprecated: kept for backwards compatibility with old /api/hls?id=...
+  // Prefer using /api/hls/[id].m3u8
+  const { getM3U8 } = await import("./store");
+  const body = getM3U8(id);
   if (!body) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return new NextResponse(body, {
