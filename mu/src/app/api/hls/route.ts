@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     lines.push(`#EXT-X-TARGETDURATION:${TARGET}`);
     lines.push("#EXT-X-MEDIA-SEQUENCE:0");
 
-    tracks.forEach((t, i) => {
+    tracks.forEach((t) => {
       const dur = Math.max(0.1, Number(t.duration || 0.1)); // must be > 0
       if (t.discontinuity) lines.push("#EXT-X-DISCONTINUITY");
       lines.push(`#EXTINF:${dur.toFixed(3)},${(t.title ?? "").replace(/\r?\n/g, " ")}`);
