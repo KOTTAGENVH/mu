@@ -12,19 +12,20 @@ import { storage4 } from "@/config/firebase4";
 import { storage5 } from "@/config/firebase5";
 
 // Handle the GET request for audio
-export async function GET(req: Request) {
+export async function GET() {
+  //req: Request
   await dbConnect();
 
   try {
     // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
-      return NextResponse.json(
-        { success: false, message: validationResult.error },
-        { status: 401 }
-      );
-    }
+    // const validationResult = await validateCookie(req);
+    // if (!validationResult.valid) {
+    //   console.log("Validation failed: ", validationResult.error);
+    //   return NextResponse.json(
+    //     { success: false, message: validationResult.error },
+    //     { status: 401 }
+    //   );
+    // }
 
     // Get all uploads
     const uploads = await Upload.find({});
