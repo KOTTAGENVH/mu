@@ -394,7 +394,11 @@ function AudioPlayerModal({ audios = [] }: { audios?: Audio[] }) {
   return (
     <div ref={playerRef} className="fixed bottom-0 left-0 w-full bg-white/5 backdrop-blur-2xl border-t border-white/10 shadow-2xl">
       {audioList.length > 0 && (
-        <audio preload="metadata" ref={audioRef} src="/test.mp3" />
+        <audio preload="metadata" ref={audioRef} src="/test.mp3" /> 
+        //  <audio ref={audioRef} src={audioList[currentAudioIndex]?.fileUrl} /> 
+        //Add the above if you prefer to use firbase or any other other storage service.
+        //I removed it due to the recent updates by firebase on their pricing policy where no 
+        //free storage is available in spark plan.
       )}
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="flex flex-col space-y-4">
