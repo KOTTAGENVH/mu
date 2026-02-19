@@ -37,7 +37,7 @@ const FileUpload: React.FC = () => {
       } else if (!file) {
         alert("Please upload a file.");
         return;
-      } 
+      }
       setLoading(true);
 
       //Verify jwt cookie
@@ -45,9 +45,14 @@ const FileUpload: React.FC = () => {
         method: "POST",
       });
       const data = await res.json();
+
+      if (data.status === 401) {
+        window.location.href = "/";
+        return;
+      }
+
       if (!res.ok) {
         alert(data.message);
-        console.error("Error verifying cookie:", data.message);
         setLoading(false);
         setScanning(false);
         return;
@@ -60,14 +65,14 @@ const FileUpload: React.FC = () => {
       const listResult = await list(musicDirRef);
 
       const fileExists = listResult.items.some(
-        (itemRef) => itemRef.name === file.name
+        (itemRef) => itemRef.name === file.name,
       );
 
       if (fileExists) {
         alert("File already exists.");
         setLoading(false);
         setScanning(false);
-        setMp3Files([])
+        setMp3Files([]);
         return;
       }
       // Upload the file to Firebase Storage
@@ -85,7 +90,7 @@ const FileUpload: React.FC = () => {
           // Handle upload error
           console.error("Upload failed:", error);
           setLoading(false);
-          setMp3Files([])
+          setMp3Files([]);
           alert("An error occurred while uploading the image.");
         },
         async () => {
@@ -106,33 +111,40 @@ const FileUpload: React.FC = () => {
                 favourite: isFavourite,
               }),
             });
+
             const data = await res.json();
+
+            if (data.status === 401) {
+              window.location.href = "/";
+              return;
+            }
+
             if (!res.ok) {
               alert(data.message);
               console.error("Error uploading to MongoDB:", data.message);
               setLoading(false);
-              setMp3Files([])
+              setMp3Files([]);
             } else {
               alert("File uploaded successfully.");
               setLoading(false);
-              setMp3Files([])
+              setMp3Files([]);
             }
           } catch (error) {
             console.error("Error getting download URL:", error);
             alert("An error occurred while uploading the image.");
             setLoading(false);
-            setMp3Files([])
+            setMp3Files([]);
           }
           setLoading(false);
-          setMp3Files([])
-        }
+          setMp3Files([]);
+        },
       );
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("An error occurred while uploading the file.");
       setLoading(false);
       setScanning(false);
-      setMp3Files([])
+      setMp3Files([]);
     }
   };
 
@@ -172,11 +184,11 @@ const FileUpload: React.FC = () => {
   };
 
   return (
-    <div className="h-4/5 w-auto">
-      <div className="flex flex-row flex-wrap justify-around items-center m-4">
+    <div className="uploadRoot">
+      <div className="uploadControls">
         <select
           title="category"
-            className="w-auto px-4 py-3 bg-white/20 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/20 rounded-2xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+          className="uploadSelect"
           onChange={(e) => {
             const selectedValue = e.target.value;
             if (selectedValue === "Rap") setCategory("Rap");
@@ -184,33 +196,37 @@ const FileUpload: React.FC = () => {
             else if (selectedValue === "Classic") setCategory("Classic");
             else if (selectedValue === "LK") setCategory("LK");
             else if (selectedValue === "FreeStyle") setCategory("FreeStyle");
+            else if (selectedValue === "MemoryLane") setCategory("MemoryLane");
           }}
         >
-  <option value="Rap" className="bg-white dark:bg-gray-800">Rap</option>
-                    <option value="OldVibes" className="bg-white dark:bg-gray-800">Old Vibes</option>
-                    <option value="Classic" className="bg-white dark:bg-gray-800">Classic</option>
-                    <option value="LK" className="bg-white dark:bg-gray-800">LK</option>
-                    <option value="Free Style" className="bg-white dark:bg-gray-800">Free Style</option>
-                    <option value="memory_lane" className="bg-white dark:bg-gray-800">Memory Lane</option>
+          <option value="" disabled>
+            Select category…
+          </option>
+          <option value="Rap">Rap</option>
+          <option value="OldVibes">Old Vibes</option>
+          <option value="Classic">Classic</option>
+          <option value="LK">LK</option>
+          <option value="FreeStyle">Free Style</option>
+          <option value="MemoryLane">Memory Lane</option>
         </select>
         <button
           title="favourite"
-          className={`w-auto flex justify-end 
-            items-center text-black dark:text-white 
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
+          className="uploadFavBtn"
           onClick={() => handleFavourite()}
         >
           <FontAwesomeIcon
             icon={faHeart}
-            className={`w-4 h-4 ${isFavourite ? "text-red-500" : "text-black dark:text-white"
-              }`}
+            className={
+              isFavourite
+                ? "uploadFavIcon uploadFavIconActive"
+                : "uploadFavIcon"
+            }
           />
         </button>
       </div>
-      <div className="flex items-center justify-center h-5/6 m-8 w-auto">
+      <div className="uploadDropzoneWrap">
         <div
-          className="flex flex-col items-center justify-center h-full w-10/12 rounded-3xl shadow-lg shadow-cyan-900/50 dark:shadow-cyan-100/20 p-4 border-2 border-dashed border-cyan-500 cursor-pointer relative"
+          className="uploadDropzone"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragLeave={handleDragLeave}
@@ -222,21 +238,16 @@ const FileUpload: React.FC = () => {
             <>
               {mp3Files.length == 0 && (
                 <>
-                  <FontAwesomeIcon
-                    icon={faUpload}
-                    className="animate-bounce w-16 h-16 md:w-20 md:h-20 z-10"
-                  />
-                  <h1 className="text-xl md:text-2xl font-bold text-black dark:text-white subpixel-antialiased p-1 md:p-4 text-center z-10">
+                  <FontAwesomeIcon icon={faUpload} className="uploadIcon" />
+                  <h1 className="uploadTitle">
                     Drag and Drop your MP3 file here or click to select
                   </h1>
                 </>
               )}
               {mp3Files.length > 0 && (
-                <div className="mt-4 p-4 w-full text-center bg-gray-200 dark:bg-gray-700 rounded-lg">
-                  <h2 className="text-lg font-semibold text-black dark:text-white">
-                    Uploaded File:
-                  </h2>
-                  <p className="text-sm text-gray-800 dark:text-gray-300">
+                <div className="uploadFileCard">
+                  <h2 className="uploadFileCardTitle">Uploaded File:</h2>
+                  <p className="uploadFileCardMeta">
                     {mp3Files[0].name} (
                     {(mp3Files[0].size / 1048576).toFixed(2)} MB)
                   </p>
@@ -254,17 +265,14 @@ const FileUpload: React.FC = () => {
           )}
         </div>
       </div>
-      <div className="flex items-center justify-center items-center w-auto">
-          <button
-       className={`w-auto flex justify-end 
-            items-center text-black dark:text-white 
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-            onClick={() => uploadFile(mp3Files[0])}
-            disabled={isScanning || isLoading}
-          >
-            <span className="text-sm md:text-lg">SUBMIT</span>
-          </button>
+      <div className="uploadActions">
+        <button
+          className="uploadSubmitBtn"
+          onClick={() => uploadFile(mp3Files[0])}
+          disabled={isScanning || isLoading}
+        >
+          <span className="uploadSubmitText">SUBMIT</span>
+        </button>
       </div>
     </div>
   );

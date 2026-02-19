@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useCallback, useState } from "react";
 import {
@@ -8,11 +7,10 @@ import {
   Music,
   Pause,
   Play,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useModal } from "@/contextApi/modalOpen";
 import { useCurrentPlay } from "@/contextApi/currentPlay";
-
 
 interface Audio {
   idPass: string;
@@ -21,7 +19,12 @@ interface Audio {
   favourite: boolean;
 }
 
-export default function AudioCard({ idPass, name, category, favourite }: Audio) {
+export default function AudioCard({
+  idPass,
+  name,
+  category,
+  favourite,
+}: Audio) {
   const [isLoading, setIsLoading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(favourite);
   const { toggleModal } = useModal();
@@ -43,7 +46,13 @@ export default function AudioCard({ idPass, name, category, favourite }: Audio) 
         },
         body: JSON.stringify({ _id: idPass, favourite: !isFavourite }),
       });
+
       const data = await res.json();
+
+      if (data.status === 401) {
+        window.location.href = "/";
+        return;
+      }
 
       if (!data.success) {
         setIsFavourite(previousState); // Rollback on error
@@ -71,7 +80,13 @@ export default function AudioCard({ idPass, name, category, favourite }: Audio) 
         },
         body: JSON.stringify({ _id: idPass }),
       });
+
       const data = await res.json();
+
+      if (data.status === 401) {
+        window.location.href = "/";
+        return;
+      }
 
       if (data.success) {
         setTimeout(() => window.location.reload(), 300);
@@ -96,14 +111,12 @@ export default function AudioCard({ idPass, name, category, favourite }: Audio) 
       toggleId(idPass, true);
       return;
     } else {
-    toggleId(idPass, false);
+      toggleId(idPass, false);
     }
   };
 
   return (
-    <div
-      className="group relative w-80 h-56 m-3 rounded-2xl overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900"
-    >
+    <div className="group relative w-80 h-56 m-3 rounded-2xl overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
       <div className="absolute inset-0 opacity-5 dark:opacity-10">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600"></div>
       </div>
@@ -139,24 +152,29 @@ export default function AudioCard({ idPass, name, category, favourite }: Audio) 
           <h3 className="font-semibold text-gray-900 dark:text-white text-lg truncate mb-3">
             {name}
           </h3>
-          <div className={`flex items-center justify-center gap-3 transition-all duration-300 opacity-100 transform translate-y-0`}>
+          <div
+            className={`flex items-center justify-center gap-3 transition-all duration-300 opacity-100 transform translate-y-0`}
+          >
             <button
               onClick={handleFavourite}
               disabled={isLoading}
-              className={`p-3 rounded-full  ${isFavourite
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+              className={`p-3 rounded-full  ${
+                isFavourite
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={
+                isFavourite ? "Remove from favourites" : "Add to favourites"
+              }
             >
               <Heart
-                className={`w-4 h-4 ${isFavourite ? 'fill-current' : ''}`}
+                className={`w-4 h-4 ${isFavourite ? "fill-current" : ""}`}
               />
             </button>
             <button
               onClick={handlePlay}
               className="p-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full  shadow-lg hover:shadow-xl"
-              title={isCurrentlyPlaying ? 'Pause' : 'Play'}
+              title={isCurrentlyPlaying ? "Pause" : "Play"}
             >
               {isCurrentlyPlaying ? (
                 <Pause className="w-4 h-4" />

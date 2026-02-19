@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import LoginHeader from "@/components/login/loginHeader";
 import { useRouter } from "next/navigation";
 import LoginFooter from "@/components/login/loginFooter";
 import { inter, roboto } from "./fonts";
@@ -81,79 +80,19 @@ function Page() {
     }
   };
 
-  //Validate token
-  useEffect(() => {
-    const validateAndGenerateToken = async () => {
-      // Check URL for token
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
 
-      if (token) {
-        try {
-          const ipAddress = await handleGetIp();
-          if (!ipAddress) {
-            setLoading(false);
-            setIsPressed(false);
-            setIsStarting(false);
-            return;
-          }
-
-          // Validate token
-          const response = await fetch("/api/services/validateURLToken", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ token, ip: ipAddress }),
-          });
-          if (response.ok) {
-            // Generate token
-            const responseGenerator = await fetch(
-              "/api/services/cookierGenerator",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ token }),
-              }
-            );
-
-            if (responseGenerator.ok) {
-              alert("Token validated!");
-              router.push(`/home`);
-            } else {
-              alert("Error generating token");
-            }
-          } else {
-            const data = await response.json();
-            alert("Error validating token" + data.message);
-          }
-        } catch (error) {
-          console.error("Error during token validation/generation:", error);
-        }
-      } else {
-        // Check if token is in cookie
-        const cookieToken = document.cookie
-          .split(";")
-          .find((c) => c.trim().startsWith("token="));
-
-        if (cookieToken) {
-          // Redirect to login page
-          router.push(`/login`);
-        }
-      }
-    };
-
-    validateAndGenerateToken();
-  }, [router]);
 
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex flex-col overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[url('/login_bg.jpg')] bg-cover bg-center bg-no-repeat" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/60" />
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <LoginHeader />
+     <div
+      className="
+        min-h-screen w-full
+        flex flex-col
+        bg-slate-300 dark:bg-slate-950
+        overflow-y-auto
+        supports-[height:100dvh]:min-h-[100dvh]
+        supports-[height:100svh]:min-h-[100svh]
+      "
+    >
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-6">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -219,7 +158,6 @@ function Page() {
           </motion.div>
         </main>
         <LoginFooter />
-      </div>
     </div>
   );
 }

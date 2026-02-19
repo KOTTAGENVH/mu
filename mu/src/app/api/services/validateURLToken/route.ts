@@ -1,15 +1,15 @@
 import { customEmail } from "@/config/customEmail";
 import { NextResponse } from "next/server";
 import { JwtPayload, verify } from "jsonwebtoken";
+import { CookieGenerator } from "../cookierGenerator/generateCookie";
 
 //Validate Cookie from passed token
 export async function POST(req: Request) {
   try {
     const secret = process.env.JWT_SECRET || "";
     const email = process.env.EMAIL || "";
-    const subject = process.env.SUBJECT || "";
+    const brand = process.env.BRAND || "";
     const { token, ip } = await req.json();
-
 
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
     }
-    if (!subject) {
-      throw new Error("SUBJECT environment variable is not set.");
+    if (!brand) {
+      throw new Error("BRAND environment variable is not set.");
     }
 
     if (!token) {
@@ -31,32 +31,32 @@ export async function POST(req: Request) {
     if (decoded.iat && Date.now() >= decoded.iat * 1000 + 24 * 60 * 60 * 1000) {
       return NextResponse.json(
         { success: false, message: "Token expired" },
-        { status: 400 }
+        { status: 400 },
       );
     } else if (!decoded.exp) {
       return NextResponse.json(
         { success: false, message: "Token does not contain exp" },
-        { status: 400 }
+        { status: 400 },
       );
     } else if (Date.now() >= decoded.exp * 1000) {
       return NextResponse.json(
         { success: false, message: "Token expired" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Verify email and subject
-    if (decoded.email && decoded.subject) {
-      if (decoded.email !== email || decoded.subject !== subject) {
+    // Verify email and brand
+    if (decoded.email && decoded.brand) {
+      if (decoded.email !== email || decoded.brand !== brand) {
         return NextResponse.json(
-          { success: false, message: "Token email or subject does not match" },
-          { status: 400 }
+          { success: false, message: "Token email or brand does not match" },
+          { status: 400 },
         );
       }
     } else {
       return NextResponse.json(
-        { success: false, message: "Token does not contain email or subject" },
-        { status: 400 }
+        { success: false, message: "Token does not contain email or brand" },
+        { status: 400 },
       );
     }
 
@@ -74,20 +74,30 @@ export async function POST(req: Request) {
     await customEmail(
       email,
       "Token Validated MU",
-      `Token validated at ${tokenValidatedAt} & ip @ ${ip}`
+      `Token validated at ${tokenValidatedAt}`,
+      ip,
     );
-    return NextResponse.json({ success: true, decoded });
+
+    const cookie = await CookieGenerator(decoded.genratedToken);
+
+    return NextResponse.json(
+      { success: true },
+      {
+        status: 201,
+        headers: { "Set-Cookie": cookie },
+      },
+    );
   } catch (error: unknown) {
     if (error instanceof Error) {
       return NextResponse.json(
         { success: false, message: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
 
   return NextResponse.json(
     { success: false, message: "An unexpected error occurred" },
-    { status: 500 }
+    { status: 500 },
   );
 }

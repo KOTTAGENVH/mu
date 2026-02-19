@@ -1,15 +1,11 @@
 import { serialize } from "cookie";
 import { sign } from "jsonwebtoken";
-import { NextResponse } from "next/server";
 
 //Generate a jwt token
-export async function POST(req: Request) {
+export async function CookieGenerator(genratedToken: string) {
   try {
-    const body = await req.json();
-    const genratedToken = body.genratedToken;
-
-    //Only 2 days validity
-    const MAX_AGE = 60 * 60 * 24 * 2;
+    //Only 31 days validity
+    const MAX_AGE = 60 * 60 * 24 * 31;
 
     //Token
     const secret = process.env.JWT_SECRET || "";
@@ -17,6 +13,10 @@ export async function POST(req: Request) {
 
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is not set.");
+    }
+
+    if (!cookieName) {
+      throw new Error("COOKIE_NAME environment variable is not set.");
     }
 
     const token = sign(
@@ -46,19 +46,9 @@ export async function POST(req: Request) {
       throw new Error("Cookie serialization failed.");
     }
     
-    return NextResponse.json(
-        { success: true, data: genratedToken },
-        {
-          status: 201,
-          headers: { "Set-Cookie": serialized },
-        }
-      );
+    return serialized;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 }
-      );
-    }
+    console.error("Error generating cookie:", error instanceof Error ? error.message : error);
+    throw new Error("Failed to generate cookie");
   }
 }

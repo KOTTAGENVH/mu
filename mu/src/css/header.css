@@ -1,0 +1,130 @@
+
+.muHeaderRoot {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 50;
+}
+
+.muHeaderNav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.5rem 0;
+	margin: 1rem 1rem;
+	padding-left: 0.75rem;
+	padding-right: 0.75rem;
+}
+
+.muHeaderLogoWrap {
+	display: none;
+}
+
+.muHeaderLogo {
+	width: 48px;
+	height: 48px;
+	border-radius: 9999px;
+	cursor: pointer;
+}
+
+.muHeaderActions {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.muHeaderBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+	padding: 0.75rem;
+	border-radius: 9999px;
+	border: none;
+	background: #f3f4f6;
+	color: #111827;
+	cursor: pointer;
+	transition: background-color 160ms ease;
+}
+
+.muHeaderBtn:hover {
+	background: #e5e7eb;
+}
+
+.muHeaderBtn:active {
+	transform: translateY(0.5px);
+}
+
+.muHeaderBtn:focus-visible {
+	outline: 2px solid rgba(59, 130, 246, 0.65);
+	outline-offset: 2px;
+}
+
+.muHeaderBtnSpaced {
+	margin-right: 1rem;
+}
+
+.muHeaderIcon {
+	width: 1rem;
+	height: 1rem;
+}
+
+.muHeaderIconLogout {
+	color: #ef4444;
+}
+
+.muHeaderGlass {
+	background-color: rgba(15, 23, 42, 0.4);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	/* border-bottom: 1px solid rgba(229, 231, 235, 0.5); */
+	/* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); */
+	transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+	.muHeaderNav {
+		justify-content: space-between;
+	}
+
+	.muHeaderLogoWrap {
+		display: block;
+	}
+
+	.muHeaderActions {
+		align-items: flex-end;
+	}
+}
+
+@media (min-width: 1024px) {
+	.muHeaderNav {
+		margin-left: 4rem;
+		margin-right: 4rem;
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	.muHeaderBtn {
+		background: #1f2937;
+		color: #ffffff;
+	}
+
+	.muHeaderBtn:hover {
+		background: #374151;
+	}
+
+	.muHeaderIconLogout {
+		color: #f87171;
+	}
+
+	.muHeaderGlass {
+		background-color: rgba(2, 6, 23, 0.4);
+		/* border-bottom: 1px solid rgba(255, 255, 255, 0.1); */
+	}
+}
+

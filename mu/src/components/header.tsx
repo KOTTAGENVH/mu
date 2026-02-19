@@ -1,24 +1,60 @@
 "use client";
 import Image from "next/image";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAdd, faAddressCard, faHouse, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-
+import {
+  faAdd,
+  faAddressCard,
+  faHouse,
+  faRightFromBracket,
+  faRightToBracket,
+} from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/contextApi/auth";
 
 function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { authStatus } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        if (window.scrollY > 10) {
+          headerRef.current.classList.add("muHeaderGlass");
+        } else {
+          headerRef.current.classList.remove("muHeaderGlass");
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    requestAnimationFrame(handleScroll);
+    window.addEventListener("load", handleScroll);
+    window.addEventListener("pageshow", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("load", handleScroll);
+      window.removeEventListener("pageshow", handleScroll);
+    };
+  }, []);
 
   // Handle home click
   const handleHome = () => {
     router.push("/home");
   };
 
+  // Handle login click
+  const handleLogin = () => {
+    router.push("/login");
+  };
+
   //Handle add click
   const handleAdd = () => {
     router.push("/upload");
-  }
+  };
 
   // Handle about click
   const handleAbout = () => {
@@ -45,74 +81,71 @@ function Header() {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50">
-      <nav className="flex items-center justify-center md:justify-between py-2 mx-4 px-3 lg:mx-16 lg:px-6 w-auto mt-4 mb-4">
-        <div className="hidden md:block w-auto h-auto">
+    <div className="muHeaderRoot" ref={headerRef}>
+      <nav className="muHeaderNav">
+        <div className="muHeaderLogoWrap">
           <Image
             src="/mu.png"
             alt="MU"
             width={48}
             height={48}
-            className="md:w-12 md:h-12 rounded-full cursor-pointer"
+            className="muHeaderLogo"
             onClick={handleHome}
           />
-
         </div>
-        <div className="flex items-center md:items-end flex-shrink-0  w-auto h-auto" >
-          {pathname?.includes("/upload") && (
+        <div className="muHeaderActions">
+          {pathname?.includes("/legal") && (
             <button
-              title="Home"
-              className={`w-auto flex justify-center 
-            items-center text-black dark:text-white text-neutral-700
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-              onClick={handleHome}
+              title="login"
+              className="muHeaderBtn muHeaderBtnSpaced"
+              onClick={handleLogin}
             >
               <FontAwesomeIcon
-                icon={faHouse}
-                className={`w-4 h-4 text-black dark:text-white`}
+                icon={faRightToBracket}
+                className="muHeaderIcon"
               />
             </button>
           )}
-          <button
-            title="Add"
-            className={`w-auto flex justify-center 
-            items-center text-black dark:text-white text-neutral-700
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-            onClick={handleAdd}
-          >
-            <FontAwesomeIcon
-              icon={faAdd}
-              className={`w-4 h-4 text-black dark:text-white`}
-            />
-          </button>
-          <button
-            title="About"
-            className={`w-auto flex justify-center 
-            items-center text-black dark:text-white text-neutral-700
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 mr-4`}
-            onClick={handleAbout}
-          >
-            <FontAwesomeIcon
-              icon={faAddressCard}
-              className={`w-4 h-4 text-black dark:text-white`}
-            />
-          </button>
-          <button
-            title="Logout"
-            className={`w-auto flex justify-center 
-            items-center text-black dark:text-white text-neutral-700
-            mt-4  mb-4 space-x-2 
-            p-3  rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700`}
-            onClick={handleLogout}
-          >
-            <FontAwesomeIcon
-              icon={faRightFromBracket}
-              className={`w-4 h-4 text-red-500 dark:text-red-400`}
-            />
-          </button>
+          {authStatus && (
+            <>
+              {pathname?.includes("/upload") && (
+                <button
+                  title="Home"
+                  className="muHeaderBtn muHeaderBtnSpaced"
+                  onClick={handleHome}
+                >
+                  <FontAwesomeIcon icon={faHouse} className="muHeaderIcon" />
+                </button>
+              )}
+              <button
+                title="Add"
+                className="muHeaderBtn muHeaderBtnSpaced"
+                onClick={handleAdd}
+              >
+                <FontAwesomeIcon icon={faAdd} className="muHeaderIcon" />
+              </button>
+              <button
+                title="About"
+                className="muHeaderBtn muHeaderBtnSpaced"
+                onClick={handleAbout}
+              >
+                <FontAwesomeIcon
+                  icon={faAddressCard}
+                  className="muHeaderIcon"
+                />
+              </button>
+              <button
+                title="Logout"
+                className="muHeaderBtn"
+                onClick={handleLogout}
+              >
+                <FontAwesomeIcon
+                  icon={faRightFromBracket}
+                  className="muHeaderIcon muHeaderIconLogout"
+                />
+              </button>
+            </>
+          )}
         </div>
       </nav>
     </div>

@@ -1,5 +1,12 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useLayoutEffect,
+} from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -23,8 +30,7 @@ interface Audio {
 
 type AudioNorm = Audio & { nameLc: string; categoryLc: string };
 
-const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700'] });
-
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
   const [search, setSearch] = useState("");
@@ -43,72 +49,96 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
     return () => clearTimeout(id);
   }, [search]);
 
-    const pushUpstream = useCallback((list: AudioNorm[]) => {
-    // AudioNorm is compatible with Audio
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const base: Audio[] = list.map(({ nameLc, categoryLc, ...rest }) => rest);
-    onLoaded?.(base);
-  }, [onLoaded]);
+  const pushUpstream = useCallback(
+    (list: AudioNorm[]) => {
+      // AudioNorm is compatible with Audio
+      const base: Audio[] = list.map(({ nameLc, categoryLc, ...rest }) => rest);
+      onLoaded?.(base);
+    },
+    [onLoaded],
+  );
 
   // Fetch audio from the API
-  const fetchAudio = useCallback(async (signal?: AbortSignal) => {
-    if (isFetchingRef.current) return;
-    try {
-      isFetchingRef.current = true;
-      setLoading(true);
-      const res = await fetch("/api/services/audio", { signal });
-      const data = await res.json();
-      const normalized: AudioNorm[] = (data.uploads || []).map((a: Audio) => ({
-        ...a,
-        nameLc: a.name.toLowerCase(),
-        categoryLc: a.category.toLowerCase(),
-      }));
-      setAllAudio(normalized);
-      pushUpstream(normalized); //Sen to parent for plater
+  const fetchAudio = useCallback(
+    async (signal?: AbortSignal) => {
+      if (isFetchingRef.current) return;
       try {
-        localStorage.setItem("mu_uploads_cache", JSON.stringify(normalized)); // Cache the normalized data
-      } catch {
-        console.warn("Storage quota exceeded while caching uploads.");
-      }
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        // ignore abort errors
-      } else {
-        console.error("Error fetching audio:", err);
-        alert("Error fetching audio. Please try again later.");
-      }
-    } finally {
-      isFetchingRef.current = false;
-      setLoading(false);
-    }
-  }, [pushUpstream]);
+        isFetchingRef.current = true;
+        setLoading(true);
 
+        const res = await fetch("/api/services/audio", { signal });
+
+        if (res.status === 401) {
+          window.location.href = "/";
+          return;
+        }
+        const data = await res.json();
+        const normalized: AudioNorm[] = (data.uploads || []).map(
+          (a: Audio) => ({
+            ...a,
+            nameLc: a.name.toLowerCase(),
+            categoryLc: a.category.toLowerCase(),
+          }),
+        );
+        setAllAudio(normalized);
+        pushUpstream(normalized); //Sen to parent for plater
+        try {
+          localStorage.setItem("mu_uploads_cache", JSON.stringify(normalized)); // Cache the normalized data
+        } catch {
+          console.warn("Storage quota exceeded while caching uploads.");
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          // ignore abort errors
+        } else {
+          console.error("Error fetching audio:", err);
+          alert("Error fetching audio. Please try again later.");
+        }
+      } finally {
+        isFetchingRef.current = false;
+        setLoading(false);
+      }
+    },
+    [pushUpstream],
+  );
 
   //Get Category from child component to parent component
-  const handleChooseCategory = useCallback((category: string) => {
-    if (category === selectedCategory) return; // no ops if unchanged
-    setSelectedCategory(category);
-  }, [selectedCategory]);
+  const handleChooseCategory = useCallback(
+    (category: string) => {
+      if (category === selectedCategory) return; // no ops if unchanged
+      setSelectedCategory(category);
+    },
+    [selectedCategory],
+  );
 
   // Preload from cache quickly on mount (normalized if needed)
   useEffect(() => {
     try {
       const cached = localStorage.getItem("mu_uploads_cache");
       if (cached) {
-        type RawAudio = Partial<Audio> & Partial<Pick<AudioNorm, "nameLc" | "categoryLc">>;
+        type RawAudio = Partial<Audio> &
+          Partial<Pick<AudioNorm, "nameLc" | "categoryLc">>;
         const rawUnknown = JSON.parse(cached) as unknown;
-        const rawArray: RawAudio[] = Array.isArray(rawUnknown) ? (rawUnknown as RawAudio[]) : [];
+        const rawArray: RawAudio[] = Array.isArray(rawUnknown)
+          ? (rawUnknown as RawAudio[])
+          : [];
         const list: AudioNorm[] = rawArray.map((a) => ({
           _id: String(a._id ?? ""),
           name: String(a.name ?? ""),
           category: String(a.category ?? ""),
           fileUrl: String(a.fileUrl ?? ""),
           favourite: Boolean(a.favourite),
-          nameLc: typeof a.nameLc === "string" ? a.nameLc : String(a.name ?? "").toLowerCase(),
-          categoryLc: typeof a.categoryLc === "string" ? a.categoryLc : String(a.category ?? "").toLowerCase(),
+          nameLc:
+            typeof a.nameLc === "string"
+              ? a.nameLc
+              : String(a.name ?? "").toLowerCase(),
+          categoryLc:
+            typeof a.categoryLc === "string"
+              ? a.categoryLc
+              : String(a.category ?? "").toLowerCase(),
         }));
         setAllAudio(list);
-        pushUpstream(list); //  send cached to parent 
+        pushUpstream(list); //  send cached to parent
         setLoading(false);
       }
     } catch {
@@ -132,13 +162,11 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
     return base.filter((a) => matchCategory(a) && matchSearch(a));
   }, [allAudio, selectedCategory, debouncedSearch]);
 
-
   useEffect(() => {
     const ctl = new AbortController();
     fetchAudio(ctl.signal);
     return () => ctl.abort();
   }, [fetchAudio]);
-
 
   // Dynamically size list to fit between header/category and bottom player
   const measureAndSetHeight = useCallback(() => {
@@ -164,12 +192,18 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
     const onResize = () => measureAndSetHeight();
     const onPlayerSize = () => measureAndSetHeight();
     window.addEventListener("resize", onResize);
-    document.addEventListener("player-size-change", onPlayerSize as EventListener);
+    document.addEventListener(
+      "player-size-change",
+      onPlayerSize as EventListener,
+    );
 
     return () => {
       cancelAnimationFrame(raf1);
       window.removeEventListener("resize", onResize);
-      document.removeEventListener("player-size-change", onPlayerSize as EventListener);
+      document.removeEventListener(
+        "player-size-change",
+        onPlayerSize as EventListener,
+      );
     };
   }, [measureAndSetHeight]);
 
@@ -185,7 +219,6 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
         onBlur={(e) => {
           const next = e.relatedTarget as Node | null;
           if (!next || !e.currentTarget.contains(next)) {
-
           }
         }}
       >
@@ -194,12 +227,8 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-
           }}
-          onFocus={() => {
-
-
-          }}
+          onFocus={() => {}}
           className={`${roboto.className} text-lg w-full p-3 pr-12 pl-4 focus:outline-none dark:placeholder-white dark:text-white text-black placeholder-black dark:placeholder-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full cursor-pointer`}
           placeholder="Search Audio"
         />
@@ -208,7 +237,6 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
             icon={faTimes}
             onClick={() => {
               setSearch("");
-
             }}
             className="absolute top-4 right-4 text-red-500 w-5 h-5 cursor-pointer hover:text-red-600 transition-colors duration-200"
           />
@@ -256,7 +284,10 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
         </motion.div>
       )}
 
-      <div ref={listRef} style={{ maxHeight: listMaxH }}     className="flex-1 min-h-0 overflow-y-auto w-auto flex flex-row flex-wrap justify-center md:justify-around items-center overflow-x-hidden bg-transparent mt-6 p-4 rounded-l-2xl rounded-r-xl
+      <div
+        ref={listRef}
+        style={{ maxHeight: listMaxH }}
+        className="flex-1 min-h-0 overflow-y-auto w-auto flex flex-row flex-wrap justify-center md:justify-around items-center overflow-x-hidden bg-transparent mt-6 p-4 rounded-l-2xl rounded-r-xl
       [&::-webkit-scrollbar]:w-2
       [&::-webkit-scrollbar-track]:rounded-full
       [&::-webkit-scrollbar-track]:bg-bg-gradient-one
@@ -264,7 +295,7 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
       [&::-webkit-scrollbar-thumb]:bg-bg-gradient-six
       dark:[&::-webkit-scrollbar-track]:bg-neutral-700
       dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
-  >
+      >
         {filteredAudio?.length > 0 &&
           filteredAudio?.map((audio) => (
             <AudioCard
