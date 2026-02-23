@@ -68,34 +68,47 @@ export async function POST(req: Request) {
 //Generate secret for 2FA setup
 export async function GET(req: Request) {
   await dbConnect();
-  const userCount = await User.countDocuments();
-  const userVerified = await User.findOne({ verified: true });
-  const validationResult = await validateCookie(req);
-  if (validationResult.valid) {
-    return NextResponse.json({ success: true, message: "authenticated" });
-  } else if (userCount === 0 || !userVerified) {
-    const secret = generateSecret();
-    const email = process.env.EMAIL || "";
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
+  try {
+    const userCount = await User.countDocuments();
+    const userVerified = await User.findOne({ verified: true });
+    const validationResult = await validateCookie(req);
+    if (validationResult.valid) {
+      return NextResponse.json({ success: true, message: "authenticated" });
+    } else if (userCount === 0 || !userVerified) {
+      const secret = generateSecret();
+      const email = process.env.EMAIL || "";
+      if (!email) {
+        throw new Error("EMAIL environment variable is not set.");
+      }
+      const issuer = "MUByNowenKottage";
+      const label = `${issuer}:${email}`;
+      const otpauthUrl = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}`;
+      const encryptedSecret = encrypt(secret);
+
+      await User.deleteMany({});
+
+      await User.create({
+        email: email,
+        token: encryptedSecret,
+        backupCodes: [],
+        verified: false,
+      });
+
+      return NextResponse.json({ secret, otpauthUrl });
+    } else {
+      return NextResponse.json({ success: true });
     }
-    const issuer = "MUByNowenKottage";
-    const label = `${issuer}:${email}`;
-    const otpauthUrl = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}`;
-    const encryptedSecret = encrypt(secret);
-
-    await User.deleteMany({});
-
-    await User.create({
-      email: email,
-      token: encryptedSecret,
-      backupCodes: [],
-      verified: false,
-    });
-
-    return NextResponse.json({ secret, otpauthUrl });
-  } else {
-    return NextResponse.json({ success: true });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.log("error message: ", error.message);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Sorry an error occurred while generating the secret.",
+        },
+        { status: 500 },
+      );
+    }
   }
 }
 
