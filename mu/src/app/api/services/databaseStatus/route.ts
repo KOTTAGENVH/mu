@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import mongoose from "mongoose";
 import { validateCookie } from "../cookieValidator/validateCookie";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 export async function GET(req: Request) {
   await dbConnect();
 
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {

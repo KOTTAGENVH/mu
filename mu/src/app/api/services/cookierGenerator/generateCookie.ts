@@ -4,6 +4,7 @@ import { sign } from "jsonwebtoken";
 //Generate a jwt token
 export async function CookieGenerator(genratedToken: string) {
   try {
+    
     //Only 31 days validity
     const MAX_AGE = 60 * 60 * 24 * 31;
 

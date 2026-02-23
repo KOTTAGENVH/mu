@@ -2,10 +2,15 @@ import { customEmail } from "@/config/customEmail";
 import { NextResponse } from "next/server";
 import { JwtPayload, verify } from "jsonwebtoken";
 import { CookieGenerator } from "../cookierGenerator/generateCookie";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 //Validate Cookie from passed token
 export async function POST(req: Request) {
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const secret = process.env.JWT_SECRET || "";
     const email = process.env.EMAIL || "";
     const brand = process.env.BRAND || "";

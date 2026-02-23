@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { s3Client } from "@/app/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 export async function GET(req: Request) {
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -14,7 +19,7 @@ export async function GET(req: Request) {
         { status: 401 },
       );
     }
-    
+
     const r2_limit_gb = 10;
     const r2_limit_bytes = r2_limit_gb * 1024 * 1024 * 1024;
 

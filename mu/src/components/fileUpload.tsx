@@ -1,13 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faUpload } from "@fortawesome/free-solid-svg-icons";
-import { storage5 } from "@/config/firebase5";
-import {
-  getDownloadURL,
-  list,
-  ref,
-  uploadBytesResumable,
-} from "@firebase/storage";
 import Loader from "./loader";
 
 const FileUpload: React.FC = () => {
@@ -28,125 +21,125 @@ const FileUpload: React.FC = () => {
     }
   };
 
-  // Function to handle file upload
-  const uploadFile = async (file: File) => {
-    try {
-      if (!isCategory) {
-        alert("Please select a category");
-        return;
-      } else if (!file) {
-        alert("Please upload a file.");
-        return;
-      }
-      setLoading(true);
+  // // Function to handle file upload
+  // const uploadFile = async (file: File) => {
+  //   try {
+  //     if (!isCategory) {
+  //       alert("Please select a category");
+  //       return;
+  //     } else if (!file) {
+  //       alert("Please upload a file.");
+  //       return;
+  //     }
+  //     setLoading(true);
 
-      //Verify jwt cookie
-      const res = await fetch("/api/services/cookieChecker", {
-        method: "POST",
-      });
-      const data = await res.json();
+  //     //Verify jwt cookie
+  //     const res = await fetch("/api/services/cookieChecker", {
+  //       method: "POST",
+  //     });
+  //     const data = await res.json();
 
-      if (data.status === 401) {
-        window.location.href = "/";
-        return;
-      }
+  //     if (data.status === 401) {
+  //       window.location.href = "/";
+  //       return;
+  //     }
 
-      if (!res.ok) {
-        alert(data.message);
-        setLoading(false);
-        setScanning(false);
-        return;
-      }
+  //     if (!res.ok) {
+  //       alert(data.message);
+  //       setLoading(false);
+  //       setScanning(false);
+  //       return;
+  //     }
 
-      // Get a reference to the music directory in Firebase Storage
-      const musicDirRef = ref(storage5, "music/");
+  //     // Get a reference to the music directory in Firebase Storage
+  //     const musicDirRef = ref(storage5, "music/");
 
-      // Check if the file already exists
-      const listResult = await list(musicDirRef);
+  //     // Check if the file already exists
+  //     const listResult = await list(musicDirRef);
 
-      const fileExists = listResult.items.some(
-        (itemRef) => itemRef.name === file.name,
-      );
+  //     const fileExists = listResult.items.some(
+  //       (itemRef) => itemRef.name === file.name,
+  //     );
 
-      if (fileExists) {
-        alert("File already exists.");
-        setLoading(false);
-        setScanning(false);
-        setMp3Files([]);
-        return;
-      }
-      // Upload the file to Firebase Storage
-      const storageRef = ref(storage5, `music/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          // Handle upload progress (if needed)
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log(`Upload is ${progress}% done`);
-        },
-        (error) => {
-          // Handle upload error
-          console.error("Upload failed:", error);
-          setLoading(false);
-          setMp3Files([]);
-          alert("An error occurred while uploading the image.");
-        },
-        async () => {
-          try {
-            // Upload completed successfully, get the download URL
-            const downloadUrl = await getDownloadURL(storageRef);
+  //     if (fileExists) {
+  //       alert("File already exists.");
+  //       setLoading(false);
+  //       setScanning(false);
+  //       setMp3Files([]);
+  //       return;
+  //     }
+  //     // Upload the file to Firebase Storage
+  //     const storageRef = ref(storage5, `music/${file.name}`);
+  //     const uploadTask = uploadBytesResumable(storageRef, file);
+  //     uploadTask.on(
+  //       "state_changed",
+  //       (snapshot) => {
+  //         // Handle upload progress (if needed)
+  //         const progress =
+  //           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+  //         console.log(`Upload is ${progress}% done`);
+  //       },
+  //       (error) => {
+  //         // Handle upload error
+  //         console.error("Upload failed:", error);
+  //         setLoading(false);
+  //         setMp3Files([]);
+  //         alert("An error occurred while uploading the image.");
+  //       },
+  //       async () => {
+  //         try {
+  //           // Upload completed successfully, get the download URL
+  //           const downloadUrl = await getDownloadURL(storageRef);
 
-            //upload to mongodb
-            const res = await fetch("/api/services/upload", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                name: file.name,
-                category: isCategory,
-                fileUrl: downloadUrl,
-                favourite: isFavourite,
-              }),
-            });
+  //           //upload to mongodb
+  //           const res = await fetch("/api/services/upload", {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //             },
+  //             body: JSON.stringify({
+  //               name: file.name,
+  //               category: isCategory,
+  //               fileUrl: downloadUrl,
+  //               favourite: isFavourite,
+  //             }),
+  //           });
 
-            const data = await res.json();
+  //           const data = await res.json();
 
-            if (data.status === 401) {
-              window.location.href = "/";
-              return;
-            }
+  //           if (data.status === 401) {
+  //             window.location.href = "/";
+  //             return;
+  //           }
 
-            if (!res.ok) {
-              alert(data.message);
-              console.error("Error uploading to MongoDB:", data.message);
-              setLoading(false);
-              setMp3Files([]);
-            } else {
-              alert("File uploaded successfully.");
-              setLoading(false);
-              setMp3Files([]);
-            }
-          } catch (error) {
-            console.error("Error getting download URL:", error);
-            alert("An error occurred while uploading the image.");
-            setLoading(false);
-            setMp3Files([]);
-          }
-          setLoading(false);
-          setMp3Files([]);
-        },
-      );
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      alert("An error occurred while uploading the file.");
-      setLoading(false);
-      setScanning(false);
-      setMp3Files([]);
-    }
-  };
+  //           if (!res.ok) {
+  //             alert(data.message);
+  //             console.error("Error uploading to MongoDB:", data.message);
+  //             setLoading(false);
+  //             setMp3Files([]);
+  //           } else {
+  //             alert("File uploaded successfully.");
+  //             setLoading(false);
+  //             setMp3Files([]);
+  //           }
+  //         } catch (error) {
+  //           console.error("Error getting download URL:", error);
+  //           alert("An error occurred while uploading the image.");
+  //           setLoading(false);
+  //           setMp3Files([]);
+  //         }
+  //         setLoading(false);
+  //         setMp3Files([]);
+  //       },
+  //     );
+  //   } catch (error) {
+  //     console.error("Error uploading file:", error);
+  //     alert("An error occurred while uploading the file.");
+  //     setLoading(false);
+  //     setScanning(false);
+  //     setMp3Files([]);
+  //   }
+  // };
 
   // Function to handle drag over event
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -268,7 +261,7 @@ const FileUpload: React.FC = () => {
       <div className="uploadActions">
         <button
           className="uploadSubmitBtn"
-          onClick={() => uploadFile(mp3Files[0])}
+          // onClick={() => uploadFile(mp3Files[0])}
           disabled={isScanning || isLoading}
         >
           <span className="uploadSubmitText">SUBMIT</span>

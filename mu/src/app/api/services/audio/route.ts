@@ -7,12 +7,17 @@ import { s3Client } from "@/app/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import Category from "@/models/category";
 import mongoose from "mongoose";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 //get audio
 export async function POST(req: Request) {
   await dbConnect();
 
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate Cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -38,7 +43,7 @@ export async function POST(req: Request) {
       const agg: any[] = [
         {
           $search: {
-            index: "mubyNK", 
+            index: "mubyNK",
             text: {
               query: search,
               path: ["name", "artist"],
@@ -162,6 +167,10 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -219,6 +228,10 @@ export async function PUT(req: Request) {
 export async function PATCH(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -319,6 +332,10 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {

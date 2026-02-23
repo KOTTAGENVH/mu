@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { serialize } from "cookie";
 import { validateCookie } from "../cookieValidator/validateCookie";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 export async function GET(req: Request) {
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const cookieName = process.env.COOKIE_NAME;
 
     if (!cookieName) {

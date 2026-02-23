@@ -5,12 +5,17 @@ import { customEmail } from "@/config/customEmail";
 import { s3Client } from "@/app/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import List from "@/models/list";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 //Get all lists
 export async function GET(req: Request) {
   await dbConnect();
 
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -51,6 +56,10 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
@@ -131,6 +140,10 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     // Validate the cookie
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {

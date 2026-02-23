@@ -7,6 +7,7 @@ import { encrypt } from "@/config/encryption";
 import { decrypt } from "@/config/decryption";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "../cookieValidator/validateCookie";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 // 14min validity
 const max_age = 60 * 14;
@@ -15,6 +16,10 @@ const max_age = 60 * 14;
 export async function POST(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const { ip, token } = await req.json();
     const email = process.env.EMAIL || "";
     if (!email) {
@@ -69,6 +74,10 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const userCount = await User.countDocuments();
     const userVerified = await User.findOne({ verified: true });
     const validationResult = await validateCookie(req);

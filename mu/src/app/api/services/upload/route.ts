@@ -7,11 +7,16 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/app/lib/r2";
 import { stegMP3Checker, stegWavChecker } from "@/app/helper/stegnographyCheck";
 import { generateId } from "@/app/helper/uniqueIdGenerator";
+import { isAllowed } from "@/app/helper/origin_helper";
 
 // Handle the POST request for audio
 export async function POST(req: Request) {
   await dbConnect();
   try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const formData = await req.formData();
 
     const category = formData.get("category") as string;
