@@ -49,7 +49,9 @@ export async function GET(
       expiresIn: 3600,
     });
 
-    return NextResponse.json({ success: true, url: signedUrl });
+    (track as any).fileUrl = signedUrl;
+
+    return NextResponse.json({ success: true, track: track });
   } catch (error: unknown) {
     console.error("Error generating URL:", error);
     return NextResponse.json(

@@ -6,6 +6,97 @@ import { s3Client } from "@/app/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import List from "@/models/list";
 import { isAllowed } from "@/app/helper/origin_helper";
+import { generateId } from "@/app/helper/uniqueIdGenerator";
+
+//Post new list
+export async function POST(req: Request) {
+  await dbConnect();
+  try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+    // Validate the cookie
+    const validationResult = await validateCookie(req);
+    if (!validationResult.valid) {
+      console.log("Validation failed: ", validationResult.error);
+      return NextResponse.json(
+        { success: false, message: validationResult.error },
+        { status: 401 },
+      );
+    }
+    let uniqueId = "";
+    let idLength = 6;
+    let isUnique = false;
+
+    while (!isUnique) {
+      uniqueId = generateId(idLength);
+
+      const existingAudio = await List.findOne({ id: uniqueId });
+
+      if (!existingAudio) {
+        isUnique = true;
+      } else {
+        idLength++;
+      }
+    }
+
+    const { name } = await req.json();
+
+    if (!name) {
+      return NextResponse.json(
+        { success: false, message: "Please provide a list name" },
+        { status: 400 },
+      );
+    }
+
+    const existingName = await List.findOne({ name });
+    if (existingName) {
+      return NextResponse.json(
+        { success: false, message: "List name already exists" },
+        { status: 400 },
+      );
+    }
+    const newList = await List.create({
+      id: uniqueId,
+      name: name,
+    });
+
+    const email = process.env.EMAIL || "";
+    if (email) {
+      try {
+        await customEmail(
+          email,
+          `New List Created`,
+          `A new list named "${newList.name}" has been created with ID: ${newList.id}`,
+        );
+      } catch (emailError) {
+        console.error("Failed to send email notification:", emailError);
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "List created successfully",
+        list: newList,
+      },
+      { status: 201 },
+    );
+  } catch (error: unknown) {
+    console.error("Error in POST list:", error);
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 },
+      );
+    } else {
+      return NextResponse.json(
+        { success: false, message: "An unknown error occurred" },
+        { status: 500 },
+      );
+    }
+  }
+}
 
 //Get all lists
 export async function GET(req: Request) {
@@ -29,12 +120,12 @@ export async function GET(req: Request) {
     // Get all lists
     const lists = await List.find({}).select("-_id");
 
-    if (!lists || lists.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "No lists found" },
-        { status: 404 },
-      );
-    }
+    // if (!lists || lists.length === 0) {
+    //   return NextResponse.json(
+    //     { success: false, message: "No lists found" },
+    //     { status: 404 },
+    //   );
+    // }
 
     return NextResponse.json({ success: true, lists });
   } catch (error: unknown) {
@@ -156,38 +247,8 @@ export async function DELETE(req: Request) {
 
     const { id } = await req.json();
 
-    // Fetch list details
-    const listDetail = await List.findOneAndUpdate({ id: id });
-    if (!listDetail) {
-      return NextResponse.json(
-        { success: false, message: "List not found" },
-        { status: 404 },
-      );
-    }
-
-    const urlObj = new URL(listDetail.fileUrl);
-
-    const fileKey = decodeURIComponent(urlObj.pathname.slice(1));
-
-    try {
-      await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME,
-          Key: fileKey,
-        }),
-      );
-    } catch (error) {
-      console.warn(
-        `Failed to delete file from R2 or file didn't exist: ${fileKey}`,
-      );
-      return NextResponse.json(
-        { success: false, message: "Failed to delete file from R2" },
-        { status: 500 },
-      );
-    }
-
     // Delete the database record
-    const list = await List.findOneAndUpdate({ id: id });
+    const list = await List.findOneAndDelete({ id: id });
     if (!list) {
       return NextResponse.json(
         { success: false, message: "List not found in the database" },

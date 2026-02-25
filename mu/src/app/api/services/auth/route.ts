@@ -121,6 +121,35 @@ export async function GET(req: Request) {
   }
 }
 
+//Delete all users
+export async function DELETE(req: Request) {
+  await dbConnect();
+  try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+    const validationResult = await validateCookie(req);
+    if (validationResult.valid) {
+      await User.deleteMany({});
+
+      return NextResponse.json({ success: true });
+    } else {
+      return NextResponse.json({ success: false, message: "Unauthorized" });
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.log("error message: ", error.message);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Sorry an error occurred while deleting all users.",
+        },
+        { status: 500 },
+      );
+    }
+  }
+}
+
 function toBase32(buffer: string | any[] | Uint8Array) {
   // 2^5 = 32
   const base32Chars = process.env.BASE_32 || "";
@@ -282,3 +311,4 @@ async function sendLoginUrlEmail(ip: string) {
     }
   }
 }
+

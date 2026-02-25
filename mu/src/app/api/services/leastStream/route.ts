@@ -88,7 +88,6 @@ export async function DELETE(req: Request) {
     }
 
     const { percentile } = await req.json();
-
     if (!percentile || percentile <= 0 || percentile > 100) {
       return NextResponse.json(
         {
@@ -124,7 +123,7 @@ export async function DELETE(req: Request) {
     }
 
     const idsToDelete = candidates.map((track) => track._id);
-    await Upload.deleteMany({ id: { $in: idsToDelete } });
+    await Upload.deleteMany({ _id: { $in: idsToDelete } });
 
     return NextResponse.json({
       success: true,

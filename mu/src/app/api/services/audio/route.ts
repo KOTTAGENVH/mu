@@ -131,12 +131,12 @@ export async function POST(req: Request) {
       countPromise,
     ]);
 
-    if (!uploads || uploads.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "No uploads found" },
-        { status: 404 },
-      );
-    }
+    // if (!uploads || uploads.length === 0) {
+    //   return NextResponse.json(
+    //     { success: true, message: "No uploads found" },
+    //     { status: 404 },
+    //   );
+    // }
 
     return NextResponse.json({
       success: true,
@@ -163,68 +163,7 @@ export async function POST(req: Request) {
   }
 }
 
-//Handle favourite update
-export async function PUT(req: Request) {
-  await dbConnect();
-  try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
-
-    // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
-      return NextResponse.json(
-        { success: false, message: validationResult.error },
-        { status: 401 },
-      );
-    }
-
-    const { id, favourite } = await req.json();
-    const audio = await Upload.findOneAndUpdate(
-      { id: id },
-      { favourite },
-      { new: true },
-    );
-    if (!audio) {
-      return NextResponse.json(
-        { success: false, message: "Audio not found" },
-        { status: 404 },
-      );
-    }
-
-    const email = process.env.EMAIL || "";
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
-    }
-
-    await customEmail(
-      email,
-      `Favourite status of ${audio.name} has been updated`,
-      `The favourite status of ${audio.name} has been updated to ${audio.favourite}`,
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: `${audio.name} added to favourites`,
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 },
-      );
-    }
-  }
-}
-
-//Handle category and name update
+//Handle audio update
 export async function PATCH(req: Request) {
   await dbConnect();
   try {
@@ -242,54 +181,40 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const { id, name, categoryid } = await req.json();
+    const body = await req.json();
+    const { id, favourite, name, categoryid, artist } = body;
 
-    //Check if the name and categoryid are empty
-    if (!name && !categoryid) {
+    if (!id) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Please provide a name or category to update",
-        },
+        { success: false, message: "ID is required" },
         { status: 400 },
       );
     }
 
-    const updateData: Partial<{ name: string; category: string }> = {};
+    const updateFields: any = {};
 
     if (name) {
-      const nameExists = await Upload.findOne({ name }).where("id").ne(id);
-      if (nameExists) {
-        return NextResponse.json(
-          { success: false, message: "Name already exists" },
-          { status: 400 },
-        );
-      }
-      updateData.name = name;
+      updateFields.name = name.replace(/[^a-zA-Z]/g, "");
+    }
+
+    if (artist) {
+      updateFields.artist = artist.replace(/[^a-zA-Z]/g, "");
     }
 
     if (categoryid) {
-      if (!mongoose.Types.ObjectId.isValid(categoryid)) {
-        return NextResponse.json(
-          { success: false, message: "Invalid category ID format" },
-          { status: 400 },
-        );
-      }
-
-      const categoryExists = await Category.findById(categoryid);
-      if (!categoryExists) {
-        return NextResponse.json(
-          { success: false, message: "Category not found" },
-          { status: 404 },
-        );
-      }
-
-      updateData.category = categoryid;
+      const catrgory = await Category.findOne({ id: categoryid });
+      updateFields.category = catrgory?._id;
     }
 
-    const audio = await Upload.findOneAndUpdate({ id: id }, updateData, {
-      new: true,
-    });
+    if (favourite !== undefined) {
+      updateFields.favourite = favourite;
+    }
+
+    const audio = await Upload.findOneAndUpdate(
+      { id: id },
+      { $set: updateFields },
+      { new: true },
+    );
 
     if (!audio) {
       return NextResponse.json(
@@ -305,13 +230,13 @@ export async function PATCH(req: Request) {
 
     await customEmail(
       email,
-      `Audio ${audio.name} has been updated`,
-      `The audio ${audio.name} has been updated`,
+      `Details for ${audio.name} have been updated`,
+      `The details for ${audio.name} have been updated successfully.`,
     );
 
     return NextResponse.json({
       success: true,
-      message: `${audio.name} is being updated`,
+      message: `${audio.name} audio updated successfully`,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -349,7 +274,7 @@ export async function DELETE(req: Request) {
     const { id } = await req.json();
 
     // Fetch audio details
-    const audioDetail = await Upload.findOneAndUpdate({ id: id });
+    const audioDetail = await Upload.findOne({ id: id });
     if (!audioDetail) {
       return NextResponse.json(
         { success: false, message: "Audio not found" },
@@ -357,9 +282,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const urlObj = new URL(audioDetail.fileUrl);
-
-    const fileKey = decodeURIComponent(urlObj.pathname.slice(1));
+    const fileKey = audioDetail.fileUrl;
 
     try {
       await s3Client.send(
@@ -379,10 +302,10 @@ export async function DELETE(req: Request) {
     }
 
     // Delete the database record
-    const audio = await Upload.findOneAndUpdate({ id: id });
+    const audio = await Upload.findOneAndDelete({ id: id });
     if (!audio) {
       return NextResponse.json(
-        { success: false, message: "Audio not found in the database" },
+        { success: false, message: "Audio found but failed to delete from DB" },
         { status: 404 },
       );
     }

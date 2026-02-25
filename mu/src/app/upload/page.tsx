@@ -5,6 +5,7 @@ import FileUpload from "@/components/fileUpload";
 import { useRouter } from "next/navigation";
 import { verifyCookie } from "../api/client/services/auth/api";
 import { useAuth } from "@/contextApi/auth";
+import LoginFooter from "@/components/login/loginFooter";
 
 function Page() {
   const router = useRouter();
@@ -37,6 +38,7 @@ function Page() {
       <div className="uploadPageBody">
         <FileUpload />
       </div>
+      <LoginFooter />
     </div>
   );
 }

@@ -124,10 +124,11 @@ html.dark {
 }
 
 .uploadDropzone {
-	width: min(900px, 92vw);
+	width: 100%;
 	min-height: 360px;
 	border-radius: 24px;
-	padding: 16px;
+	padding-top: 16px;
+	padding-bottom:16px;
 	border: 2px dashed var(--upload-accent);
 	background: rgba(255, 255, 255, 0.08);
 	box-shadow: 0 18px 40px var(--upload-shadow);

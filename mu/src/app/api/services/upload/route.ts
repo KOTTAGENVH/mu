@@ -8,6 +8,7 @@ import { s3Client } from "@/app/lib/r2";
 import { stegMP3Checker, stegWavChecker } from "@/app/helper/stegnographyCheck";
 import { generateId } from "@/app/helper/uniqueIdGenerator";
 import { isAllowed } from "@/app/helper/origin_helper";
+import Category from "@/models/category";
 
 // Handle the POST request for audio
 export async function POST(req: Request) {
@@ -20,7 +21,6 @@ export async function POST(req: Request) {
     const formData = await req.formData();
 
     const category = formData.get("category") as string;
-    const favourite = formData.get("favourite") === "true";
     let artist = formData.get("artist") as string;
     let name = formData.get("name") as string;
     const file = formData.get("file") as File | null;
@@ -46,6 +46,14 @@ export async function POST(req: Request) {
       );
     }
 
+    const categoryDoc = await Category.findOne({ id: category });
+
+    if (!categoryDoc) {
+      return NextResponse.json(
+        { success: false, message: `Category '${category}' not found.` },
+        { status: 400 }
+      );
+    }
     // Remove inverted commas from the name
     name = name.replace(/[^a-zA-Z]/g, "");
 
@@ -130,9 +138,9 @@ export async function POST(req: Request) {
       id: uniqueId,
       name,
       artist,
-      category,
-      objectKey,
-      favourite,
+      category: categoryDoc._id,
+      fileUrl: objectKey,
+      favourite: false,
     });
 
     // Check if upload was created
