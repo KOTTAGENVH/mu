@@ -17,7 +17,7 @@ function WebHeader() {
     "after:transition-transform after:duration-300 after:ease-out hover:after:origin-bottom-left hover:after:scale-x-100";
 
   return (
-    <div className="sticky top-0 left-0 z-50 w-full">
+    <div className="fixed top-0 left-0 z-50 w-full">
       <nav className="w-full bg-transparent backdrop-blur-[12px]">
         <div className="flex items-center justify-between mx-4 px-2 py-4 lg:mx-14 lg:px-6">
           <div className="h-auto w-auto">

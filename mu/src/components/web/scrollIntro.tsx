@@ -1,23 +1,24 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import NextImage from "next/image";
 
-const TOTAL_FRAMES = 417;
-const FILE_EXT = "webp";
-const FRAME_PATH = "/frames";
-const SCROLL_LENGTH_VH = 350;
+const total_frames = 417;
+const file_ext = "png";
+const frame_path = "/web";
+const scroll_length_vh = 450;
+const frame_offset = 2;
 
-const QUOTES = [
+const quotes = [
   "Open source. Fully yours.",
   "No ads. No tracking.",
   "Plays what you actually like.",
   "Smart search, instant finds.",
-  "Wishlist → queued.",
+  "Add you wishlist, download later.",
   "Your categories. Your flow.",
   "2FA built in.",
   "Stats you can see. Storage you control.",
   "Private by design.",
-  "Made for your home screen.",
 ];
 
 function pad5(n: number) {
@@ -25,7 +26,7 @@ function pad5(n: number) {
 }
 
 function frameUrl(frameIndex1Based: number) {
-  return `${FRAME_PATH}/frame_${pad5(frameIndex1Based)}.${FILE_EXT}`;
+  return `${frame_path}/mubynk-${pad5(frameIndex1Based + frame_offset)}.${file_ext}`;
 }
 
 export default function ScrollIntro() {
@@ -33,23 +34,26 @@ export default function ScrollIntro() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
-    Array(TOTAL_FRAMES).fill(null),
+    Array(total_frames).fill(null),
   );
-  const loadedRef = useRef<boolean[]>(Array(TOTAL_FRAMES).fill(false));
+  const loadedRef = useRef<boolean[]>(Array(total_frames).fill(false));
   const rafRef = useRef<number | null>(null);
 
-  const [progress, setProgress] = useState(0); // 0..1
+  const [progress, setProgress] = useState(0);
+  const [firstFrameLoaded, setFirstFrameLoaded] = useState(false);
 
-  const revealStart = 0.82;
+  const revealStart = 0.75;
+  const animationEnd = 0.85;
   const showText = progress < revealStart;
 
   const quoteIndex = useMemo(() => {
     const t = Math.min(progress / revealStart, 0.999);
-    return Math.floor(t * QUOTES.length);
+    return Math.floor(t * quotes.length);
   }, [progress]);
 
   const frameIndex = useMemo(() => {
-    const idx0 = Math.round(progress * (TOTAL_FRAMES - 1));
+    const t = Math.min(progress / animationEnd, 1);
+    const idx0 = Math.round(t * (total_frames - 1));
     return idx0 + 1;
   }, [progress]);
 
@@ -97,7 +101,12 @@ export default function ScrollIntro() {
     img.onload = () => {
       loadedRef.current[i] = true;
       imagesRef.current[i] = img;
-      drawFrame(idx1);
+
+      if (idx1 === 1) {
+        setFirstFrameLoaded(true);
+      }
+
+      if (idx1 === frameIndex) drawFrame(idx1);
     };
     img.onerror = () => {
       loadedRef.current[i] = false;
@@ -108,7 +117,7 @@ export default function ScrollIntro() {
 
   function preloadWindow(centerIdx1: number, radius = 10) {
     const start = Math.max(1, centerIdx1 - radius);
-    const end = Math.min(TOTAL_FRAMES, centerIdx1 + radius);
+    const end = Math.min(total_frames, centerIdx1 + radius);
     for (let f = start; f <= end; f++) ensureLoaded(f);
   }
 
@@ -122,7 +131,7 @@ export default function ScrollIntro() {
     };
 
     const idleId = idle(() => {
-      for (let f = 1; f <= TOTAL_FRAMES; f += 6) ensureLoaded(f);
+      for (let f = 1; f <= total_frames; f += 6) ensureLoaded(f);
     });
 
     return () => {
@@ -131,6 +140,12 @@ export default function ScrollIntro() {
       else clearTimeout(idleId);
     };
   }, []);
+
+  useEffect(() => {
+    if (firstFrameLoaded && progress === 0) {
+      drawFrame(1);
+    }
+  }, [firstFrameLoaded, progress]);
 
   useEffect(() => {
     preloadWindow(frameIndex, 12);
@@ -169,84 +184,128 @@ export default function ScrollIntro() {
   }, []);
 
   return (
-    <section
-      ref={sectionRef as any}
-      style={{
-        height: `${SCROLL_LENGTH_VH}vh`,
-        background: "#000",
-        position: "relative",
-      }}
-    >
-      <div
+    <>
+      <style>{`
+        .responsive-text-wrapper {
+          align-items: center;
+        }
+        .responsive-text-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+        @media (min-width: 768px) {
+          .responsive-text-wrapper {
+            align-items: flex-end;
+          }
+          .responsive-text-content {
+            align-items: flex-start;
+            text-align: left;
+          }
+        }
+      `}</style>
+      <section
+        ref={sectionRef as any}
         style={{
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflow: "hidden",
+          height: `${scroll_length_vh}vh`,
           background: "#000",
+          position: "relative",
         }}
       >
-        <canvas
-          ref={canvasRef}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-            background: "#000",
-          }}
-        />
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            padding: "clamp(20px, 5vw, 64px)",
-            pointerEvents: "none",
+            position: "sticky",
+            top: 0,
+            height: "100vh",
+            overflow: "hidden",
+            background: "#000",
           }}
         >
+          <canvas
+            ref={canvasRef}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              background: "#000",
+            }}
+          />
           <div
             style={{
-              maxWidth: 920,
-              width: "100%",
-              opacity: showText ? 1 : 0,
-              transition: "opacity 500ms ease",
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+              opacity: !showText ? 1 : 0,
+              transition: "opacity 800ms ease, transform 800ms ease",
+              transform: !showText ? "scale(1)" : "scale(0.95)",
+            }}
+          >
+            <NextImage
+              src="/mu.png"
+              alt="MUBYNK Logo"
+              width={240}
+              height={240}
+              className="rounded-full "
+              priority
+            />
+          </div>
+          <div
+            className="responsive-text-wrapper"
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              justifyContent: "center",
+              padding: "clamp(20px, 5vw, 64px)",
+              pointerEvents: "none",
             }}
           >
             <div
               style={{
-                color: "rgba(255,255,255,0.92)",
-                fontSize: "clamp(20px, 3vw, 44px)",
-                fontWeight: 600,
-                lineHeight: 1.1,
-                letterSpacing: "-0.02em",
-                textShadow: "0 2px 18px rgba(0,0,0,0.55)",
-              }}
-            >
-              {QUOTES[quoteIndex]}
-            </div>
-            <div
-              style={{
-                marginTop: 16,
-                height: 2,
-                width: "min(420px, 70%)",
-                background: "rgba(255,255,255,0.12)",
-                borderRadius: 999,
-                overflow: "hidden",
+                maxWidth: 920,
+                width: "100%",
+                opacity: showText ? 1 : 0,
+                transition: "opacity 500ms ease",
               }}
             >
               <div
                 style={{
-                  height: "100%",
-                  width: `${Math.min(progress / revealStart, 1) * 100}%`,
-                  background: "rgba(255,255,255,0.6)",
+                  color: "rgba(255,255,255,0.92)",
+                  fontSize: "clamp(20px, 3vw, 44px)",
+                  fontWeight: 600,
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.02em",
+                  textShadow: "0 2px 18px rgba(0,0,0,0.55)",
                 }}
-              />
+              >
+                {quotes[quoteIndex]}
+              </div>
+              <div
+                style={{
+                  marginTop: 16,
+                  height: 2,
+                  width: "min(420px, 70%)",
+                  background: "rgba(255,255,255,0.12)",
+                  borderRadius: 999,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(progress / revealStart, 1) * 100}%`,
+                    background: "rgba(255,255,255,0.6)",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
