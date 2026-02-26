@@ -6,6 +6,7 @@ import { inter, roboto } from "./fonts";
 import Source from "@/components/web/source";
 // import Support from "@/components/web/support";
 import WebHeader from "@/components/web/webHeader";
+import ScrollIntro from "@/components/web/scrollIntro";
 
 function Page() {
   return (
@@ -20,8 +21,8 @@ function Page() {
       "
     >
       <WebHeader/>
+      <ScrollIntro />
       <Source />
-      {/* <Support  /> */}
       <LoginFooter />
     </div>
   );
