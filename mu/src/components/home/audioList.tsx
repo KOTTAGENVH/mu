@@ -2,269 +2,266 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
-  useLayoutEffect,
 } from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMagnifyingGlass,
-  faMusic,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
+import { faMusic, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
-import { useModal } from "@/contextApi/modalOpen";
-import EditModal from "./editModal";
-import CategoryScroll from "./categoryScroll";
-import { Roboto } from "next/font/google";
+import { getAllSongs } from "@/app/api/client/services/audio/api";
+import { useSearch } from "@/contextApi/sematicSearch";
+import { getAllCategories } from "@/app/api/client/services/categories/api";
+import Loader from "../loader";
+import { Filter, Search } from "lucide-react";
+import AudioPlayerModal from "./audioPlayerModal";
 
-interface Audio {
-  _id: string;
+interface AudioList {
+  id: string;
   name: string;
-  category: string;
+  artist: string;
+  categotry: Category;
   fileUrl: string;
   favourite: boolean;
+  lastPlayed: string;
+  playCount: number;
+  skipCount: number;
 }
 
-type AudioNorm = Audio & { nameLc: string; categoryLc: string };
+interface PaginationData {
+  currentPage: number;
+  perPage: number;
+  totalAudio: number;
+  totalPages: number;
+}
 
-const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
+interface Category {
+  id: string;
+  name: string;
+}
 
-function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
+function AudioList() {
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [paginationData, setPaginationData] = useState<PaginationData | null>(
+    null,
+  );
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryListClicked, setCategoryListClicked] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [listMaxH, setListMaxH] = useState<number | undefined>(undefined);
-  const [allAudio, setAllAudio] = useState<AudioNorm[] | null>(null);
-  const { Modal } = useModal();
+  const [allAudio, setAllAudio] = useState<AudioList[] | null>(null);
+  const [id, setId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const isFetchingRef = useRef(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const isLoadMore = useRef(false);
+  const { sematicSearch } = useSearch();
 
-  // Debounce search input to avoid filtering on each keystroke
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(search), 200);
-    return () => clearTimeout(id);
-  }, [search]);
-
-  const pushUpstream = useCallback(
-    (list: AudioNorm[]) => {
-      // AudioNorm is compatible with Audio
-      const base: Audio[] = list.map(({ nameLc, categoryLc, ...rest }) => rest);
-      onLoaded?.(base);
-    },
-    [onLoaded],
-  );
-
-  // Fetch audio from the API
-  const fetchAudio = useCallback(
-    async (signal?: AbortSignal) => {
-      if (isFetchingRef.current) return;
-      try {
-        isFetchingRef.current = true;
-        setLoading(true);
-
-        const res = await fetch("/api/services/audio", { signal });
-
-        if (res.status === 401) {
-          window.location.href = "/";
-          return;
-        }
-        const data = await res.json();
-        const normalized: AudioNorm[] = (data.uploads || []).map(
-          (a: Audio) => ({
-            ...a,
-            nameLc: a.name.toLowerCase(),
-            categoryLc: a.category.toLowerCase(),
-          }),
-        );
-        setAllAudio(normalized);
-        pushUpstream(normalized); //Sen to parent for plater
-        try {
-          localStorage.setItem("mu_uploads_cache", JSON.stringify(normalized)); // Cache the normalized data
-        } catch {
-          console.warn("Storage quota exceeded while caching uploads.");
-        }
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          // ignore abort errors
-        } else {
-          console.error("Error fetching audio:", err);
-          alert("Error fetching audio. Please try again later.");
-        }
-      } finally {
-        isFetchingRef.current = false;
-        setLoading(false);
-      }
-    },
-    [pushUpstream],
-  );
-
-  //Get Category from child component to parent component
-  const handleChooseCategory = useCallback(
-    (category: string) => {
-      if (category === selectedCategory) return; // no ops if unchanged
-      setSelectedCategory(category);
-    },
-    [selectedCategory],
-  );
-
-  // Preload from cache quickly on mount (normalized if needed)
-  useEffect(() => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const cached = localStorage.getItem("mu_uploads_cache");
-      if (cached) {
-        type RawAudio = Partial<Audio> &
-          Partial<Pick<AudioNorm, "nameLc" | "categoryLc">>;
-        const rawUnknown = JSON.parse(cached) as unknown;
-        const rawArray: RawAudio[] = Array.isArray(rawUnknown)
-          ? (rawUnknown as RawAudio[])
-          : [];
-        const list: AudioNorm[] = rawArray.map((a) => ({
-          _id: String(a._id ?? ""),
-          name: String(a.name ?? ""),
-          category: String(a.category ?? ""),
-          fileUrl: String(a.fileUrl ?? ""),
-          favourite: Boolean(a.favourite),
-          nameLc:
-            typeof a.nameLc === "string"
-              ? a.nameLc
-              : String(a.name ?? "").toLowerCase(),
-          categoryLc:
-            typeof a.categoryLc === "string"
-              ? a.categoryLc
-              : String(a.category ?? "").toLowerCase(),
-        }));
-        setAllAudio(list);
-        pushUpstream(list); //  send cached to parent
-        setLoading(false);
+      setLoading(true);
+      const response = await getAllCategories();
+      const data = await response;
+
+      if (data.success) {
+        setCategories(data.category);
+      } else {
+        setCategories([]);
       }
-    } catch {
-      console.warn("Storage quota exceeded while caching uploads.");
+    } catch (error) {
+      //   console.error("Failed to fetch categories", error);
+      alert("An error occurred while fetching categories.");
+    } finally {
+      setLoading(false);
     }
-  }, [pushUpstream]);
-
-  // Memoized filtered list combining category and search
-  const filteredAudio = useMemo(() => {
-    const base = allAudio ?? [];
-    const q = debouncedSearch.trim().toLowerCase();
-    const matchCategory = (a: AudioNorm) => {
-      if (selectedCategory === "All") return true;
-      if (selectedCategory === "Favourite") return a.favourite === true;
-      return a.categoryLc === selectedCategory.trim().toLowerCase();
-    };
-    const matchSearch = (a: AudioNorm) => {
-      if (!q) return true;
-      return a.nameLc.includes(q) || a.categoryLc.includes(q);
-    };
-    return base.filter((a) => matchCategory(a) && matchSearch(a));
-  }, [allAudio, selectedCategory, debouncedSearch]);
-
-  useEffect(() => {
-    const ctl = new AbortController();
-    fetchAudio(ctl.signal);
-    return () => ctl.abort();
-  }, [fetchAudio]);
-
-  // Dynamically size list to fit between header/category and bottom player
-  const measureAndSetHeight = useCallback(() => {
-    const top = listRef.current?.getBoundingClientRect().top ?? 0;
-    const playerVar = getComputedStyle(document.documentElement)
-      .getPropertyValue("--player-height")
-      .trim();
-    const playerH = parseFloat(playerVar || "0") || 0;
-    const h = Math.max(120, window.innerHeight - playerH - top - 8);
-    setListMaxH(h);
   }, []);
 
-  //useLayoutEffect similar to useEffect but it fires synchronously after all DOM mutations
-  useLayoutEffect(() => {
-    let raf1 = requestAnimationFrame(() => {
-      measureAndSetHeight();
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
-      raf1 = requestAnimationFrame(() => {
-        measureAndSetHeight();
-      });
-    });
+  const fetchAudio = useCallback(
+    async (search: string, category: string, append = false) => {
+      try {
+        setLoading(true);
+        const response = await getAllSongs(
+          currentPage,
+          2,
+          search,
+          category,
+          sematicSearch,
+        );
+        const data = await response;
 
-    const onResize = () => measureAndSetHeight();
-    const onPlayerSize = () => measureAndSetHeight();
-    window.addEventListener("resize", onResize);
-    document.addEventListener(
-      "player-size-change",
-      onPlayerSize as EventListener,
-    );
-
-    return () => {
-      cancelAnimationFrame(raf1);
-      window.removeEventListener("resize", onResize);
-      document.removeEventListener(
-        "player-size-change",
-        onPlayerSize as EventListener,
-      );
-    };
-  }, [measureAndSetHeight]);
+        if (data.success) {
+          setAllAudio((prev) =>
+            append && prev
+              ? [
+                  ...prev,
+                  ...data.uploads.filter(
+                    (newItem: { id: string }) =>
+                      !prev.some((existing) => existing.id === newItem.id),
+                  ),
+                ]
+              : data.uploads,
+          );
+          setPaginationData({
+            currentPage: data?.pagination?.currentPage || 1,
+            perPage: data?.pagination?.perPage,
+            totalAudio: data?.pagination?.totalAudio,
+            totalPages: data?.pagination?.totalPages,
+          });
+        } else {
+          setAllAudio([]);
+        }
+      } catch (error) {
+        // console.error("Failed to fetch audios", error);
+        alert("An error occurred while fetching audios.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage],
+  );
 
   useEffect(() => {
-    requestAnimationFrame(() => measureAndSetHeight());
-  }, [allAudio, selectedCategory, debouncedSearch, measureAndSetHeight]);
+    fetchAudio("", "", isLoadMore.current);
+  }, [fetchAudio]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!categoryListClicked) return;
+
+      const target = event.target as Node;
+
+      if (
+        (dropdownRef.current && dropdownRef.current.contains(target)) ||
+        (event.target as HTMLElement).closest("[data-filter-button]")
+      ) {
+        return;
+      }
+
+      setCategoryListClicked(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [categoryListClicked]);
+
   return (
     <div className="justify-center items-center w-auto h-auto mt-20 mx-4 px-3 lg:mx-16 lg:px-6">
-      <CategoryScroll onChooseCategory={handleChooseCategory} />
       <div
-        className={`dark:text-white bg-transparent  text-black  relative flex-1  rounded-2xl overflow-visible`}
+        className={`dark:text-white bg-transparent text-black relative flex flex-wrap items-center justify-center gap-2 w-full rounded-2xl overflow-visible`}
         tabIndex={0}
-        onBlur={(e) => {
-          const next = e.relatedTarget as Node | null;
-          if (!next || !e.currentTarget.contains(next)) {
-          }
-        }}
       >
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+        <button
+          data-filter-button
+          title="Category filter"
+          className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          aria-hidden="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            setCategoryListClicked((v) => !v);
           }}
-          onFocus={() => {}}
-          className={`${roboto.className} text-lg w-full p-3 pr-12 pl-4 focus:outline-none dark:placeholder-white dark:text-white text-black placeholder-black dark:placeholder-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full cursor-pointer`}
-          placeholder="Search Audio"
-        />
-        {search.length > 0 ? (
-          <FontAwesomeIcon
-            icon={faTimes}
-            onClick={() => {
-              setSearch("");
-            }}
-            className="absolute top-4 right-4 text-red-500 w-5 h-5 cursor-pointer hover:text-red-600 transition-colors duration-200"
-          />
-        ) : (
-          <FontAwesomeIcon
-            icon={faMagnifyingGlass}
-            className={`absolute top-4 right-4 dark:text-white text-black w-5 h-5`}
-          />
-        )}
-      </div>
-      {loading && filteredAudio.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="min-h-[40vh] flex flex-col items-center justify-center text-center py-10"
         >
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <Filter className="w-4 h-4 stroke-[3]" />
+        </button>
+        <div className="relative flex-1 min-w-[250px]">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="text-sm w-full pl-6 pr-10 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
+            placeholder="What are you in the mood for?"
+          />
+
+          {search.length > 0 && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 w-8 h-8 flex items-center justify-center cursor-pointer hover:text-red-600 transition-colors duration-200"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          )}
+        </div>
+        <button
+          data-filter-button
+          title="Category filter"
+          className="md:hidden inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          aria-hidden="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            setCategoryListClicked((v) => !v);
+          }}
+        >
+          <Filter className="w-4 h-4 stroke-[3]" />
+        </button>
+        <button
+          title="Search"
+          className="flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          aria-hidden="true"
+          onClick={() => {
+            fetchAudio(search, "");
+          }}
+        >
+          <Search className="w-4 h-4 stroke-[3]" />
+        </button>
+      </div>
+      {categoryListClicked && (
+        <div
+          ref={dropdownRef}
+          className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 justify-center w-60 md:w-96 h-auto max-h-60 overflow-y-auto
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+        >
+          <button
+            onClick={() => {
+              setSelectedCategory("");
+              fetchAudio("", "");
+              setCategoryListClicked(false);
+            }}
+            className={`px-4 py-2 rounded-xl border-none cursor-pointer ${
+              selectedCategory === ""
+                ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+            } transition-colors duration-200`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat?.id);
+                fetchAudio("", cat?.id);
+                setCategoryListClicked(false);
+              }}
+              className={`px-4 py-2 rounded-xl border-none cursor-pointer ${
+                selectedCategory === cat.id
+                  ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                  : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+              } transition-colors duration-200`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {loading && allAudio?.length === 0 && (
+        <div className="min-h-[40vh] flex flex-col items-center justify-center text-center py-10">
+          <Loader />
           <p className="text-black dark:text-white text-lg font-medium">
             Loading your audio...
           </p>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             Please wait a moment
           </span>
-        </motion.div>
+        </div>
       )}
 
-      {!loading && filteredAudio?.length === 0 && (
+      {!loading && allAudio?.length === 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -286,28 +283,43 @@ function AudioList({ onLoaded }: { onLoaded?: (list: Audio[]) => void }) {
 
       <div
         ref={listRef}
-        style={{ maxHeight: listMaxH }}
-        className="flex-1 min-h-0 overflow-y-auto w-auto flex flex-row flex-wrap justify-center md:justify-around items-center overflow-x-hidden bg-transparent mt-6 p-4 rounded-l-2xl rounded-r-xl
-      [&::-webkit-scrollbar]:w-2
-      [&::-webkit-scrollbar-track]:rounded-full
-      [&::-webkit-scrollbar-track]:bg-bg-gradient-one
-      [&::-webkit-scrollbar-thumb]:rounded-full
-      [&::-webkit-scrollbar-thumb]:bg-bg-gradient-six
-      dark:[&::-webkit-scrollbar-track]:bg-neutral-700
-      dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
+        className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
-        {filteredAudio?.length > 0 &&
-          filteredAudio?.map((audio) => (
+        {allAudio &&
+          allAudio.length > 0 &&
+          allAudio.map((audio) => (
             <AudioCard
-              key={audio._id}
-              idPass={audio._id}
+              key={audio.id}
+              idPass={audio.id}
+              currentPlayingId={id || ""}
               name={audio.name}
-              category={audio.category}
+              artist={audio.artist}
               favourite={audio.favourite}
+              handleId={(id) => {
+                setId(id);
+              }}
             />
           ))}
       </div>
-      {Modal && <EditModal />}
+      {paginationData && currentPage < paginationData.totalPages && (
+        <div className="w-full flex justify-center pb-6">
+          <button
+            onClick={() => {
+              isLoadMore.current = true;
+              setCurrentPage((p) => p + 1);
+            }}
+            className="w-32 py-3 mt-2 rounded-full bg-gray-800 text-white hover:bg-gray-700"
+          >
+            Load more
+          </button>
+        </div>
+      )}
+      <AudioPlayerModal
+        id={id!}
+        handleId={(id) => {
+          setId(id);
+        }}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { inter, roboto } from "../../app/fonts";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -10,10 +10,11 @@ import OTPInput from "./otpInputField";
 import { ArrowLeft, Mail } from "lucide-react";
 
 interface TokenInputProps {
+  backToLogin?: boolean;
   handleSetToken: (value: boolean) => void;
 }
 
-function TokenInput({ handleSetToken }: TokenInputProps) {
+function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
   const [isLoading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -95,12 +96,12 @@ function TokenInput({ handleSetToken }: TokenInputProps) {
       transition={{ duration: 0.7, ease: "easeOut" }}
       className="flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8"
     >
-      <div className=" w-full h-full rounded-2xl overflow-hidden ">
+      <div className={`${backToLogin ? "hidden" : "block"} w-full h-full rounded-2xl overflow-hidden`}>
         <button
           type="button"
           onClick={() => handleSecretView()}
           disabled={isLoading}
-          className={`
+          className={` 
           w-auto flex items-center justify-center gap-2
           text-black dark:text-white mt-6 mb-4 px-6 py-3
           rounded-full bg-gray-300 dark:bg-gray-700

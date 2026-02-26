@@ -32,6 +32,7 @@ export async function GET(req: Request) {
       {
         $match: {
           $or: [
+            { lastPlayedAt: { $exists: false } },
             { lastPlayedAt: null },
             { lastPlayedAt: { $lt: fourHoursAgo } },
           ],
@@ -54,8 +55,8 @@ export async function GET(req: Request) {
       let score = Math.random() * 10;
 
       if (track.favourite) score += 20;
-      score += track.playCount * 0.5;
-      score -= track.skipCount * 2;
+      score += (track.playCount || 0) * 0.5;
+      score -= (track.skipCount || 0) * 2;
 
       if (previousArtist && track.artist === previousArtist) {
         score -= 50;
@@ -77,7 +78,7 @@ export async function GET(req: Request) {
 
     const getCommand = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: bestCandidate.objectKey,
+      Key: bestCandidate.fileUrl,
     });
 
     const signedUrl = await getSignedUrl(s3Client, getCommand, {

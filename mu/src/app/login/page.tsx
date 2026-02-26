@@ -136,7 +136,7 @@ function Page() {
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 ">
           {isLoading && <Loader />}
           {!isLoading && isTokenInput && (
-            <TokenInput handleSetToken={setTokenInput} />
+            <TokenInput backToLogin={isTokenInput} handleSetToken={setTokenInput} />
           )}
           {!isLoading && !isTokenInput && isQrScan && (
             <QrScan

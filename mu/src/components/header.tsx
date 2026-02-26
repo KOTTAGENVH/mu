@@ -101,6 +101,7 @@ function Header() {
             height={48}
             className="w-12 h-12 rounded-full cursor-pointer"
             onClick={handleHome}
+            priority
           />
         </div>
         <div className="flex items-center shrink-0 md:items-end">

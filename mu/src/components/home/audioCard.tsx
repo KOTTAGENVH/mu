@@ -1,201 +1,69 @@
 "use client";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import {
-  Edit3,
-  Headphones,
-  Heart,
-  Music,
   Pause,
   Play,
-  Trash2,
 } from "lucide-react";
-import { useModal } from "@/contextApi/modalOpen";
-import { useCurrentPlay } from "@/contextApi/currentPlay";
 
 interface Audio {
   idPass: string;
+  currentPlayingId: string;
   name: string;
-  category: string;
+  artist: string;
   favourite: boolean;
+  handleId: (id: string) => void;
 }
 
 export default function AudioCard({
   idPass,
+  currentPlayingId,
   name,
-  category,
+  artist,
   favourite,
+  handleId,
 }: Audio) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFavourite, setIsFavourite] = useState(favourite);
-  const { toggleModal } = useModal();
-  const { toggleId, id, pause } = useCurrentPlay();
-  const isCurrentlyPlaying = id === idPass && !pause;
-
-  // Favourites handling function
-  const handleFavourite = useCallback(async () => {
-    setIsLoading(true);
-    const previousState = isFavourite;
-    setIsFavourite(!isFavourite);
-
-    try {
-      const res = await fetch("/api/services/audio", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ _id: idPass, favourite: !isFavourite }),
-      });
-
-      const data = await res.json();
-
-      if (data.status === 401) {
-        window.location.href = "/";
-        return;
-      }
-
-      if (!data.success) {
-        setIsFavourite(previousState); // Rollback on error
-        console.error("Error updating favourite");
-      }
-    } catch (error) {
-      setIsFavourite(previousState); // Rollback on error
-      console.error("Error updating favourite");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [idPass, isFavourite]);
-
-  // Delete handling function
-  const handleDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
-
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/services/audio", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ _id: idPass }),
-      });
-
-      const data = await res.json();
-
-      if (data.status === 401) {
-        window.location.href = "/";
-        return;
-      }
-
-      if (data.success) {
-        setTimeout(() => window.location.reload(), 300);
-      } else {
-        console.error("Error deleting audio");
-      }
-    } catch (error) {
-      console.error("Error deleting audio");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Modal open handler Edit one
-  const handleModalOpen = () => {
-    toggleModal(true, idPass, name, category);
-  };
+  const [idPlaying, setIdPlaying] = useState("");
+  const isCurrentlyPlaying = currentPlayingId === idPass;
 
   // Play/Pause handler
   const handlePlay = () => {
-    if (id === idPass && !pause) {
-      toggleId(idPass, true);
+    if (idPlaying === idPass) {
+      setIdPlaying("");
+      handleId("");
       return;
     } else {
-      toggleId(idPass, false);
+      setIdPlaying(idPass);
+      handleId(idPass);
     }
   };
 
   return (
-    <div className="group relative w-80 h-56 m-3 rounded-2xl overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-      <div className="absolute inset-0 opacity-5 dark:opacity-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600"></div>
-      </div>
-      <div className="relative h-full flex flex-col">
-        <div className="flex justify-between items-start p-4 pb-2">
-          <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
-            {category}
-          </span>
-          <div className="relative">
-            <button
-              onClick={handleDelete}
-              disabled={isLoading}
-              className="
-            p-3 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors "
-            >
-              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="relative">
+    <div
+      key={idPass}
+      className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border-none shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between w-60 md:w-80"
+    >
+      <div className="flex items-center gap-4 overflow-hidden">
+        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <button
+            onClick={handlePlay}
+            className={`p-3 bg-blue-50 dark:bg-blue-900/20 ${isCurrentlyPlaying ? "hover:bg-red-400 dark:hover:bg-red-600" : "hover:bg-green-400 dark:hover:bg-green-500"} text-black dark:text-white rounded-full `}
+            title={isCurrentlyPlaying ? "Pause" : "Play"}
+          >
             {isCurrentlyPlaying ? (
-              <div className="relative">
-                <Music className="w-16 h-16 text-blue-600 dark:text-blue-400" />
-                <div className="absolute inset-0 w-16 h-16 bg-blue-500 rounded-full animate-ping opacity-20"></div>
-              </div>
+              <Pause className="w-4 h-4" />
             ) : (
-              <Headphones className="w-16 h-16 text-gray-600 dark:text-gray-400" />
+              <Play className="w-4 h-4" />
             )}
-          </div>
+          </button>
         </div>
-        <div className="p-4 pt-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-lg truncate mb-3">
+        <div className="min-w-0">
+          <h3 className="text-sm text-black dark:text-white truncate">
             {name}
           </h3>
-          <div
-            className={`flex items-center justify-center gap-3 transition-all duration-300 opacity-100 transform translate-y-0`}
-          >
-            <button
-              onClick={handleFavourite}
-              disabled={isLoading}
-              className={`p-3 rounded-full  ${
-                isFavourite
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={
-                isFavourite ? "Remove from favourites" : "Add to favourites"
-              }
-            >
-              <Heart
-                className={`w-4 h-4 ${isFavourite ? "fill-current" : ""}`}
-              />
-            </button>
-            <button
-              onClick={handlePlay}
-              className="p-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full  shadow-lg hover:shadow-xl"
-              title={isCurrentlyPlaying ? "Pause" : "Play"}
-            >
-              {isCurrentlyPlaying ? (
-                <Pause className="w-4 h-4" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
-            </button>
-            <button
-              onClick={handleModalOpen}
-              className="p-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full "
-              title="Edit audio"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-          </div>
+          <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">
+            Artist: {artist}
+          </span>
         </div>
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center rounded-xl">
-            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
       </div>
     </div>
   );

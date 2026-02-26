@@ -150,3 +150,31 @@ export async function getSongById(id: string) {
     throw new Error(errorData.message || "Failed to fetch song");
   }
 }
+
+//stream songs
+export async function streamSongs() {
+  const response = await fetch("/api/services/listen", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to stream songs");
+  }
+}
+
+//stream song by id
+export async function streamSongById(id: string) {
+  const response = await fetch(`/api/services/audio/${id}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (response.ok) {
+  return response.json();
+  } else {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to stream song");
+  }
+}

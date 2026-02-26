@@ -16,7 +16,6 @@ export type Audio = {
 };
 
 function Page() {
-  const [audios, setAudios] = useState<Audio[]>([]);
   const router = useRouter();
   const { toggleAuth } = useAuth();
 
@@ -52,8 +51,7 @@ function Page() {
       "
     >
       <Header />
-      <AudioList onLoaded={setAudios} />
-      <AudioPlayerModal audios={audios} />
+      <AudioList />
     </div>
   );
 }

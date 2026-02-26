@@ -6,7 +6,6 @@ import { customEmail } from "@/config/customEmail";
 import { s3Client } from "@/app/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import Category from "@/models/category";
-import mongoose from "mongoose";
 import { isAllowed } from "@/app/helper/origin_helper";
 
 //get audio
@@ -39,25 +38,60 @@ export async function POST(req: Request) {
     const limitNumber = parseInt(limit as string);
     const skip = (pageNumber - 1) * limitNumber;
 
+    let categoryObjectId = null;
+
+    if (category) {
+      const categoryDoc = (await Category.findOne({ id: category })
+        .select("_id")
+        .lean()) as any;
+
+      if (categoryDoc) {
+        categoryObjectId = categoryDoc._id;
+      } else {
+        return NextResponse.json({
+          success: true,
+          pagination: {
+            totalAudio: 0,
+            totalPages: 0,
+            currentPage: pageNumber,
+            perPage: limitNumber,
+          },
+          uploads: [],
+        });
+      }
+    }
+
     if (search && useVector) {
       const agg: any[] = [
         {
           $search: {
             index: "mubyNK",
-            text: {
-              query: search,
-              path: ["name", "artist"],
-              fuzzy: {
-                maxEdits: 2,
-              },
+            compound: {
+              should: [
+                {
+                  autocomplete: {
+                    query: search,
+                    path: "name",
+                    fuzzy: { maxEdits: 1 },
+                  },
+                },
+                {
+                  autocomplete: {
+                    query: search,
+                    path: "artist",
+                    fuzzy: { maxEdits: 1 },
+                  },
+                },
+              ],
+              minimumShouldMatch: 1,
             },
           },
         },
       ];
-      if (category) {
+      if (categoryObjectId) {
         agg.push({
           $match: {
-            category: new mongoose.Types.ObjectId(category),
+            category: categoryObjectId,
           },
         });
       }
@@ -65,6 +99,7 @@ export async function POST(req: Request) {
         $facet: {
           metadata: [{ $count: "total" }],
           data: [
+            { $sort: { score: { $meta: "searchScore" } } },
             { $skip: skip },
             { $limit: limitNumber },
             {
@@ -87,9 +122,10 @@ export async function POST(req: Request) {
       });
 
       const result = await Upload.aggregate(agg);
-
       const totalDocs = result[0]?.metadata[0]?.total || 0;
       const uploads = result[0]?.data || [];
+
+      await Upload.populate(uploads, { path: "category" });
 
       return NextResponse.json({
         success: true,
@@ -112,12 +148,12 @@ export async function POST(req: Request) {
       ];
     }
 
-    if (category) {
-      query.category = category;
+    if (categoryObjectId) {
+      query.category = categoryObjectId;
     }
 
     const uploadsPromise = Upload.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limitNumber)
       .select("-_id")
