@@ -16,7 +16,6 @@ import { logout } from "@/app/api/client/services/auth/api";
 function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const headerRef = useRef<HTMLDivElement>(null);
   const { authStatus } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 

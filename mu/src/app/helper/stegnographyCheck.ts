@@ -96,7 +96,7 @@ export function stegMP3Checker(fileBuffer: Buffer) {
   }
 
   // Extract the pure audio data between startIndex and endIndex
-  let pureAudioBuffer = fileBuffer.slice(startIndex, endIndex);
+  const pureAudioBuffer = fileBuffer.slice(startIndex, endIndex);
 
   // check the first 11 bits (Frame Sync word) of the audio data to confirm it looks like valid MP3 frames and not corrupted
   if (pureAudioBuffer[0] !== 0xff || (pureAudioBuffer[1] & 0xe0) !== 0xe0) {

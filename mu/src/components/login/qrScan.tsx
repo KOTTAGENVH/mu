@@ -118,7 +118,7 @@ function QrScan({ url, secret, handleSetToken }: QrScanProps) {
             className={`${roboto.className} w-full text-left text-base md:text-lg text-black dark:text-gray-400 leading-relaxed`}
           >
             Please scan the QR code with your authenticator app and click
-            "Verify Token" to proceed.
+            &quot;Verify Token&quot; to proceed.
           </p>
           {qrMatrix.length > 0 && (
             <div className="flex justify-center p-5 bg-transparent  mb-6  w-full">

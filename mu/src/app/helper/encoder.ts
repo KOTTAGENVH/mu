@@ -7,7 +7,11 @@ export class QRCodeEncoder {
 
   private readonly version_info: Record<
     number,
-    { totalData: number; eccPerBlock: number; groups: any[] }
+    {
+      totalData: number;
+      eccPerBlock: number;
+      groups: { blocks: number; dataPerBlock: number }[];
+    }
   > = {
     1: {
       totalData: 16,
@@ -196,7 +200,7 @@ export class QRCodeEncoder {
     }
 
     // Interleave ECC codewords
-    const eccStart = result.length;
+    // const eccStart = result.length;
     for (let i = 0; i < info.eccPerBlock; i++) {
       for (const block of eccBlocks) {
         result.push(block[i]);
@@ -222,7 +226,7 @@ export class QRCodeEncoder {
     this.addBits(bits, text.length, countBits);
 
     // Data - log first few characters
-    const startLen = bits.length;
+    // const startLen = bits.length;
     for (let i = 0; i < text.length; i++) {
       this.addBits(bits, text.charCodeAt(i), 8);
     }
@@ -642,7 +646,7 @@ export class QRCodeEncoder {
       }
     }
 
-    // Combine format data and BCH code, then apply mask 0x5412 
+    // Combine format data and BCH code, then apply mask 0x5412
     const format = ((formatData << 10) | remainder) ^ 0x5412;
     const size = matrix.length;
 

@@ -116,7 +116,7 @@ function AudioList() {
         setLoading(false);
       }
     },
-    [currentPage],
+    [currentPage, sematicSearch],
   );
 
   useEffect(() => {
@@ -304,7 +304,6 @@ function AudioList() {
               currentPlayingId={id || ""}
               name={audio.name}
               artist={audio.artist}
-              favourite={audio.favourite}
               handleId={(id) => {
                 setId(id);
               }}

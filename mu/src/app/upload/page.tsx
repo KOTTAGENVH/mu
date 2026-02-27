@@ -30,7 +30,7 @@ function Page() {
       }
     };
     fetchCookieStatus();
-  }, []);
+}, [router, toggleAuth]);
 
   return (
     <div className="uploadPage">

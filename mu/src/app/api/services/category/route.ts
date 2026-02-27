@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { customEmail } from "@/config/customEmail";
-import { s3Client } from "@/app/lib/r2";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import Category from "@/models/category";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { generateId } from "@/app/helper/uniqueIdGenerator";

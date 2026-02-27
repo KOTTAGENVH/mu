@@ -7,6 +7,14 @@ import { s3Client } from "@/app/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import Category from "@/models/category";
 import { isAllowed } from "@/app/helper/origin_helper";
+import { PipelineStage, FilterQuery } from "mongoose";
+
+interface IUpdateFields {
+  name?: string;
+  artist?: string;
+  category?: string;
+  favourite?: boolean;
+}
 
 //get audio
 export async function POST(req: Request) {
@@ -43,7 +51,7 @@ export async function POST(req: Request) {
     if (category) {
       const categoryDoc = (await Category.findOne({ id: category })
         .select("_id")
-        .lean()) as any;
+        .lean()) as { _id: string } | null;
 
       if (categoryDoc) {
         categoryObjectId = categoryDoc._id;
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
     }
 
     if (search && useVector) {
-      const agg: any[] = [
+      const agg: PipelineStage[] = [
         {
           $search: {
             index: "mubyNK",
@@ -99,7 +107,7 @@ export async function POST(req: Request) {
         $facet: {
           metadata: [{ $count: "total" }],
           data: [
-            { $sort: { score: { $meta: "searchScore" } } },
+            { $sort: { score: { $meta: "searchScore" as any } } },
             { $skip: skip },
             { $limit: limitNumber },
             {
@@ -139,7 +147,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const query: any = {};
+    const query: FilterQuery<typeof Upload> = {};
 
     if (search) {
       query.$or = [
@@ -227,7 +235,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const updateFields: any = {};
+    const updateFields: IUpdateFields = {};
 
     if (name) {
       updateFields.name = name.replace(/[^a-zA-Z]/g, "");

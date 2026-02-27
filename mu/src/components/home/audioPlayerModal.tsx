@@ -163,7 +163,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
 
     const isBatchExpired = Date.now() - batchFetchedAt > 3000000;
-    let nextIndex = currentAudioIndex + 1;
+    const nextIndex = currentAudioIndex + 1;
 
     if (nextIndex >= audioList.length || isBatchExpired) {
       if (audioRef.current) audioRef.current.src = "";
@@ -187,7 +187,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const nextId = audioList[nextIndex]?.id || "";
     if (nextId) handleId(nextId);
     setCurrentAudioIndex(nextIndex);
-  }, [audioList, currentAudioIndex, isShuffling, handleId, batchFetchedAt]);
+  }, [
+    audioList,
+    currentAudioIndex,
+    isShuffling,
+    handleId,
+    batchFetchedAt,
+    handleSkipCount,
+  ]);
 
   const handleNextRef = useRef(handleNext);
   useEffect(() => {
@@ -251,7 +258,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const tryPlay = () => {
       if (cancelled) return;
       el.play().catch((err) => {
-        // console.error("Play failed:", err);
+        console.error("Play failed:", err);
       });
     };
 
@@ -340,14 +347,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
       if (freshBatch.length > 0) {
         const updatedCurrentTrack = freshBatch.find(
-          (t: any) => (t.id || t._id) === trackId,
+          (t: AudioItem) => (t.id || t._id) === trackId,
         );
 
         setAudioList(freshBatch);
 
         if (updatedCurrentTrack) {
           const newIdx = freshBatch.findIndex(
-            (t: any) => (t.id || t._id) === trackId,
+            (t: AudioItem) => (t.id || t._id) === trackId,
           );
           setCurrentAudioIndex(newIdx);
 
@@ -439,7 +446,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-  }, [id, audioList.length]);
+}, [id, audioList, currentAudioIndex, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {

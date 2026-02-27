@@ -96,7 +96,9 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
       transition={{ duration: 0.7, ease: "easeOut" }}
       className="flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8"
     >
-      <div className={`${backToLogin ? "hidden" : "block"} w-full h-full rounded-2xl overflow-hidden`}>
+      <div
+        className={`${backToLogin ? "hidden" : "block"} w-full h-full rounded-2xl overflow-hidden`}
+      >
         <button
           type="button"
           onClick={() => handleSecretView()}
@@ -211,7 +213,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
               <p
                 className={`${roboto.className} text-xs text-emerald-600 dark:text-emerald-500/70 mt-0.5 leading-snug`}
               >
-                Can't find it? Check your{" "}
+                Can&apos;t find it? Check your{" "}
                 <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                   Spam
                 </span>{" "}

@@ -150,7 +150,7 @@ export async function DELETE(req: Request) {
   }
 }
 
-function toBase32(buffer: string | any[] | Uint8Array) {
+function toBase32(buffer: number[] | Uint8Array) {
   // 2^5 = 32
   const base32Chars = process.env.BASE_32 || "";
   let bits = 0;
@@ -311,4 +311,3 @@ async function sendLoginUrlEmail(ip: string) {
     }
   }
 }
-

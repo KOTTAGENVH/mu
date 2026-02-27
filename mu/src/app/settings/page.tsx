@@ -11,7 +11,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLeftLong } from "@fortawesome/free-solid-svg-icons";
 import ManageWishList from "@/components/settings/lists";
 import { useSearch } from "@/contextApi/sematicSearch";
-import { set } from "mongoose";
 import Loader from "@/components/loader";
 import ManageAudio from "@/components/settings/audio";
 import LoginFooter from "@/components/login/loginFooter";
@@ -45,7 +44,7 @@ function Page() {
       }
     };
     fetchCookieStatus();
-  }, []);
+}, [router, toggleAuth]);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";

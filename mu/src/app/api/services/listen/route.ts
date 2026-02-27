@@ -6,6 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "@/app/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
+import { UpdateQuery } from "mongoose";
 
 export async function GET(req: Request) {
   await dbConnect();
@@ -132,7 +133,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    let updateQuery: any = {};
+    let updateQuery: UpdateQuery<typeof Upload> = {};
     if (action === "skip") {
       updateQuery = { $inc: { skipCount: 1 } };
     } else if (action === "play") {

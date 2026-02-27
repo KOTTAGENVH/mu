@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faList, faSpinner, faUpload } from "@fortawesome/free-solid-svg-icons";
 import Loader from "./loader";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
-import { a } from "framer-motion/client";
 import { uploadSong } from "@/app/api/client/services/audio/api";
 import WishListMoadal from "./listModal";
 

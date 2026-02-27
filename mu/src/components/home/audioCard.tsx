@@ -7,7 +7,6 @@ interface Audio {
   currentPlayingId: string;
   name: string;
   artist: string;
-  favourite: boolean;
   handleId: (id: string) => void;
 }
 
@@ -16,7 +15,6 @@ export default function AudioCard({
   currentPlayingId,
   name,
   artist,
-  favourite,
   handleId,
 }: Audio) {
   const isCurrentlyPlaying = currentPlayingId === idPass;

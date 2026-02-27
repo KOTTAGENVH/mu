@@ -1,8 +1,7 @@
 "use client";
 import AudioList from "@/components/home/audioList";
 import Header from "@/components/header";
-import AudioPlayerModal from "@/components/home/audioPlayerModal";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { verifyCookie } from "../api/client/services/auth/api";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contextApi/auth";
@@ -38,7 +37,7 @@ function Page() {
       }
     };
     fetchCookieStatus();
-  }, []);
+  }, [router, toggleAuth]);
 
   return (
     <div

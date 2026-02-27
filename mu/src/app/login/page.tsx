@@ -52,7 +52,7 @@ function Page() {
       }
     };
     fetchAuthStatus();
-  }, []);
+}, [router, toggleAuth]);
 
   //Validate token
   useEffect(() => {

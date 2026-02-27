@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import NextImage from "next/image";
 
-const total_frames = 417;
+const total_frames = 415;
 const file_ext = "png";
 const frame_path = "/web";
 const scroll_length_vh = 450;
@@ -161,18 +161,18 @@ export default function ScrollIntro() {
         window.cancelIdleCallback(idleId as number);
       else clearTimeout(idleId);
     };
-  }, []);
+  }, [ensureLoaded]);
 
   useEffect(() => {
     if (firstFrameLoaded && progress === 0) {
       drawFrame(1);
     }
-  }, [firstFrameLoaded, progress]);
+  }, [firstFrameLoaded, progress, drawFrame]);
 
   useEffect(() => {
     preloadWindow(frameIndex, 12);
     drawFrame(frameIndex);
-  }, [frameIndex]);
+  }, [frameIndex, drawFrame, preloadWindow]);
 
   useEffect(() => {
     function onScroll() {

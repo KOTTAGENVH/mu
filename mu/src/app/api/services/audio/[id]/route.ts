@@ -7,6 +7,22 @@ import { s3Client } from "@/app/lib/r2";
 import { validateCookie } from "../../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 
+export interface IPopulatedTrack {
+  id: string;
+  name: string;
+  artist: string;
+  fileUrl: string;
+  favourite: boolean;
+  category: {
+    id: string;
+    name: string;
+  };
+  playCount: number;
+  skipCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -28,10 +44,10 @@ export async function GET(
       );
     }
     const { id } = await params;
-    const track = await Upload.findOne({ id: id })
+    const track = (await Upload.findOne({ id: id })
       .select("-_id")
       .populate("category")
-      .lean();
+      .lean()) as unknown as IPopulatedTrack;
 
     if (!track) {
       return NextResponse.json(
@@ -42,7 +58,7 @@ export async function GET(
 
     const getCommand = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: (track as any).fileUrl,
+      Key: track.fileUrl,
     });
     const signedUrl = await getSignedUrl(s3Client, getCommand, {
       expiresIn: 3600,
