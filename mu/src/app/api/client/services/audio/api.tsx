@@ -172,9 +172,24 @@ export async function streamSongById(id: string) {
     headers: { "Content-Type": "application/json" },
   });
   if (response.ok) {
-  return response.json();
+    return response.json();
   } else {
     const errorData = await response.json();
     throw new Error(errorData.message || "Failed to stream song");
+  }
+}
+
+//Update skip count for a song
+export async function updateSkipCount(id: string, action: "skip" | "play") {
+  const response = await fetch("/api/services/listen", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackId: id, action }),
+  });
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to update skip count");
   }
 }

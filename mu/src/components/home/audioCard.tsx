@@ -1,9 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import {
-  Pause,
-  Play,
-} from "lucide-react";
+import React from "react";
+import { Pause, Play } from "lucide-react";
 
 interface Audio {
   idPass: string;
@@ -22,17 +19,14 @@ export default function AudioCard({
   favourite,
   handleId,
 }: Audio) {
-  const [idPlaying, setIdPlaying] = useState("");
   const isCurrentlyPlaying = currentPlayingId === idPass;
 
   // Play/Pause handler
   const handlePlay = () => {
-    if (idPlaying === idPass) {
-      setIdPlaying("");
+    if (isCurrentlyPlaying) {
       handleId("");
       return;
     } else {
-      setIdPlaying(idPass);
       handleId(idPass);
     }
   };

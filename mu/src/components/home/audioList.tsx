@@ -1,10 +1,5 @@
 "use client";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMusic, faTimes } from "@fortawesome/free-solid-svg-icons";
@@ -188,6 +183,18 @@ function AudioList() {
           )}
         </div>
         <button
+          title="Search"
+          className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          aria-hidden="true"
+          onClick={() => {
+            fetchAudio(search, "");
+          }}
+        >
+          <Search className="w-4 h-4 stroke-[3]" />
+        </button>
+      </div>
+      <div className="flex flex-row flex-wrap items-center gap-4 mt-4 w-full justify-center">
+        <button
           data-filter-button
           title="Category filter"
           className="md:hidden inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
@@ -201,7 +208,7 @@ function AudioList() {
         </button>
         <button
           title="Search"
-          className="flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          className="md:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
           aria-hidden="true"
           onClick={() => {
             fetchAudio(search, "");
@@ -210,6 +217,7 @@ function AudioList() {
           <Search className="w-4 h-4 stroke-[3]" />
         </button>
       </div>
+
       {categoryListClicked && (
         <div
           ref={dropdownRef}
@@ -218,6 +226,7 @@ function AudioList() {
         >
           <button
             onClick={() => {
+              setCurrentPage(1);
               setSelectedCategory("");
               fetchAudio("", "");
               setCategoryListClicked(false);
@@ -234,6 +243,7 @@ function AudioList() {
             <button
               key={cat.id}
               onClick={() => {
+                setCurrentPage(1);
                 setSelectedCategory(cat?.id);
                 fetchAudio("", cat?.id);
                 setCategoryListClicked(false);
@@ -283,7 +293,7 @@ function AudioList() {
 
       <div
         ref={listRef}
-        className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
+        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
         {allAudio &&
           allAudio.length > 0 &&
@@ -314,6 +324,10 @@ function AudioList() {
           </button>
         </div>
       )}
+      <div
+        className="h-56 md:h-48 lg:h-40 w-full shrink-0 pointer-events-none"
+        aria-hidden="true"
+      />
       <AudioPlayerModal
         id={id!}
         handleId={(id) => {

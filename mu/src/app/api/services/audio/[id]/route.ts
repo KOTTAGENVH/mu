@@ -9,7 +9,7 @@ import { isAllowed } from "@/app/helper/origin_helper";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   await dbConnect();
 
@@ -27,8 +27,8 @@ export async function GET(
         { status: 401 },
       );
     }
-
-    const track = await Upload.findOne({ id: params.id })
+    const { id } = await params;
+    const track = await Upload.findOne({ id: id })
       .select("-_id")
       .populate("category")
       .lean();

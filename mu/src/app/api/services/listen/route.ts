@@ -23,12 +23,13 @@ export async function GET(req: Request) {
         { status: 401 },
       );
     }
+
     const { searchParams } = new URL(req.url);
     const previousArtist = searchParams.get("previousArtist");
 
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
-    const candidates = await Upload.aggregate([
+    let candidates = await Upload.aggregate([
       {
         $match: {
           $or: [
@@ -41,57 +42,135 @@ export async function GET(req: Request) {
       { $sample: { size: 20 } },
     ]);
 
-    if (!candidates.length) {
-      return NextResponse.json(
-        { error: "No available music" },
-        { status: 404 },
-      );
+    if (!candidates || candidates.length === 0 || candidates.length < 20) {
+      candidates = await Upload.aggregate([{ $sample: { size: 20 } }]);
     }
 
-    let bestCandidate = candidates[0];
-    let highestScore = -Infinity;
-
-    candidates.forEach((track) => {
+    const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
 
-      if (track.favourite) score += 20;
-      score += (track.playCount || 0) * 0.5;
-      score -= (track.skipCount || 0) * 2;
+      const playBonus = Math.min((track.playCount || 0) * 0.5, 10);
+      score += playBonus;
+
+      const skipPenalty = Math.min((track.skipCount || 0) * 2, 10);
+      score -= skipPenalty;
+
+      if (track.favourite) score += 5;
 
       if (previousArtist && track.artist === previousArtist) {
-        score -= 50;
+        score -= 20;
       }
 
-      if (score > highestScore) {
-        highestScore = score;
-        bestCandidate = track;
-      }
+      return { ...track, score };
     });
 
-    await Upload.updateOne(
-      { _id: bestCandidate._id },
-      {
-        $set: { lastPlayedAt: new Date() },
-        $inc: { playCount: 1 },
-      },
+    scoredCandidates.sort((a, b) => b.score - a.score);
+
+    const candidateIds = scoredCandidates.map((track) => track._id);
+    await Upload.updateMany(
+      { _id: { $in: candidateIds } },
+      { $set: { lastPlayedAt: new Date() } },
     );
 
-    const getCommand = new GetObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: bestCandidate.fileUrl,
-    });
+    const queue = await Promise.all(
+      scoredCandidates.map(async (track) => {
+        const getCommand = new GetObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME,
+          Key: track.fileUrl,
+        });
 
-    const signedUrl = await getSignedUrl(s3Client, getCommand, {
-      expiresIn: 3600,
-    });
-    bestCandidate.fileUrl = signedUrl;
-    delete bestCandidate._id;
+        const signedUrl = await getSignedUrl(s3Client, getCommand, {
+          expiresIn: 3600,
+        });
 
-    return NextResponse.json(bestCandidate);
+        track.fileUrl = signedUrl;
+
+        delete track._id;
+        delete track.score;
+
+        return track;
+      }),
+    );
+
+    return NextResponse.json({
+      success: true,
+      uploads: queue,
+    });
   } catch (error: unknown) {
     console.error("Error in GET /listen:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch music" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(req: Request) {
+  await dbConnect();
+
+  try {
+    if (!isAllowed(req)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    // Validate Cookie
+    const validationResult = await validateCookie(req);
+    if (!validationResult.valid) {
+      console.log("Validation failed: ", validationResult.error);
+      return NextResponse.json(
+        { success: false, message: validationResult.error },
+        { status: 401 },
+      );
+    }
+
+    const body = await req.json();
+    const { trackId, action } = body;
+
+    if (!trackId || !action) {
+      return NextResponse.json(
+        { success: false, message: "Missing trackId or action" },
+        { status: 400 },
+      );
+    }
+
+    let updateQuery: any = {};
+    if (action === "skip") {
+      updateQuery = { $inc: { skipCount: 1 } };
+    } else if (action === "play") {
+      updateQuery = { $inc: { playCount: 1 } };
+    } else {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid action. Must be 'skip' or 'play'.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const updatedTrack = await Upload.findOneAndUpdate(
+      { id: trackId },
+      updateQuery,
+      {
+        new: true,
+      },
+    );
+
+    if (!updatedTrack) {
+      return NextResponse.json(
+        { success: false, message: "Track not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Track ${action} count updated successfully`,
+    });
+  } catch (error: unknown) {
+    console.error("Error in PATCH route:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to update track statistics" },
       { status: 500 },
     );
   }
