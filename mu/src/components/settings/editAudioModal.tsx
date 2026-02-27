@@ -1,6 +1,4 @@
-import {
-  getAllCategories,
-} from "@/app/api/client/services/categories/api";
+import { getAllCategories } from "@/app/api/client/services/categories/api";
 import React, { useState, useEffect, useCallback } from "react";
 import Loader from "../loader";
 import { getSongById, updateSong } from "@/app/api/client/services/audio/api";
@@ -112,7 +110,7 @@ export default function EditAudioModal({
 
       setIsLoaded(true);
 
-      const updates: any = {};
+      const updates: Record<string, string> = {};
 
       if (newName.trim()) updates.name = newName;
       if (newArtist.trim()) updates.artist = newArtist;

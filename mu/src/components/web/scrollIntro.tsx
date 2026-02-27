@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import NextImage from "next/image";
 
 const total_frames = 417;
@@ -67,7 +73,7 @@ export default function ScrollIntro() {
     return idx0 + 1;
   }, [progress]);
 
-  function drawFrame(idx1: number) {
+  const drawFrame = useCallback((idx1: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -99,37 +105,43 @@ export default function ScrollIntro() {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, dx, dy, sw, sh);
-  }
+  }, []);
 
-  function ensureLoaded(idx1: number) {
-    const i = idx1 - 1;
-    if (loadedRef.current[i]) return;
+  const ensureLoaded = useCallback(
+    (idx1: number) => {
+      const i = idx1 - 1;
+      if (loadedRef.current[i]) return;
 
-    const img = new Image();
-    img.src = frameUrl(idx1);
-    img.decoding = "async";
-    img.onload = () => {
-      loadedRef.current[i] = true;
+      const img = new Image();
+      img.src = frameUrl(idx1);
+      img.decoding = "async";
+      img.onload = () => {
+        loadedRef.current[i] = true;
+        imagesRef.current[i] = img;
+
+        if (idx1 === 1) {
+          setFirstFrameLoaded(true);
+        }
+
+        if (idx1 === frameIndex) drawFrame(idx1);
+      };
+      img.onerror = () => {
+        loadedRef.current[i] = false;
+      };
+
       imagesRef.current[i] = img;
+    },
+    [drawFrame],
+  );
 
-      if (idx1 === 1) {
-        setFirstFrameLoaded(true);
-      }
-
-      if (idx1 === frameIndex) drawFrame(idx1);
-    };
-    img.onerror = () => {
-      loadedRef.current[i] = false;
-    };
-
-    imagesRef.current[i] = img;
-  }
-
-  function preloadWindow(centerIdx1: number, radius = 10) {
-    const start = Math.max(1, centerIdx1 - radius);
-    const end = Math.min(total_frames, centerIdx1 + radius);
-    for (let f = start; f <= end; f++) ensureLoaded(f);
-  }
+  const preloadWindow = useCallback(
+    (centerIdx1: number, radius = 10) => {
+      const start = Math.max(1, centerIdx1 - radius);
+      const end = Math.min(total_frames, centerIdx1 + radius);
+      for (let f = start; f <= end; f++) ensureLoaded(f);
+    },
+    [ensureLoaded],
+  );
 
   useEffect(() => {
     ensureLoaded(1);

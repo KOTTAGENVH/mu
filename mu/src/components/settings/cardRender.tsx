@@ -5,7 +5,6 @@ import {
   faHeart,
   faMagnifyingGlass,
   faShieldHalved,
-  faRightFromBracket,
   faMusic,
 } from "@fortawesome/free-solid-svg-icons";
 

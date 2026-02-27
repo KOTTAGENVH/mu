@@ -63,12 +63,6 @@ function StatusDisplay() {
   const r2Percent = ((r2Stats.used / r2Stats.total) * 100).toFixed(1);
 
   useEffect(() => {
-    handleDatabaseStatus();
-    handleStorageStatus();
-    handleLeastListened();
-  }, []);
-
-  useEffect(() => {
     if (!dbCanvasRef.current) return;
     if (dbChartInstance.current) {
       dbChartInstance.current.destroy();
@@ -110,7 +104,7 @@ function StatusDisplay() {
         dbChartInstance.current.destroy();
       }
     };
-  }, [dbStats]);
+  }, [dbStats, dbFree]);
 
   useEffect(() => {
     if (!r2CanvasRef.current) return;
@@ -155,7 +149,7 @@ function StatusDisplay() {
         r2ChartInstance.current.destroy();
       }
     };
-  }, [r2Stats]);
+  }, [r2Stats, r2Free]);
 
   //get data for r2 storage status
   const handleStorageStatus = useCallback(async () => {
@@ -233,6 +227,12 @@ function StatusDisplay() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    handleDatabaseStatus();
+    handleStorageStatus();
+    handleLeastListened();
+  }, [handleDatabaseStatus, handleStorageStatus, handleLeastListened]);
 
   //delete least listened audios
   const handleDeleteLeastListened = async () => {
@@ -434,7 +434,7 @@ function StatusDisplay() {
                     <p className="text-sm text-slate-600 dark:text-slate-400">
                       {searchQuery
                         ? "No matching songs found."
-                        : "No wish songs found."}
+                        : "No least listened songs found."}
                     </p>
                   </div>
                 )}

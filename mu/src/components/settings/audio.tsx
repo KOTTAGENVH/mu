@@ -11,7 +11,6 @@ import Loader from "@/components/loader";
 import { deleteSong, getAllSongs } from "@/app/api/client/services/audio/api";
 import { useSearch } from "@/contextApi/sematicSearch";
 import EditAudioModal from "./editAudioModal";
-import { inter } from "@/app/fonts";
 import { ArrowLeftCircleIcon, ArrowRightCircleIcon } from "lucide-react";
 
 interface AudioList {
@@ -77,7 +76,7 @@ function ManageAudio() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, sematicSearch]);
 
   useEffect(() => {
     fetchAudios();
@@ -133,7 +132,7 @@ function ManageAudio() {
     const maxVisiblePages = 3;
 
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
