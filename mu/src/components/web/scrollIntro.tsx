@@ -21,6 +21,16 @@ const quotes = [
   "Private by design.",
 ];
 
+declare global {
+  interface Window {
+    requestIdleCallback: (
+      callback: IdleRequestCallback,
+      options?: IdleRequestOptions,
+    ) => number;
+    cancelIdleCallback: (handle: number) => void;
+  }
+}
+
 function pad5(n: number) {
   return String(n).padStart(5, "0");
 }
@@ -30,8 +40,8 @@ function frameUrl(frameIndex1Based: number) {
 }
 
 export default function ScrollIntro() {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
     Array(total_frames).fill(null),
@@ -126,7 +136,7 @@ export default function ScrollIntro() {
 
     const idle = (cb: () => void) => {
       if ("requestIdleCallback" in window)
-        return (window as any).requestIdleCallback(cb);
+        return window.requestIdleCallback(cb);
       return setTimeout(cb, 50);
     };
 
@@ -136,7 +146,7 @@ export default function ScrollIntro() {
 
     return () => {
       if ("cancelIdleCallback" in window)
-        (window as any).cancelIdleCallback(idleId);
+        window.cancelIdleCallback(idleId as number);
       else clearTimeout(idleId);
     };
   }, []);
@@ -206,7 +216,7 @@ export default function ScrollIntro() {
         }
       `}</style>
       <section
-        ref={sectionRef as any}
+        ref={sectionRef}
         style={{
           height: `${scroll_length_vh}vh`,
           background: "#000",

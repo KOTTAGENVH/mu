@@ -1,5 +1,4 @@
 import {
-  editCategory,
   getAllCategories,
 } from "@/app/api/client/services/categories/api";
 import React, { useState, useEffect, useCallback } from "react";

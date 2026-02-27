@@ -22,7 +22,7 @@ import {
   storageStatus,
 } from "@/app/api/client/services/audio/api";
 import Loader from "@/components/loader";
-import { LucideTrash, Trash2 } from "lucide-react";
+import { LucideTrash } from "lucide-react";
 
 export interface Candidate {
   id: string;

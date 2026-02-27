@@ -78,7 +78,6 @@ export async function GET(req: Request) {
           Bucket: process.env.R2_BUCKET_NAME,
           Key: track.fileUrl,
         });
-
         const signedUrl = await getSignedUrl(s3Client, getCommand, {
           expiresIn: 3600,
         });

@@ -49,7 +49,7 @@ interface AudioPlayerModalProps {
 }
 
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoadingSync] = useState(false);
   const [audioList, setAudioList] = useState<AudioItem[]>([]);
   const [currentAudioIndex, setCurrentAudioIndex] = useState<number>(0);
   const [isLooping, setIsLooping] = useState<boolean>(false);
@@ -61,25 +61,24 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const playerRef = useRef<HTMLDivElement | null>(null);
   const [pause, setPause] = useState<boolean>(true);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const isRecovering = useRef(false);
+  const isLoadingRef = useRef(false);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
 
-  const fetchStreamAudio = useCallback(async () => {
+  const fetchStreamAudio = useCallback(async (forceRefresh = false) => {
+    if (isLoadingRef.current) return;
     try {
-      setIsLoading(true);
+      setIsLoadingSync(true);
       const response = await streamSongs();
       const data = await response;
 
       if (data && data.success) {
-        setAudioList((prev) => (prev.length === 0 ? data.uploads : prev));
-        if (data.uploads.length > 0) {
-          setPause(false);
-        }
+        setAudioList((prev) =>
+          prev.length === 0 || forceRefresh ? data.uploads : prev,
+        );
         setBatchFetchedAt(Date.now());
 
-        if (data.uploads.length > 0) {
-          setPause(false);
-        }
-        return data.uploads;
+        return data;
       } else {
         setAudioList([]);
         return [];
@@ -88,7 +87,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       // console.error("Failed to fetch streaming audios", error);
       alert("An error occurred while fetching streaming audios.");
     } finally {
-      setIsLoading(false);
+      setIsLoadingSync(false);
+      isLoadingRef.current = false;
     }
   }, []);
 
@@ -99,12 +99,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const fetchStreamAudioById = useCallback(
     async (id: string): Promise<AudioList | null> => {
       try {
-        setIsLoading(true);
+        setIsLoadingSync(true);
         const response = await streamSongById(id);
         const data = await response;
 
         if (data && data.success) {
-          return data.uploads?.[0] ?? null;
+          return data.track ?? null;
         } else {
           return null;
         }
@@ -113,7 +113,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         alert("An error occurred while fetching streaming audios.");
         return null;
       } finally {
-        setIsLoading(false);
+        setIsLoadingSync(false);
       }
     },
     [],
@@ -134,6 +134,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   );
 
   const handleNext = useCallback(async () => {
+    if (isRecovering.current) return;
     const el = audioRef.current;
     if (el && el.duration > 0) {
       const percentPlayed = el.currentTime / el.duration;
@@ -161,28 +162,29 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       return;
     }
 
-    let nextIndex = currentAudioIndex + 1;
     const isBatchExpired = Date.now() - batchFetchedAt > 3000000;
+    let nextIndex = currentAudioIndex + 1;
 
     if (nextIndex >= audioList.length || isBatchExpired) {
-      setIsLoading(true);
+      if (audioRef.current) audioRef.current.src = "";
+      setIsLoadingSync(true);
       const response = await streamSongs();
       const moreTracks = Array.isArray(response) ? response : response?.uploads;
 
       if (moreTracks && moreTracks.length > 0) {
         setAudioList((prev) => [...prev, ...moreTracks]);
 
-        const nextId = moreTracks[0]?.id || moreTracks[0]?._id || "";
+        const nextId = moreTracks[0]?.id || "";
         if (nextId) handleId(nextId);
         setCurrentAudioIndex(nextIndex);
       } else {
         setCurrentAudioIndex(0);
       }
-      setIsLoading(false);
+      setIsLoadingSync(false);
       return;
     }
 
-    const nextId = audioList[nextIndex]?.id || audioList[nextIndex]?._id || "";
+    const nextId = audioList[nextIndex]?.id || "";
     if (nextId) handleId(nextId);
     setCurrentAudioIndex(nextIndex);
   }, [audioList, currentAudioIndex, isShuffling, handleId, batchFetchedAt]);
@@ -201,8 +203,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const onLoaded = () => setDuration(el.duration || 0);
     const onDurationChange = () => setDuration(el.duration || 0);
     const onEnded = () => {
-      const currentTrackId =
-        audioList[currentAudioIndex]?.id || audioList[currentAudioIndex]?._id;
+      const currentTrackId = audioList[currentAudioIndex]?.id;
 
       if (currentTrackId) {
         handleSkipCount(currentTrackId, "play").catch(() => {});
@@ -233,7 +234,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
   }, [audioList, currentTrackUrl]);
 
-  // sync react with browsers audio engine
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -282,16 +282,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
     const nextIdx =
       currentAudioIndex === 0 ? audioList.length - 1 : currentAudioIndex - 1;
-    const nextId = audioList[nextIdx]?.id || audioList[nextIdx]?._id || "";
+    const nextId = audioList[nextIdx]?.id || "";
     if (nextId) handleId(nextId);
     setCurrentAudioIndex(nextIdx);
   }, [audioList, currentAudioIndex, handleId]);
 
   const handleAudio = () => {
-    const currentTrackId =
-      audioList[currentAudioIndex]?.id ||
-      audioList[currentAudioIndex]?._id ||
-      "";
+    const currentTrackId = audioList[currentAudioIndex]?.id || "";
     // if (!pause) {
     //   if (currentTrackId) handleId(currentTrackId);
     //   audioRef.current?.pause();
@@ -311,34 +308,78 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   };
 
   const handleAudioError = async () => {
+    if (isRecovering.current || isLoadingRef.current) return;
+
+    isRecovering.current = true;
+    isLoadingRef.current = true;
+    setIsLoadingSync(true);
+    setPause(true);
+
+    console.log(
+      "URL Expired. Terminating current audio stream and fetching fresh URLs...",
+    );
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+    }
+
     const currentTrack = audioList[currentAudioIndex];
     const trackId = currentTrack?.id || currentTrack?._id;
 
     if (!trackId) {
+      cleanupRecovery();
       handleNext();
       return;
     }
-    setIsLoading(true);
 
-    const freshTrack = await fetchStreamAudioById(trackId);
+    try {
+      const response = await streamSongs();
+      const freshBatch = response?.uploads || [];
 
-    if (freshTrack && freshTrack.fileUrl) {
-      setAudioList((prevList) => {
-        const newList = [...prevList];
-        newList[currentAudioIndex] = {
-          ...newList[currentAudioIndex],
-          fileUrl: freshTrack.fileUrl,
-        };
-        return newList;
-      });
+      if (freshBatch.length > 0) {
+        const updatedCurrentTrack = freshBatch.find(
+          (t: any) => (t.id || t._id) === trackId,
+        );
 
-      setPause(false);
-    } else {
+        setAudioList(freshBatch);
+
+        if (updatedCurrentTrack) {
+          const newIdx = freshBatch.findIndex(
+            (t: any) => (t.id || t._id) === trackId,
+          );
+          setCurrentAudioIndex(newIdx);
+
+          if (audioRef.current) {
+            audioRef.current.src = updatedCurrentTrack.fileUrl;
+            audioRef.current.load();
+          }
+        } else {
+          setCurrentAudioIndex(0);
+        }
+
+        setBatchFetchedAt(Date.now());
+
+        setTimeout(() => {
+          setPause(false);
+          cleanupRecovery();
+        }, 500);
+      } else {
+        throw new Error("Empty batch received");
+      }
+    } catch (error) {
+      console.error("Critical recovery failure:", error);
+      cleanupRecovery();
       handleNext();
     }
-    setIsLoading(false);
   };
 
+  const cleanupRecovery = () => {
+    isRecovering.current = false;
+    isLoadingRef.current = false;
+    setIsLoadingSync(false);
+  };
   useEffect(() => {
     const playExternalSong = async () => {
       if (!id) {
@@ -360,7 +401,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         setCurrentAudioIndex(existingIndex);
         setPause(false);
       } else {
-        setIsLoading(true);
+        setIsLoadingSync(true);
         const newTrack = await fetchStreamAudioById(id);
 
         if (newTrack) {
@@ -372,12 +413,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             fileUrl: newTrack.fileUrl,
             favourite: newTrack.favourite,
           };
+
+          let insertedIndex = 0;
           setAudioList((prev) => {
             const newList = [...prev];
             if (newList.length === 0) {
+              insertedIndex = 0;
               return [newTrackAsItem];
             } else {
-              newList.splice(currentAudioIndex + 1, 0, newTrackAsItem);
+              const insertAt = currentAudioIndex + 1;
+              newList.splice(insertAt, 0, newTrackAsItem);
+              insertedIndex = insertAt;
               return newList;
             }
           });
@@ -385,9 +431,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           setCurrentAudioIndex((prev) =>
             prev === audioList.length ? 0 : prev + 1,
           );
+          setCurrentAudioIndex(insertedIndex);
           setPause(false);
         }
-        setIsLoading(false);
+        setIsLoadingSync(false);
       }
     };
 
@@ -400,7 +447,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
   }, [currentAudioIndex, audioList]);
 
-  //mobile auto play issue fix
   useEffect(() => {
     if ("mediaSession" in navigator && audioList.length > 0) {
       const currentTrack = audioList[currentAudioIndex];
