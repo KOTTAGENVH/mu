@@ -200,37 +200,37 @@ function fromBase32(base32: string) {
   return Buffer.from(buffer);
 }
 
-export function generateSecret(length = 20) {
+function generateSecret(length = 20) {
   const randomBuffer = crypto.randomBytes(length);
   return toBase32(new Uint8Array(randomBuffer));
 }
 
-export function generateToken(secret: string) {
-  const key = fromBase32(secret);
-  const epoch = Math.floor(Date.now() / 1000.0);
-  const timeStep = 30;
-  const counter = Math.floor(epoch / timeStep);
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeUInt32BE(counter, 4);
+//  function generateToken(secret: string) {
+//   const key = fromBase32(secret);
+//   const epoch = Math.floor(Date.now() / 1000.0);
+//   const timeStep = 30;
+//   const counter = Math.floor(epoch / timeStep);
+//   const counterBuffer = Buffer.alloc(8);
+//   counterBuffer.writeUInt32BE(counter, 4);
 
-  const hmac = crypto.createHmac("sha1", key);
-  hmac.update(counterBuffer);
-  const digest = hmac.digest();
+//   const hmac = crypto.createHmac("sha1", key);
+//   hmac.update(counterBuffer);
+//   const digest = hmac.digest();
 
-  const offset = digest[digest.length - 1] & 0xf;
+//   const offset = digest[digest.length - 1] & 0xf;
 
-  const binary =
-    ((digest[offset] & 0x7f) << 24) |
-    ((digest[offset + 1] & 0xff) << 16) |
-    ((digest[offset + 2] & 0xff) << 8) |
-    (digest[offset + 3] & 0xff);
+//   const binary =
+//     ((digest[offset] & 0x7f) << 24) |
+//     ((digest[offset + 1] & 0xff) << 16) |
+//     ((digest[offset + 2] & 0xff) << 8) |
+//     (digest[offset + 3] & 0xff);
 
-  const otp = binary % 1000000;
+//   const otp = binary % 1000000;
 
-  return otp.toString().padStart(6, "0");
-}
+//   return otp.toString().padStart(6, "0");
+// }
 
-export function verifyToken(token: string, secret: string, window = 1) {
+function verifyToken(token: string, secret: string, window = 1) {
   const key = fromBase32(secret);
   const epoch = Math.floor(Date.now() / 1000.0);
   const timeStep = 30;
