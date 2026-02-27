@@ -42,7 +42,8 @@ function pad5(n: number) {
 }
 
 function frameUrl(frameIndex1Based: number) {
-  return `${frame_path}/mubynk-${pad5(frameIndex1Based + frame_offset)}.${file_ext}`;
+  const safeIndex = Math.min(frameIndex1Based, total_frames);
+  return `${frame_path}/mubynk-${pad5(safeIndex + frame_offset)}.${file_ext}`;
 }
 
 export default function ScrollIntro() {

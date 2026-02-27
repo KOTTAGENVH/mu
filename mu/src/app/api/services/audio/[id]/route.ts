@@ -64,7 +64,7 @@ export async function GET(
       expiresIn: 3600,
     });
 
-    (track as any).fileUrl = signedUrl;
+    track.fileUrl = signedUrl;
 
     return NextResponse.json({ success: true, track: track });
   } catch (error: unknown) {

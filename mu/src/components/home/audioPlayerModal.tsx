@@ -239,7 +239,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
     };
-  }, [audioList, currentTrackUrl]);
+  }, [audioList, currentTrackUrl, currentAudioIndex, handleSkipCount]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -446,7 +446,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-}, [id, audioList, currentAudioIndex, fetchStreamAudioById]);
+  }, [id, audioList, currentAudioIndex, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {

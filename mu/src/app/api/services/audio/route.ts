@@ -107,7 +107,11 @@ export async function POST(req: Request) {
         $facet: {
           metadata: [{ $count: "total" }],
           data: [
-            { $sort: { score: { $meta: "searchScore" as any } } },
+            {
+              $sort: {
+                score: { $meta: "searchScore" as unknown as "textScore" },
+              },
+            },
             { $skip: skip },
             { $limit: limitNumber },
             {
