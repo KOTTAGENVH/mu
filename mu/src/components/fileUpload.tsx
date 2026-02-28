@@ -6,7 +6,13 @@ import React, {
   useState,
 } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faList, faSpinner, faUpload } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronDown,
+  faList,
+  faSpinner,
+  faUpload,
+  faX,
+} from "@fortawesome/free-solid-svg-icons";
 import Loader from "./loader";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
 import { uploadSong } from "@/app/api/client/services/audio/api";
@@ -19,12 +25,14 @@ interface Category {
 
 const FileUpload: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [mp3Files, setMp3Files] = useState<File[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCategory, setCategory] = useState("");
   const [artistName, setArtistName] = useState("");
   const [wishListModal, setWishListModal] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const totalSizeMB = useMemo(() => {
     const totalBytes = mp3Files.reduce((acc, file) => acc + file.size, 0);
@@ -33,6 +41,29 @@ const FileUpload: React.FC = () => {
 
   const selectClass =
     "w-auto min-w-[160px] px-4 py-3 rounded-2xl border border-white/35 dark:border-white/20 bg-white/65 dark:bg-black/35 backdrop-blur-md text-slate-900 dark:text-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 flex items-center gap-2";
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!isDropdownOpen) return;
+
+      const target = event.target as Node;
+
+      if (
+        (dropdownRef.current && dropdownRef.current.contains(target)) ||
+        (event.target as HTMLElement).closest("[data-filter-button]")
+      ) {
+        return;
+      }
+
+      setIsDropdownOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // Function to process the MP3 files uploaded
   const processMP3Files = (files: File[]) => {
@@ -144,6 +175,22 @@ const FileUpload: React.FC = () => {
     fetchCategories();
   }, [fetchCategories]);
 
+  //Clear all states
+  const handleClearUpload = useCallback(() => {
+    setMp3Files([]);
+    setCategory("");
+    setArtistName("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  const selectedCategoryName = useMemo(() => {
+    const selected = categories.find((cat) => cat.id === isCategory);
+    return selected ? selected.name : "Select category…";
+  }, [isCategory, categories]);
+
   return (
     <div className="uploadRoot">
       <div className="uploadControls">
@@ -156,24 +203,64 @@ const FileUpload: React.FC = () => {
             <span className="text-sm">Loading...</span>
           </div>
         ) : (
-          <select
-            disabled={isLoading}
-            title="category"
-            value={isCategory}
-            className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="" disabled>
-              Select category…
-            </option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              disabled={isLoading}
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-auto min-w-[160px] px-4 py-3 flex items-center justify-between gap-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>{selectedCategoryName}</span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isDropdownOpen && (
+              <div
+                ref={dropdownRef}
+                className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2  w-60 md:w-96 h-auto max-h-60 overflow-y-auto
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+              >
+                {" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategory("");
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
+                    isCategory === ""
+                      ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                      : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                  } transition-colors duration-200`}
+                >
+                  Select category…
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setCategory(cat.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
+                      isCategory === cat.id
+                        ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                        : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                    } transition-colors duration-200`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         <input
+          disabled={isLoading}
           title="artist name"
           type="text"
           placeholder="Artist Name"
@@ -204,6 +291,15 @@ const FileUpload: React.FC = () => {
             onClick={() => handleUpload()}
           >
             <FontAwesomeIcon icon={faUpload} className={"w-4 h-4"} />
+          </button>
+          <button
+            disabled={isLoading}
+            title="Clear"
+            aria-label="Clear"
+            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-red-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
+            onClick={() => handleClearUpload()}
+          >
+            <FontAwesomeIcon icon={faX} className={"w-4 h-4"} />
           </button>
         </div>
       </div>
@@ -249,6 +345,7 @@ const FileUpload: React.FC = () => {
                 </div>
               )}
               <input
+                disabled={isLoading}
                 title="file"
                 type="file"
                 accept=".mp3"
