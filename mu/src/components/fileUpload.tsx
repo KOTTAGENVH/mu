@@ -42,6 +42,29 @@ const FileUpload: React.FC = () => {
   const selectClass =
     "w-auto min-w-[160px] px-4 py-3 rounded-2xl border border-white/35 dark:border-white/20 bg-white/65 dark:bg-black/35 backdrop-blur-md text-slate-900 dark:text-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 flex items-center gap-2";
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!isDropdownOpen) return;
+
+      const target = event.target as Node;
+
+      if (
+        (dropdownRef.current && dropdownRef.current.contains(target)) ||
+        (event.target as HTMLElement).closest("[data-filter-button]")
+      ) {
+        return;
+      }
+
+      setIsDropdownOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   // Function to process the MP3 files uploaded
   const processMP3Files = (files: File[]) => {
     if (files.length > 5) {
@@ -195,7 +218,12 @@ const FileUpload: React.FC = () => {
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute left-0 z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 justify-center w-60 md:w-96 h-auto max-h-60 overflow-y-auto bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-lg">
+              <div
+                ref={dropdownRef}
+                className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2  w-60 md:w-96 h-auto max-h-60 overflow-y-auto
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+              >
+                {" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -232,6 +260,7 @@ const FileUpload: React.FC = () => {
           </div>
         )}
         <input
+          disabled={isLoading}
           title="artist name"
           type="text"
           placeholder="Artist Name"
@@ -316,6 +345,7 @@ const FileUpload: React.FC = () => {
                 </div>
               )}
               <input
+                disabled={isLoading}
                 title="file"
                 type="file"
                 accept=".mp3"
