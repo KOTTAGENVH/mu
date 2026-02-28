@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Pause, Play } from "lucide-react";
+import { useMask } from "@/contextApi/mask";
 
 interface Audio {
   idPass: string;
@@ -17,6 +18,7 @@ export default function AudioCard({
   artist,
   handleId,
 }: Audio) {
+  const { maskStatus } = useMask();
   const isCurrentlyPlaying = currentPlayingId === idPass;
 
   // Play/Pause handler
@@ -50,10 +52,10 @@ export default function AudioCard({
         </div>
         <div className="min-w-0">
           <h3 className="text-sm text-black dark:text-white truncate">
-            {name}
+            {maskStatus ? "xxxx " : name}
           </h3>
           <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">
-            Artist: {artist}
+            Artist: {maskStatus ? "mubynk " : artist}
           </span>
         </div>
       </div>

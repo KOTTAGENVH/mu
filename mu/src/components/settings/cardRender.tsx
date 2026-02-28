@@ -6,6 +6,7 @@ import {
   faMagnifyingGlass,
   faShieldHalved,
   faMusic,
+  faMask,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface RenderProps {
@@ -38,6 +39,11 @@ function SettingCardRender({ onSettingSelect }: RenderProps) {
       id: 4,
       title: "Change Authenticator app",
       icon: faShieldHalved,
+    },
+    {
+      id: 6,
+      title: "Mask Songs",
+      icon: faMask,
     }
   ];
 
