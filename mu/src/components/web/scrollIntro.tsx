@@ -11,7 +11,7 @@ import NextImage from "next/image";
 
 const total_frames = 415;
 const file_ext = "png";
-const frame_path = "/web";
+const frame_path = process.env.NEXT_PUBLIC_R2_PUBLIC_BUCKET_IMG;
 const scroll_length_vh = 450;
 const frame_offset = 2;
 
@@ -114,6 +114,7 @@ export default function ScrollIntro() {
       if (loadedRef.current[i]) return;
 
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.src = frameUrl(idx1);
       img.decoding = "async";
       img.onload = () => {
