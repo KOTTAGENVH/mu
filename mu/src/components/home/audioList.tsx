@@ -221,7 +221,7 @@ function AudioList() {
       {categoryListClicked && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 justify-center w-60 md:w-96 h-auto max-h-60 overflow-y-auto
+          className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96 h-auto max-h-60 overflow-y-auto
     bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
         >
           <button
