@@ -7,12 +7,10 @@
 ```
 git clone https://github.com/KOTTAGENVH/mu
 ```
-
-
 - Navigate to frontend
-  ```
-  cd mu/mu
-  ```
+```
+cd mu/mu
+```
 - Install Dependencies
 ```
 pnpm i 
@@ -38,7 +36,7 @@ R2_BUCKET_NAME="YOUR_SECRET"
 ```
 - Run
 ```
-npm run dev
+pnpm run dev
 ```
 >
 
