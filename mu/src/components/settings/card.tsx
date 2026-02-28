@@ -1,3 +1,4 @@
+import { useMask } from "@/contextApi/mask";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,6 +13,7 @@ interface SettingCardProps {
 
 function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
   const { sematicSearch } = useSearch();
+  const { maskStatus } = useMask();
 
   const baseBtnClass =
     "relative flex flex-col items-center justify-center gap-2 h-32 w-32 p-3 rounded-2xl border-none cursor-pointer";
@@ -32,6 +34,11 @@ function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
       {id === 3 && (
         <span
           className={`${sematicSearch ? "bg-green-500 dark:bg-green-700" : "bg-red-500 dark:bg-red-700"} absolute top-2 right-2 text-xs font-mono text-white rounded-full px-2 py-0.5`}
+        ></span>
+      )}
+      {id === 6 && (
+        <span
+          className={`${maskStatus ? "bg-green-500 dark:bg-green-700" : "bg-red-500 dark:bg-red-700"} absolute top-2 right-2 text-xs font-mono text-white rounded-full px-2 py-0.5`}
         ></span>
       )}
     </button>
