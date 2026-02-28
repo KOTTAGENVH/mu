@@ -1,0 +1,232 @@
+
+:root {
+	--upload-bg: #cbd5e1; /* slate-300-ish */
+	--upload-fg: #0f172a; /* slate-900 */
+	--upload-card: rgba(255, 255, 255, 0.65);
+	--upload-card-strong: #e5e7eb;
+	--upload-border: rgba(255, 255, 255, 0.35);
+	--upload-accent: #06b6d4; /* cyan-500 */
+	--upload-shadow: rgba(8, 145, 178, 0.35);
+	--upload-btn: #f3f4f6;
+	--upload-btn-hover: #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--upload-bg: #020617; /* near slate-950 */
+		--upload-fg: #e5e7eb;
+		--upload-card: rgba(0, 0, 0, 0.35);
+		--upload-card-strong: #374151;
+		--upload-border: rgba(255, 255, 255, 0.18);
+		--upload-shadow: rgba(255, 255, 255, 0.12);
+		--upload-btn: #1f2937;
+		--upload-btn-hover: #374151;
+	}
+}
+
+/* If your theme toggler uses a .dark class on <html>, respect it too */
+html.dark {
+	--upload-bg: #020617;
+	--upload-fg: #e5e7eb;
+	--upload-card: rgba(0, 0, 0, 0.35);
+	--upload-card-strong: #374151;
+	--upload-border: rgba(255, 255, 255, 0.18);
+	--upload-shadow: rgba(255, 255, 255, 0.12);
+	--upload-btn: #1f2937;
+	--upload-btn-hover: #374151;
+}
+
+.uploadPage {
+	height: 100vh;
+	width: 100vw;
+	overflow: auto;
+	background: var(--upload-bg);
+	color: var(--upload-fg);
+}
+
+.uploadPageBody {
+	min-height: calc(100vh - 72px);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	margin: 8px;
+	padding: 8px;
+}
+
+.uploadRoot {
+	width: min(980px, 96vw);
+}
+
+.uploadControls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 16px;
+}
+
+.uploadSelect {
+	width: auto;
+	padding: 12px 16px;
+	border-radius: 16px;
+	border: 1px solid var(--upload-border);
+	background: var(--upload-card);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	color: var(--upload-fg);
+	outline: none;
+	cursor: pointer;
+}
+
+.uploadSelect:focus {
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+	border-color: rgba(59, 130, 246, 0.5);
+}
+
+.uploadFavBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	border-radius: 999px;
+	border: 1px solid var(--upload-border);
+	background: var(--upload-btn);
+	color: var(--upload-fg);
+	cursor: pointer;
+	transition: background 150ms ease, transform 80ms ease;
+}
+
+.uploadFavBtn:hover {
+	background: var(--upload-btn-hover);
+}
+
+.uploadFavBtn:active {
+	transform: scale(0.98);
+}
+
+.uploadFavIcon {
+	width: 16px;
+	height: 16px;
+	color: var(--upload-fg);
+}
+
+.uploadFavIconActive {
+	color: #ef4444;
+}
+
+.uploadDropzoneWrap {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 24px;
+}
+
+.uploadDropzone {
+	width: 100%;
+	min-height: 360px;
+	border-radius: 24px;
+	padding-top: 16px;
+	padding-bottom:16px;
+	border: 2px dashed var(--upload-accent);
+	background: rgba(255, 255, 255, 0.08);
+	box-shadow: 0 18px 40px var(--upload-shadow);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	cursor: pointer;
+	user-select: none;
+}
+
+.uploadDropzone:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.uploadIcon {
+	width: 72px;
+	height: 72px;
+	animation: upload-bounce 1.2s infinite;
+}
+
+@keyframes upload-bounce {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-10px); }
+}
+
+.uploadTitle {
+	font-size: 20px;
+	font-weight: 700;
+	padding: 12px;
+	max-width: 46ch;
+}
+
+@media (min-width: 768px) {
+	.uploadIcon {
+		width: 88px;
+		height: 88px;
+	}
+	.uploadTitle {
+		font-size: 24px;
+		padding: 16px;
+	}
+}
+
+.uploadFileCard {
+	width: 100%;
+	max-width: 760px;
+	margin-top: 16px;
+	padding: 16px;
+	border-radius: 14px;
+	background: var(--upload-card-strong);
+}
+
+.uploadFileCardTitle {
+	font-size: 18px;
+	font-weight: 700;
+	margin: 0 0 6px 0;
+}
+
+.uploadFileCardMeta {
+	margin: 0;
+	font-size: 14px;
+	opacity: 0.92;
+	word-break: break-word;
+}
+
+.uploadActions {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 16px 0 8px;
+}
+
+.uploadSubmitBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px 16px;
+	border-radius: 999px;
+	border: 1px solid var(--upload-border);
+	background: var(--upload-btn);
+	color: var(--upload-fg);
+	cursor: pointer;
+	transition: background 150ms ease, opacity 150ms ease;
+}
+
+.uploadSubmitBtn:hover {
+	background: var(--upload-btn-hover);
+}
+
+.uploadSubmitBtn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.uploadSubmitText {
+	font-size: 16px;
+	letter-spacing: 0.06em;
+}
+

@@ -18,9 +18,9 @@ function LoginFooter() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative bg-slate-900/40 dark:bg-slate-950/40 backdrop-blur-xl mt-auto"
+            className="relative bg-slate-900/40 dark:bg-slate-980/40 backdrop-blur-xl mt-auto"
         >
-            <div className="max-w-7xl mx-auto px-6 py-2">
+            <div className="mx-4 px-3 lg:mx-16 lg:px-6 py-2">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -28,14 +28,14 @@ function LoginFooter() {
                     className="pt-2 pb-2"
                 >
                     <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                        <p className={`${roboto.className} text-xs text-gray-400 dark:text-gray-500 cursor-pointer`}
+                        <p className={`${roboto.className} text-xs text-gray-800 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-400`}
                             onClick={() => window.open('https://nowenkottage.com', '_blank', 'noopener,noreferrer')}
                         >
                             © {currentYear} NowenKottage
                         </p>
 
                         <div className="flex items-center space-x-6">
-                            <span className={`${roboto.className} text-xs text-gray-400 dark:text-gray-500 cursor-pointer`}
+                            <span className={`${roboto.className} text-xs text-gray-800 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-400`}
                                 onClick={handleLegalClick}
                             >
                                 Term & Conditions

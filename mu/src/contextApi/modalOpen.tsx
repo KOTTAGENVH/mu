@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-// Define the type for the Modal context state
 interface ModalContextState {
   Modal: boolean;
   id: string;
@@ -15,7 +14,6 @@ interface ModalContextState {
   ) => void;
 }
 
-// Create the context with default values
 const ModalContext = createContext<ModalContextState>({
   Modal: false,
   id: "",
@@ -24,7 +22,6 @@ const ModalContext = createContext<ModalContextState>({
   toggleModal: () => {},
 });
 
-// Create a provider component
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -33,7 +30,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
 
-  // Toggle function to set the Modal passed
   const toggleModal = (
     newModal: boolean,
     newId: string,
@@ -53,5 +49,4 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Custom hook to use the Modal context
 export const useModal = () => useContext(ModalContext);
