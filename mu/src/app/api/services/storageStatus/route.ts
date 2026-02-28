@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { s3Client } from "@/app/lib/r2";
+import {
+  ListObjectsV2Command,
+  ListObjectsV2CommandOutput,
+} from "@aws-sdk/client-s3";
+import { s3Client, s3Client2 } from "@/app/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 
@@ -23,28 +26,50 @@ export async function GET(req: Request) {
     const r2_limit_gb = 10;
     const r2_limit_bytes = r2_limit_gb * 1024 * 1024 * 1024;
 
+    const bucketsConfig = [
+      { name: process.env.R2_BUCKET_NAME, client: s3Client },
+      { name: process.env.R2_IMG_BUCKET_NAME, client: s3Client2 },
+    ];
+
+    const bucketStats = await Promise.all(
+      bucketsConfig.map(async (config) => {
+        if (!config.name) return { size: 0, count: 0 };
+
+        let size = 0;
+        let count = 0;
+        let continuationToken: string | undefined = undefined;
+        let isTruncated = true;
+
+        while (isTruncated) {
+          const command = new ListObjectsV2Command({
+            Bucket: config.name,
+            ContinuationToken: continuationToken,
+          });
+
+          const response: ListObjectsV2CommandOutput =
+            await config.client.send(command);
+
+          if (response.Contents) {
+            for (const file of response.Contents) {
+              size += file.Size || 0;
+              count++;
+            }
+          }
+
+          isTruncated = response.IsTruncated ?? false;
+          continuationToken = response.NextContinuationToken;
+        }
+
+        return { size, count };
+      }),
+    );
+
     let totalSize = 0;
     let totalObjects = 0;
-    let continuationToken: string | undefined = undefined;
-    let isTruncated = true;
 
-    while (isTruncated) {
-      const command: ListObjectsV2Command = new ListObjectsV2Command({
-        Bucket: process.env.R2_BUCKET_NAME,
-        ContinuationToken: continuationToken,
-      });
-
-      const response = await s3Client.send(command);
-
-      if (response.Contents) {
-        for (const file of response.Contents) {
-          totalSize += file.Size || 0;
-          totalObjects++;
-        }
-      }
-
-      isTruncated = response.IsTruncated || false;
-      continuationToken = response.NextContinuationToken;
+    for (const stat of bucketStats) {
+      totalSize += stat.size;
+      totalObjects += stat.count;
     }
 
     const availableBytes = r2_limit_bytes - totalSize;
