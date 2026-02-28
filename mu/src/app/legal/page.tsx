@@ -64,6 +64,10 @@ const sections = [
         text: "The audio tracks provided within the application are for demonstration purposes. I do not claim ownership of third-party musical compositions unless explicitly stated. If you are a copyright holder and believe your content is used improperly, please contact me for immediate removal.",
       },
       {
+        label: "Visual Assets & Animations",
+        text: "Certain visual elements, such as the interactive smoke animation, are created using frames extracted from copyright-free video materials sourced from Pexels (original footage by Dan Cristian Pădureț). These are used in compliance with their free-use license.",
+      },
+      {
         label: "Third-Party Assets",
         text: "Icons and UI elements may utilize libraries such as Lucide React and Font Awesome. These assets remain the property of their respective creators.",
       },
