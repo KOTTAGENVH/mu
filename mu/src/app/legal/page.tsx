@@ -20,21 +20,39 @@ const sections = [
     title: "Introduction",
     items: [
       {
-        label: "Ownership",
-        text: 'Mu is created, owned, and operated by Nowen Kottage ("I," "me," or "my"). By using the Mu application ("the App" or "the Service"), you ("the User") agree to be bound by these Terms & Conditions.',
+        label: "Ownership & Scope",
+        text: 'Mu is a self-hosted audio platform created, owned, and operated by Nowen Kottage ("I," "me," or "my"). By using the Mu application ("the App" or "the Service"), you ("the User") agree to be bound by these Terms & Conditions.',
       },
       {
         label: "Acceptance of Terms",
         text: "If you do not agree with any part of these Terms & Conditions, please do not use the Mu application.",
       },
       {
-        label: "Scope",
-        text: "Mu is designed as a personal project for a better and pleasant audio listening experience. It is not intended for commercial use or redistribution of audio content.",
+        label: "Self-Hosted Environment",
+        text: "Mu is designed as a personal, self-hosted project for a pleasant audio listening experience. It is not a commercial product and is not intended for public redistribution of audio content.",
       },
     ],
   },
   {
     number: "02",
+    title: "Disclaimer of Warranties (No Warranty)",
+    items: [
+      {
+        label: 'Provided "As-Is"',
+        text: "This self-hosted platform is provided strictly on an 'AS IS' and 'AS AVAILABLE' basis, without warranties of any kind, either express or implied.",
+      },
+      {
+        label: "No Guarantee of Service",
+        text: "I do not warrant or guarantee that the service will be uninterrupted, secure, or error-free. I make no warranty regarding the permanent storage of audio files, user preferences, or server uptime.",
+      },
+      {
+        label: "Limitation of Liability",
+        text: "Under no circumstances shall I, Nowen Kottage, be held liable for any direct, indirect, incidental, or consequential damages, including but not limited to data loss, device issues, or server downtime arising from your use of this platform.",
+      },
+    ],
+  },
+  {
+    number: "03",
     title: "Intellectual Property",
     items: [
       {
@@ -47,12 +65,12 @@ const sections = [
       },
       {
         label: "Third-Party Assets",
-        text: "Icons and UI elements may utilize libraries such as Lucide React, Font Awesome. These assets remain the property of their respective creators.",
+        text: "Icons and UI elements may utilize libraries such as Lucide React and Font Awesome. These assets remain the property of their respective creators.",
       },
     ],
   },
   {
-    number: "03",
+    number: "04",
     title: "User Responsibilities",
     items: [
       {
@@ -61,21 +79,21 @@ const sections = [
       },
       {
         label: "Prohibited Actions",
-        text: "You may not attempt to manipulate audio streams, or flood the server with requests (DDoS).",
+        text: "You may not attempt to manipulate audio streams, bypass authentication, or flood the self-hosted server with excessive requests (DDoS).",
       },
       {
         label: "Fair Usage",
-        text: "While listening is free, excessive bandwidth usage via automated scripts or bots is prohibited to ensure service availability for all users.",
+        text: "Because this platform runs on limited self-hosted infrastructure, excessive bandwidth usage via automated scripts or bots is strictly prohibited to ensure the server remains stable.",
       },
     ],
   },
   {
-    number: "04",
+    number: "05",
     title: "Privacy & Data Usage",
     items: [
       {
         label: "Data Storage",
-        text: 'As of Mu version 3.0, user preferences (such as "Favorites") may be stored using local storage on your device or a secure database linked to your account.',
+        text: "User preferences and authentication tokens are stored on this self-hosted server and your local device. While basic security measures are in place, no guarantees of absolute data security are provided.",
       },
       {
         label: "Cookies",
@@ -88,7 +106,7 @@ const sections = [
     ],
   },
   {
-    number: "05",
+    number: "06",
     title: "Compatibility & Testing",
     meta: "Last reviewed: Feb 2026",
     items: [

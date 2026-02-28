@@ -1,4 +1,5 @@
-const allowedHosts = new Set(["localhost:3000","mu.nowenkottage.com","localhost:3001"]);
+const allowedHosts = new Set(["mu.nowenkottage.com"]);
+//"localhost:3000"
 
 export function normalizeOrigin(raw: string | null) {
   if (!raw) return null;
