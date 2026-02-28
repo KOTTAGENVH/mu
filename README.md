@@ -7,7 +7,7 @@
 ```
 git clone https://github.com/KOTTAGENVH/mu
 ```
-- Navigate to frontend
+- Navigate to project
 ```
 cd mu/mu
 ```
