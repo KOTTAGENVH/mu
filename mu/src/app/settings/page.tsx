@@ -14,11 +14,13 @@ import { useSearch } from "@/contextApi/sematicSearch";
 import Loader from "@/components/loader";
 import ManageAudio from "@/components/settings/audio";
 import LoginFooter from "@/components/login/loginFooter";
+import { useMask } from "@/contextApi/mask";
 
 function Page() {
   const router = useRouter();
   const { toggleAuth } = useAuth();
   const { toggleSearch, sematicSearch } = useSearch();
+  const { maskStatus, toggleMask } = useMask();
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +46,7 @@ function Page() {
       }
     };
     fetchCookieStatus();
-}, [router, toggleAuth]);
+  }, [router, toggleAuth]);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";
@@ -58,7 +60,7 @@ function Page() {
       return;
     }
     if (id === 4) {
-      setIsLoading(true); 
+      setIsLoading(true);
 
       try {
         const response = await deleteAccount();
@@ -80,6 +82,9 @@ function Page() {
         setIsLoading(false);
       }
       return;
+    }
+    if (id === 6) {
+      toggleMask(!maskStatus);
     }
     setActiveSetting(id);
   };
@@ -133,7 +138,7 @@ function Page() {
           {renderContent()}
         </div>
       )}
-      <LoginFooter/>
+      <LoginFooter />
     </div>
   );
 }

@@ -22,7 +22,8 @@ import {
   storageStatus,
 } from "@/app/api/client/services/audio/api";
 import Loader from "@/components/loader";
-import { LucideTrash } from "lucide-react";
+import { LucideTrash, Skull } from "lucide-react";
+import { useMask } from "@/contextApi/mask";
 
 export interface Candidate {
   id: string;
@@ -56,6 +57,7 @@ function StatusDisplay() {
   const [leastListened, setLeastListened] =
     useState<LeastListenedResponse | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { maskStatus } = useMask();
   const toGB = (bytes: number) => (bytes / 1024 ** 3).toFixed(2);
   const dbFree = dbStats.total - dbStats.used;
   const dbPercent = ((dbStats.used / dbStats.total) * 100).toFixed(1);
@@ -257,6 +259,27 @@ function StatusDisplay() {
     }
   };
 
+  //delete all audios
+  const handleDeleteAll = async () => {
+    try {
+      setIsLoading(true);
+      const response = await deleteLeastStreamedSongs(100);
+
+      const data = await response;
+      if (data?.success) {
+        setIsLoading(false);
+        handleLeastListened();
+      } else {
+        setIsLoading(false);
+        alert("Failed to delete all songs");
+      }
+    } catch (error) {
+      setIsLoading(false);
+      //   console.error("Error during database status check:", error);
+      alert("An error occurred while deleting all songs. Please try again.");
+    }
+  };
+
   //delete one audio by id
   const handleDelete = useCallback(
     async (id: string) => {
@@ -375,15 +398,24 @@ function StatusDisplay() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="text-sm flex-1 pl-10 pr-4 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
+                  className="text-sm flex-1 p-2 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
                   placeholder="Search least listened songs..."
                 />
                 <button
+                  aria-label="Delete Least Listened 30%"
                   onClick={() => handleDeleteLeastListened()}
                   title="Delete Least Listened 30%"
                   className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
                 >
                   <LucideTrash className="w-4 h-4" />
+                </button>
+                <button
+                  aria-label="Kill Switch"
+                  onClick={() => handleDeleteAll()}
+                  title="Kill Switch"
+                  className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
+                >
+                  <Skull className="w-4 h-4" />
                 </button>
               </div>
               <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2">
@@ -401,7 +433,7 @@ function StatusDisplay() {
                             className="text-sm font-medium text-black dark:text-white truncate"
                             title={list.name}
                           >
-                            {list.name}
+                            {maskStatus ? "xxxx" : list.name}
                           </p>
                         </div>
 

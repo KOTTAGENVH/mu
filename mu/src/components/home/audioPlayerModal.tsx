@@ -15,6 +15,7 @@ import {
   updateSkipCount,
   updateSong,
 } from "@/app/api/client/services/audio/api";
+import { useMask } from "@/contextApi/mask";
 
 interface Category {
   id: string;
@@ -49,6 +50,7 @@ interface AudioPlayerModalProps {
 }
 
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
+  const { maskStatus } = useMask();
   const [isLoading, setIsLoadingSync] = useState(false);
   const [audioList, setAudioList] = useState<AudioItem[]>([]);
   const [currentAudioIndex, setCurrentAudioIndex] = useState<number>(0);
@@ -551,12 +553,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 <h2
                   className={`${inter.className} text-xl font-bold text-black dark:text-white mb-1 tracking-tight truncate`}
                 >
-                  {audioList[currentAudioIndex]?.name}
+                  {maskStatus ? "xxxx" : audioList[currentAudioIndex]?.name}
                 </h2>
                 <p
                   className={`${roboto.className} text-md text-black/70 dark:text-white/70 font-medium truncate`}
                 >
-                  {audioList[currentAudioIndex]?.artist}
+                  {maskStatus ? "mubynk" : audioList[currentAudioIndex]?.artist}
                 </p>
               </>
             )}

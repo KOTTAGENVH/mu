@@ -12,6 +12,7 @@ import { deleteSong, getAllSongs } from "@/app/api/client/services/audio/api";
 import { useSearch } from "@/contextApi/sematicSearch";
 import EditAudioModal from "./editAudioModal";
 import { ArrowLeftCircleIcon, ArrowRightCircleIcon } from "lucide-react";
+import { useMask } from "@/contextApi/mask";
 
 interface AudioList {
   id: string;
@@ -37,6 +38,7 @@ function ManageAudio() {
   const [editAudioId, setEditAudioId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { sematicSearch } = useSearch();
+  const { maskStatus } = useMask();
 
   const baseBtnClass =
     "mt-20 w-12 h-12 inline-flex items-center justify-center rounded-full border-none cursor-pointer transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed";
@@ -253,10 +255,10 @@ function ManageAudio() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm text-black dark:text-white truncate">
-                    {audio.name}
+                    {maskStatus ? "xxxx" : audio.name}
                   </h3>
                   <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">
-                    Artist: {audio.artist}
+                    Artist: {maskStatus ? "mubynk" : audio.artist}
                   </span>
                 </div>
               </div>
