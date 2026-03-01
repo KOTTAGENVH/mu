@@ -65,6 +65,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const isRecovering = useRef(false);
   const isLoadingRef = useRef(false);
+  const retryCountRef = useRef(0);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
 
   const fetchStreamAudio = useCallback(async (forceRefresh = false) => {
@@ -87,7 +88,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       }
     } catch (error) {
       // console.error("Failed to fetch streaming audios", error);
-      alert("An error occurred while fetching streaming audios.");
+      alert("Error in fetchStreamAudio (Bulk fetch failed)");
     } finally {
       setIsLoadingSync(false);
       isLoadingRef.current = false;
@@ -112,7 +113,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       } catch (error) {
         // console.error("Failed to fetch streaming audios", error);
-        alert("An error occurred while fetching streaming audios.");
+        alert("Error in fetchStreamAudioById (Single fetch failed)");
         return null;
       } finally {
         setIsLoadingSync(false);
@@ -343,6 +344,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       return;
     }
 
+    if (retryCountRef.current > 3) {
+      alert("Unable to load audio. Please refresh the page.");
+      setPause(true);
+      cleanupRecovery();
+      return;
+    }
+    retryCountRef.current += 1;
+
     try {
       const response = await streamSongs();
       const freshBatch = response?.uploads || [];
@@ -389,6 +398,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     isLoadingRef.current = false;
     setIsLoadingSync(false);
   };
+
   useEffect(() => {
     const playExternalSong = async () => {
       if (!id) {
@@ -535,7 +545,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           ref={audioRef}
           src={audioList[currentAudioIndex]?.fileUrl || ""}
           loop={isLooping}
-          onPlay={() => setPause(false)}
+          onPlay={() => {
+            setPause(false);
+            retryCountRef.current = 0;
+          }}
           onPause={() => setPause(true)}
           onError={handleAudioError}
         />
