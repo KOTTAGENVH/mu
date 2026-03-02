@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
+import Category from "@/models/category";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "@/app/lib/r2";
@@ -46,7 +47,10 @@ export async function GET(
     const { id } = await params;
     const track = (await Upload.findOne({ id: id })
       .select("-_id")
-      .populate("category")
+      .populate({
+        path: "category",
+        model: Category, 
+      })
       .lean()) as unknown as IPopulatedTrack;
 
     if (!track) {
