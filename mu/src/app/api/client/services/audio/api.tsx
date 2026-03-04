@@ -152,8 +152,14 @@ export async function getSongById(id: string) {
 }
 
 //stream songs
-export async function streamSongs() {
-  const response = await fetch("/api/services/listen", {
+export async function streamSongs(lastArtist = "") {
+  let url = "/api/services/listen";
+
+  if (lastArtist) {
+    url += `?previousArtist=${encodeURIComponent(lastArtist)}`;
+  }
+
+  const response = await fetch(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
