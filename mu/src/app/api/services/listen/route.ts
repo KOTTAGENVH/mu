@@ -8,6 +8,7 @@ import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { UpdateQuery } from "mongoose";
 
+
 export async function GET(req: Request) {
   await dbConnect();
   try {
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
 
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
+    //get 20 random candidates that are not recently played
     let candidates = await Upload.aggregate([
       {
         $match: {
@@ -43,28 +45,38 @@ export async function GET(req: Request) {
       { $sample: { size: 20 } },
     ]);
 
+    //if tracks<20 get random 20 tracks
     if (!candidates || candidates.length === 0 || candidates.length < 20) {
       candidates = await Upload.aggregate([{ $sample: { size: 20 } }]);
     }
 
+    //Score each candidate to determine queue order
     const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
 
+      // Play Bonus: +0.5 per play (Capped at +10 points)
       const playBonus = Math.min((track.playCount || 0) * 0.5, 10);
       score += playBonus;
 
+      // Skip Penalty: -2.0 per skip (Capped at -10 points)
       const skipPenalty = Math.min((track.skipCount || 0) * 2, 10);
       score -= skipPenalty;
 
+      // Favorite Bonus: +5 points
       if (track.favourite) score += 5;
 
-      if (previousArtist && track.artist === previousArtist) {
+      // Variety Penalty: -20 points if it's the same artist as the last track
+      if (
+        previousArtist &&
+        track.artist.toLowerCase() === previousArtist.toLowerCase()
+      ) {
         score -= 20;
       }
 
       return { ...track, score };
     });
 
+    //Sort highest score first
     scoredCandidates.sort((a, b) => b.score - a.score);
 
     const candidateIds = scoredCandidates.map((track) => track._id);

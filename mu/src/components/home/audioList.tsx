@@ -146,6 +146,15 @@ function AudioList() {
     };
   }, [categoryListClicked]);
 
+  const handleSearchClear = async () => {
+    try {
+      setSearch("");
+      await fetchAudio("", "", isLoadMore.current);
+    } catch (error) {
+      alert("Sorry an error occurred on retrieving songs!");
+    }
+  };
+
   return (
     <div className="justify-center items-center w-auto h-auto mt-20 mx-4 px-3 lg:mx-16 lg:px-6">
       <div
@@ -175,7 +184,7 @@ function AudioList() {
 
           {search.length > 0 && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => handleSearchClear()}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 w-8 h-8 flex items-center justify-center cursor-pointer hover:text-red-600 transition-colors duration-200"
             >
               <FontAwesomeIcon icon={faTimes} />
