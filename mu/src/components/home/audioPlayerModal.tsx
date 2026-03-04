@@ -262,7 +262,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       if (cancelled) return;
       el.play().catch((err) => {
         alert("Audio Play failed an error occured!");
-        // console.error("Play failed:", err);
+        console.error("Play failed:", err);
       });
     };
 
