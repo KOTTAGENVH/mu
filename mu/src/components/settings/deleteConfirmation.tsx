@@ -1,9 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Loader from "../loader";
-import {
-  deleteLeastStreamedSongs,
-  deleteSong,
-} from "@/app/api/client/services/audio/api";
+import React, { useState, useEffect } from "react";
 
 interface DeleteSongProps {
   handleClose: () => void;
@@ -30,9 +25,6 @@ export default function DeleteSongModal({
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10);
   }, []);
-
-  const actionBtnClass =
-    "p-2 rounded-full border-none cursor-pointer transition-colors duration-200";
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-2xl border-none cursor-pointer";

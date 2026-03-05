@@ -24,7 +24,6 @@ import {
 import Loader from "@/components/loader";
 import { LucideTrash, Skull } from "lucide-react";
 import { useMask } from "@/contextApi/mask";
-import { deleteModel } from "mongoose";
 import DeleteSongModal from "./deleteConfirmation";
 
 export interface Candidate {
