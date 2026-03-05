@@ -85,6 +85,7 @@ function Page() {
     }
     if (id === 6) {
       toggleMask(!maskStatus);
+      return;
     }
     setActiveSetting(id);
   };

@@ -186,6 +186,25 @@ const FileUpload: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const isTypingInInput = e.target instanceof HTMLInputElement;
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleUpload();
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        if (!isTypingInInput) {
+          e.preventDefault();
+          handleClearUpload();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [handleUpload, handleClearUpload]);
+
   const selectedCategoryName = useMemo(() => {
     const selected = categories.find((cat) => cat.id === isCategory);
     return selected ? selected.name : "Select category…";
@@ -275,6 +294,7 @@ const FileUpload: React.FC = () => {
         </div>
         <div className="flex flex-row flex-wrap justify-center items-center gap-2">
           <button
+            type="button"
             disabled={isLoading}
             title="Wishlist"
             aria-label="Wishlist"
@@ -284,6 +304,7 @@ const FileUpload: React.FC = () => {
             <FontAwesomeIcon icon={faList} className={"w-4 h-4"} />
           </button>
           <button
+            type="submit"
             disabled={isLoading}
             title="Upload"
             aria-label="Upload"
@@ -293,6 +314,7 @@ const FileUpload: React.FC = () => {
             <FontAwesomeIcon icon={faUpload} className={"w-4 h-4"} />
           </button>
           <button
+            type="button"
             disabled={isLoading}
             title="Clear"
             aria-label="Clear"

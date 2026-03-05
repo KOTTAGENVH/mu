@@ -36,7 +36,6 @@ interface AudioList {
 
 export interface AudioItem {
   id?: string;
-  _id?: string;
   name: string;
   artist?: string;
   category: string;
@@ -65,13 +64,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const isRecovering = useRef(false);
   const isLoadingRef = useRef(false);
+  const retryCountRef = useRef(0);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
 
   const fetchStreamAudio = useCallback(async (forceRefresh = false) => {
     if (isLoadingRef.current) return;
     try {
       setIsLoadingSync(true);
-      const response = await streamSongs();
+      const lastSong = audioList.at(-1);
+      const response = await streamSongs(lastSong?.artist);
       const data = await response;
 
       if (data && data.success) {
@@ -87,7 +88,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       }
     } catch (error) {
       // console.error("Failed to fetch streaming audios", error);
-      alert("An error occurred while fetching streaming audios.");
+      alert("Error in fetchStreamAudio (Bulk fetch failed)");
     } finally {
       setIsLoadingSync(false);
       isLoadingRef.current = false;
@@ -112,7 +113,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       } catch (error) {
         // console.error("Failed to fetch streaming audios", error);
-        alert("An error occurred while fetching streaming audios.");
+        alert("Error in fetchStreamAudioById (Single fetch failed)");
         return null;
       } finally {
         setIsLoadingSync(false);
@@ -141,8 +142,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (el && el.duration > 0) {
       const percentPlayed = el.currentTime / el.duration;
       if (percentPlayed < 0.9) {
-        const currentTrackId =
-          audioList[currentAudioIndex]?.id || audioList[currentAudioIndex]?._id;
+        const currentTrackId = audioList[currentAudioIndex]?.id;
         if (currentTrackId) {
           handleSkipCount(currentTrackId, "skip").catch(() => {
             alert("An error occurred while updating skip count.");
@@ -158,7 +158,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (isShuffling) {
       let rand = Math.floor(Math.random() * len);
       if (len > 1 && rand === currentAudioIndex) rand = (rand + 1) % len;
-      const nextId = audioList[rand]?.id || audioList[rand]?._id || "";
+      const nextId = audioList[rand]?.id || "";
       if (nextId) handleId(nextId);
       setCurrentAudioIndex(rand);
       return;
@@ -170,7 +170,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (nextIndex >= audioList.length || isBatchExpired) {
       if (audioRef.current) audioRef.current.src = "";
       setIsLoadingSync(true);
-      const response = await streamSongs();
+      const lastSong = audioList.at(-1);
+      const response = await streamSongs(lastSong?.artist);
       const moreTracks = Array.isArray(response) ? response : response?.uploads;
 
       if (moreTracks && moreTracks.length > 0) {
@@ -260,6 +261,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const tryPlay = () => {
       if (cancelled) return;
       el.play().catch((err) => {
+        alert("Audio Play failed an error occured!");
         console.error("Play failed:", err);
       });
     };
@@ -298,13 +300,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   const handleAudio = () => {
     const currentTrackId = audioList[currentAudioIndex]?.id || "";
-    // if (!pause) {
-    //   if (currentTrackId) handleId(currentTrackId);
-    //   audioRef.current?.pause();
-    // } else {
-    //   if (currentTrackId) handleId(currentTrackId);
-    //   audioRef.current?.play().catch(() => {});
-    // }
     if (currentTrackId) handleId(currentTrackId);
 
     setPause((prev) => !prev);
@@ -324,9 +319,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     setIsLoadingSync(true);
     setPause(true);
 
-    console.log(
-      "URL Expired. Terminating current audio stream and fetching fresh URLs...",
-    );
+    const savedTime = audioRef.current?.currentTime || 0;
 
     if (audioRef.current) {
       audioRef.current.pause();
@@ -335,34 +328,54 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
 
     const currentTrack = audioList[currentAudioIndex];
-    const trackId = currentTrack?.id || currentTrack?._id;
+    const trackId = currentTrack?.id;
 
     if (!trackId) {
       cleanupRecovery();
       handleNext();
       return;
     }
+    if (retryCountRef.current > 3) {
+      alert("Unable to load audio. The page will now refresh to fix this.");
+      setPause(true);
+      cleanupRecovery();
+      window.location.reload();
+      return;
+    }
+    retryCountRef.current += 1;
 
     try {
-      const response = await streamSongs();
+      const lastSong = audioList.at(-1);
+      const response = await streamSongs(lastSong?.artist);
       const freshBatch = response?.uploads || [];
 
       if (freshBatch.length > 0) {
         const updatedCurrentTrack = freshBatch.find(
-          (t: AudioItem) => (t.id || t._id) === trackId,
+          (t: AudioItem) => t.id === trackId,
         );
 
         setAudioList(freshBatch);
 
         if (updatedCurrentTrack) {
           const newIdx = freshBatch.findIndex(
-            (t: AudioItem) => (t.id || t._id) === trackId,
+            (t: AudioItem) => t.id === trackId,
           );
           setCurrentAudioIndex(newIdx);
 
           if (audioRef.current) {
             audioRef.current.src = updatedCurrentTrack.fileUrl;
             audioRef.current.load();
+            const restoreTime = () => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = savedTime;
+                audioRef.current.removeEventListener(
+                  "loadedmetadata",
+                  restoreTime,
+                );
+              }
+            };
+
+            audioRef.current.addEventListener("loadedmetadata", restoreTime);
           }
         } else {
           setCurrentAudioIndex(0);
@@ -378,7 +391,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         throw new Error("Empty batch received");
       }
     } catch (error) {
-      console.error("Critical recovery failure:", error);
+      // console.error("Critical recovery failure:", error);
+      alert("Something went wrong. Please reload the app.");
       cleanupRecovery();
       handleNext();
     }
@@ -389,22 +403,20 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     isLoadingRef.current = false;
     setIsLoadingSync(false);
   };
+
   useEffect(() => {
     const playExternalSong = async () => {
       if (!id) {
         setPause(true);
         return;
       }
-      const currentlyPlayingId =
-        audioList[currentAudioIndex]?.id || audioList[currentAudioIndex]?._id;
+      const currentlyPlayingId = audioList[currentAudioIndex]?.id;
       if (id === currentlyPlayingId) {
         setPause(false);
         return;
       }
 
-      const existingIndex = audioList.findIndex(
-        (track) => track.id === id || track._id === id,
-      );
+      const existingIndex = audioList.findIndex((track) => track.id === id);
 
       if (existingIndex !== -1) {
         setCurrentAudioIndex(existingIndex);
@@ -462,9 +474,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
       if (!currentTrack) return;
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack.name || "Unknown Track",
-        artist: currentTrack.artist || "Unknown Artist",
-        album: currentTrack.category || "Audio Stream",
+        title: maskStatus ? "xxxx" : currentTrack.name || "Unknown Track",
+        artist: maskStatus ? "mubynk" : currentTrack.artist || "Unknown Artist",
+        album: maskStatus ? "xxxx" : currentTrack.category || "Audio Stream",
         artwork: [{ src: "/mu.jpg", sizes: "512x512", type: "image/png" }],
       });
       navigator.mediaSession.setActionHandler("play", () => {
@@ -490,7 +502,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   //hande favourite edit
   const handleFavoriteToggle = async () => {
     const currentTrack = audioList[currentAudioIndex];
-    const trackId = currentTrack?.id || currentTrack?._id;
+    const trackId = currentTrack?.id;
 
     if (!trackId) return;
 
@@ -535,7 +547,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           ref={audioRef}
           src={audioList[currentAudioIndex]?.fileUrl || ""}
           loop={isLooping}
-          onPlay={() => setPause(false)}
+          onPlay={() => {
+            setPause(false);
+            retryCountRef.current = 0;
+          }}
           onPause={() => setPause(true)}
           onError={handleAudioError}
         />
@@ -626,9 +641,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
             >
               {pause ? (
-                <Play className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white" />
+                <Play
+                  fill="currentColor"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white"
+                />
               ) : (
-                <Pause className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white" />
+                <Pause
+                  fill="currentColor"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white"
+                />
               )}
             </button>
             <button
