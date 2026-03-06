@@ -8,6 +8,17 @@ import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { UpdateQuery } from "mongoose";
 
+function weightedRandomPick(candidates: any[]) {
+  const minScore = Math.min(...candidates.map((c) => c.score));
+  const weights = candidates.map((c) => c.score - minScore + 1);
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < candidates.length; i++) {
+    random -= weights[i];
+    if (random <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
 
 export async function GET(req: Request) {
   await dbConnect();
@@ -68,7 +79,8 @@ export async function GET(req: Request) {
       // Variety Penalty: -20 points if it's the same artist as the last track
       if (
         previousArtist &&
-        track.artist.toLowerCase() === previousArtist.toLowerCase()
+        track.artist.replace(/\s+/g, "").toLowerCase() ===
+          previousArtist.replace(/\s+/g, "").toLowerCase()
       ) {
         score -= 20;
       }
@@ -77,16 +89,22 @@ export async function GET(req: Request) {
     });
 
     //Sort highest score first
-    scoredCandidates.sort((a, b) => b.score - a.score);
+    const orderedQueue: any[] = [];
+    let remaining = [...scoredCandidates];
+    while (remaining.length > 0) {
+      const pick = weightedRandomPick(remaining);
+      orderedQueue.push(pick);
+      remaining = remaining.filter((t) => t._id !== pick._id);
+    }
 
-    const candidateIds = scoredCandidates.map((track) => track._id);
+    const candidateIds = orderedQueue.map((track) => track._id);
     await Upload.updateMany(
       { _id: { $in: candidateIds } },
       { $set: { lastPlayedAt: new Date() } },
     );
 
     const queue = await Promise.all(
-      scoredCandidates.map(async (track) => {
+      orderedQueue.map(async (track) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.R2_BUCKET_NAME,
           Key: track.fileUrl,
