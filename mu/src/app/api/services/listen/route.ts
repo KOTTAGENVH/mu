@@ -60,7 +60,7 @@ export async function GET(req: Request) {
 
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
-    //get 20 random candidates that are not recently played
+    //get 50 random candidates that are not recently played
     let candidates = (await Upload.aggregate([
       {
         $match: {
@@ -71,12 +71,14 @@ export async function GET(req: Request) {
           ],
         },
       },
-      { $sample: { size: 20 } },
+      { $sample: { size: 50 } },
     ])) as TrackData[];
 
-    //if tracks<20 get random 20 tracks
-    if (!candidates || candidates.length === 0 || candidates.length < 20) {
-      candidates = (await Upload.aggregate([{ $sample: { size: 20 } }])) as TrackData[];
+    //if tracks<50 get random 50 tracks
+    if (!candidates || candidates.length === 0 || candidates.length < 50) {
+      candidates = (await Upload.aggregate([
+        { $sample: { size: 50 } },
+      ])) as TrackData[];
     }
 
     //Score each candidate to determine queue order
@@ -107,12 +109,14 @@ export async function GET(req: Request) {
     });
 
     //Sort highest score first
-    const orderedQueue: any[] = [];
+    const orderedQueue: ScoredTrackData[] = [];
     let remaining = [...scoredCandidates];
     while (remaining.length > 0) {
       const pick = weightedRandomPick(remaining);
       orderedQueue.push(pick);
-      remaining = remaining.filter((t) => t._id !== pick._id);
+      remaining = remaining.filter(
+        (t) => t._id?.toString() !== pick._id?.toString(),
+      );
     }
 
     const candidateIds = orderedQueue.map((track) => track._id);
