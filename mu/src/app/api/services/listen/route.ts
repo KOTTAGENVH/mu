@@ -7,10 +7,28 @@ import { s3Client } from "@/app/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { UpdateQuery } from "mongoose";
+import { Types } from "mongoose";
 
-function weightedRandomPick(candidates: any[]) {
-  const minScore = Math.min(...candidates.map((c) => c.score));
-  const weights = candidates.map((c) => c.score - minScore + 1);
+interface TrackData {
+  _id?: Types.ObjectId;
+  id: string;
+  name: string;
+  artist: string;
+  category: Types.ObjectId;
+  fileUrl: string;
+  favourite: boolean;
+  lastPlayedAt?: Date | null;
+  playCount: number;
+  skipCount: number;
+}
+
+interface ScoredTrackData extends TrackData {
+  score?: number;
+}
+
+function weightedRandomPick(candidates: ScoredTrackData[]) {
+  const minScore = Math.min(...candidates.map((c) => c.score || 0));
+  const weights = candidates.map((c) => (c.score || 0) - minScore + 1);
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   let random = Math.random() * totalWeight;
   for (let i = 0; i < candidates.length; i++) {
@@ -43,7 +61,7 @@ export async function GET(req: Request) {
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
     //get 20 random candidates that are not recently played
-    let candidates = await Upload.aggregate([
+    let candidates = (await Upload.aggregate([
       {
         $match: {
           $or: [
@@ -54,11 +72,11 @@ export async function GET(req: Request) {
         },
       },
       { $sample: { size: 20 } },
-    ]);
+    ])) as TrackData[];
 
     //if tracks<20 get random 20 tracks
     if (!candidates || candidates.length === 0 || candidates.length < 20) {
-      candidates = await Upload.aggregate([{ $sample: { size: 20 } }]);
+      candidates = (await Upload.aggregate([{ $sample: { size: 20 } }])) as TrackData[];
     }
 
     //Score each candidate to determine queue order
