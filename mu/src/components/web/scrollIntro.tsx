@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import NextImage from "next/image";
+import WebLoader from "./webLoader";
 
 const total_frames = 415;
 const file_ext = "png";
@@ -246,6 +247,24 @@ export default function ScrollIntro() {
             background: "#000",
           }}
         >
+          {!firstFrameLoaded && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#000",
+                zIndex: 50,
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "1.2rem",
+                fontFamily: "sans-serif",
+              }}
+            >
+             <WebLoader/>
+            </div>
+          )}
           <canvas
             ref={canvasRef}
             style={{
