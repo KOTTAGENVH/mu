@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack(config) {
-    config.optimization.minimize = false;
+    config.optimization.minimize = true;
     return config;
   },
   productionBrowserSourceMaps: false,
