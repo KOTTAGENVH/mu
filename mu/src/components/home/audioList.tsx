@@ -178,6 +178,11 @@ function AudioList() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                fetchAudio(search, "");
+              }
+            }}
             className="text-sm w-full pl-6 pr-10 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
             placeholder="What are you in the mood for?"
           />
