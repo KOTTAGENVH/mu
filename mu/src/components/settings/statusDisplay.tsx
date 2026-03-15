@@ -440,7 +440,7 @@ function StatusDisplay() {
                     <Skull className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2">
+                <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                   {filteredLists &&
                   filteredLists.candidates &&
                   filteredLists.candidates.length > 0 ? (

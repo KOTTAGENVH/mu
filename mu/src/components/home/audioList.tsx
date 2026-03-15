@@ -236,7 +236,7 @@ function AudioList() {
         <div
           ref={dropdownRef}
           className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96 h-auto max-h-60 overflow-y-auto
-    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300"
         >
           <button
             onClick={() => {
@@ -307,7 +307,7 @@ function AudioList() {
 
       <div
         ref={listRef}
-        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
+        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
         {allAudio &&
           allAudio.length > 0 &&

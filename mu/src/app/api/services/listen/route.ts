@@ -71,12 +71,17 @@ export async function GET(req: Request) {
           ],
         },
       },
+      { $sort: { lastPlayedAt: 1 } },
+      { $limit: 1000 },
       { $sample: { size: 50 } },
     ])) as TrackData[];
 
-    //if tracks<50 get random 50 tracks
+    //if tracks<50 get random 50 tracks which were played last
+    //Would recommend to index lastPlayedAt at mongo db
     if (!candidates || candidates.length === 0 || candidates.length < 50) {
       candidates = (await Upload.aggregate([
+        { $sort: { lastPlayedAt: 1 } },
+        { $limit: 1000 },
         { $sample: { size: 50 } },
       ])) as TrackData[];
     }

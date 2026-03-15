@@ -30,14 +30,20 @@ function Page() {
       }
     };
     fetchCookieStatus();
-}, [router, toggleAuth]);
+  }, [router, toggleAuth]);
 
   return (
-    <div className="uploadPage">
+    <div
+      className="
+        min-h-screen w-full
+        flex flex-col
+        bg-slate-300 dark:bg-slate-950
+        supports-[height:100dvh]:min-h-[100dvh]
+        supports-[height:100svh]:min-h-[100svh]
+      "
+    >
       <Header />
-      <div className="uploadPageBody">
-        <FileUpload />
-      </div>
+      <FileUpload />
       <LoginFooter />
     </div>
   );

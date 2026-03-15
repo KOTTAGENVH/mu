@@ -165,7 +165,7 @@ export async function POST(req: Request) {
     }
 
     const uploadsPromise = Upload.find(query)
-      .sort({ createdAt: -1, _id: -1 })
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limitNumber)
       .select("-_id")
