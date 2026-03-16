@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGear,
   faHouse,
+  faMicrophone,
   faRightFromBracket,
   faRightToBracket,
   faUpload,
@@ -54,6 +55,10 @@ function Header() {
   // Handle settings click
   const handleSettings = () => {
     router.push("/settings");
+  };
+
+  const handleMicTalk = () => {
+    router.push("/mictalk");
   };
 
   const handleLogout = async () => {
@@ -133,6 +138,15 @@ function Header() {
                 onClick={handleAdd}
               >
                 <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
+              </button>
+
+              <button
+                title="mictalk"
+                aria-label="mictalk"
+                className={getBtnClass("/mictalk")}
+                onClick={handleMicTalk}
+              >
+                <FontAwesomeIcon icon={faMicrophone} className="w-4 h-4" />
               </button>
 
               <button

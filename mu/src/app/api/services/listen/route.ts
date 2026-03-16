@@ -78,7 +78,7 @@ export async function GET(req: Request) {
 
     //if tracks<50 get random 50 tracks which were played last
     //Would recommend to index lastPlayedAt at mongo db
-    if (!candidates || candidates.length === 0 || candidates.length < 50) {
+    if (!candidates || candidates.length < 50) {
       candidates = (await Upload.aggregate([
         { $sort: { lastPlayedAt: 1 } },
         { $limit: 1000 },
@@ -123,12 +123,6 @@ export async function GET(req: Request) {
         (t) => t._id?.toString() !== pick._id?.toString(),
       );
     }
-
-    const candidateIds = orderedQueue.map((track) => track._id);
-    await Upload.updateMany(
-      { _id: { $in: candidateIds } },
-      { $set: { lastPlayedAt: new Date() } },
-    );
 
     const queue = await Promise.all(
       orderedQueue.map(async (track) => {
@@ -190,11 +184,16 @@ export async function PATCH(req: Request) {
       );
     }
 
+    //1-skip
+    //2-play
     let updateQuery: UpdateQuery<typeof Upload> = {};
     if (action === "skip") {
       updateQuery = { $inc: { skipCount: 1 } };
     } else if (action === "play") {
-      updateQuery = { $inc: { playCount: 1 } };
+      updateQuery = {
+        $inc: { playCount: 1 },
+        $set: { lastPlayedAt: new Date() },
+      };
     } else {
       return NextResponse.json(
         {

@@ -12,10 +12,11 @@ import { inter, roboto } from "@/app/fonts";
 import {
   streamSongById,
   streamSongs,
-  updateSkipCount,
+  updateSkipPlayCount,
   updateSong,
 } from "@/app/api/client/services/audio/api";
 import { useMask } from "@/contextApi/mask";
+import { useAudioEq } from "@/contextApi/audioEnhance";
 
 interface Category {
   id: string;
@@ -50,6 +51,7 @@ interface AudioPlayerModalProps {
 
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const { maskStatus } = useMask();
+  const { eqValues, pan, useCompressor } = useAudioEq();
   const [isLoading, setIsLoadingSync] = useState(false);
   const [audioList, setAudioList] = useState<AudioItem[]>([]);
   const [currentAudioIndex, setCurrentAudioIndex] = useState<number>(0);
@@ -64,8 +66,117 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const isRecovering = useRef(false);
   const isLoadingRef = useRef(false);
+  const lastCountedTrackIdRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const compressorRef = useRef<DynamicsCompressorNode | null>(null);
+  const pannerRef = useRef<StereoPannerNode | null>(null);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
+
+  const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
+
+  useEffect(() => {
+    if (!audioRef.current || sourceRef.current) return;
+
+    try {
+      const audioCtx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
+      audioCtxRef.current = audioCtx;
+
+      const source = audioCtx.createMediaElementSource(audioRef.current);
+      sourceRef.current = source;
+
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 30;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.25;
+      compressorRef.current = compressor;
+
+      const panner = audioCtx.createStereoPanner();
+      panner.pan.value = 0;
+      pannerRef.current = panner;
+
+      const frequencies = [100, 300, 1000, 4000, 12000];
+      const types: BiquadFilterType[] = [
+        "lowshelf",
+        "peaking",
+        "peaking",
+        "peaking",
+        "highshelf",
+      ];
+
+      let prevNode: AudioNode | null = null;
+
+      frequencies.forEach((freq, index) => {
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = types[index];
+        filter.frequency.value = freq;
+        if (types[index] === "peaking") filter.Q.value = 1;
+        filter.gain.value = 0;
+
+        filtersRef.current[freq.toString()] = filter;
+        if (prevNode) {
+          prevNode.connect(filter);
+        }
+        prevNode = filter;
+      });
+    } catch (error) {
+      console.error("Web Audio API initialization failed:", error);
+    }
+  }, [audioList.length]);
+
+  useEffect(() => {
+    if (
+      !audioCtxRef.current ||
+      !sourceRef.current ||
+      !compressorRef.current ||
+      !pannerRef.current
+    )
+      return;
+
+    const source = sourceRef.current;
+    const compressor = compressorRef.current;
+    const firstFilter = filtersRef.current["100"];
+    const lastFilter = filtersRef.current["12000"];
+    const panner = pannerRef.current;
+
+    try {
+      source.disconnect();
+    } catch (e) {}
+    try {
+      lastFilter.disconnect();
+    } catch (e) {}
+    try {
+      compressor.disconnect();
+    } catch (e) {}
+
+    if (useCompressor) {
+      source.connect(compressor);
+      compressor.connect(firstFilter);
+    } else {
+      compressor.disconnect();
+      source.connect(firstFilter);
+    }
+
+    lastFilter.connect(panner);
+    panner.connect(audioCtxRef.current.destination);
+  }, [useCompressor, audioList.length]);
+
+  useEffect(() => {
+    Object.entries(eqValues).forEach(([freq, gain]) => {
+      if (filtersRef.current[freq]) {
+        filtersRef.current[freq].gain.value = gain;
+      }
+    });
+  }, [eqValues]);
+
+  useEffect(() => {
+    if (pannerRef.current) pannerRef.current.pan.value = pan;
+  }, [pan]);
 
   const fetchStreamAudio = useCallback(async (forceRefresh = false) => {
     if (isLoadingRef.current) return;
@@ -122,14 +233,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     [],
   );
 
-  const handleSkipCount = useCallback(
+  const handleSkipPlayCount = useCallback(
     async (id: string, action: "skip" | "play") => {
       try {
-        const response = await updateSkipCount(id, action);
+        const response = await updateSkipPlayCount(id, action);
         if (!response.success) {
           throw new Error(response.message || "Failed to update skip count");
         }
       } catch (error) {
+        // console.error("Failed to update skip count");
         alert("An error occurred while updating skip count.");
       }
     },
@@ -144,7 +256,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       if (percentPlayed < 0.9) {
         const currentTrackId = audioList[currentAudioIndex]?.id;
         if (currentTrackId) {
-          handleSkipCount(currentTrackId, "skip").catch(() => {
+          handleSkipPlayCount(currentTrackId, "skip").catch(() => {
+            // console.error("Failed to update skip count");
             alert("An error occurred while updating skip count.");
           });
         }
@@ -196,7 +309,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     isShuffling,
     handleId,
     batchFetchedAt,
-    handleSkipCount,
+    handleSkipPlayCount,
   ]);
 
   const handleNextRef = useRef(handleNext);
@@ -210,15 +323,19 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     // if (audioRef.current) {
     //   audioRef.current.load();
     // }
-    const onLoaded = () => setDuration(el.duration || 0);
+    const onLoaded = () => {
+      const currentTrackId = audioList[currentAudioIndex]?.id;
+      setDuration(el.duration || 0);
+      if (currentTrackId && lastCountedTrackIdRef.current !== currentTrackId) {
+        lastCountedTrackIdRef.current = currentTrackId;
+        handleSkipPlayCount(currentTrackId, "play").catch(() => {
+          // console.error("Failed to update play count");
+          alert("An error occurred while updating play count.");
+        });
+      }
+    };
     const onDurationChange = () => setDuration(el.duration || 0);
     const onEnded = () => {
-      const currentTrackId = audioList[currentAudioIndex]?.id;
-
-      if (currentTrackId) {
-        handleSkipCount(currentTrackId, "play").catch(() => {});
-      }
-
       if (handleNextRef.current) {
         handleNextRef.current();
       }
@@ -242,7 +359,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
     };
-  }, [audioList, currentTrackUrl, currentAudioIndex, handleSkipCount]);
+  }, [audioList, currentTrackUrl, currentAudioIndex, handleSkipPlayCount]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -260,9 +377,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
     const tryPlay = () => {
       if (cancelled) return;
+      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume();
+      }
       el.play().catch((err) => {
-        alert("Audio Play failed an error occured!");
-        console.error("Play failed:", err);
+        if (err.name !== "AbortError") {
+          alert("Audio Play failed an error occured!");
+          console.error("Play failed:", err);
+        }
       });
     };
 
@@ -301,6 +423,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const handleAudio = () => {
     const currentTrackId = audioList[currentAudioIndex]?.id || "";
     if (currentTrackId) handleId(currentTrackId);
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
 
     setPause((prev) => !prev);
   };
@@ -546,10 +671,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           preload="metadata"
           ref={audioRef}
           src={audioList[currentAudioIndex]?.fileUrl || ""}
+          crossOrigin="anonymous"
           loop={isLooping}
           onPlay={() => {
             setPause(false);
             retryCountRef.current = 0;
+            if (
+              audioCtxRef.current &&
+              audioCtxRef.current.state === "suspended"
+            ) {
+              audioCtxRef.current.resume();
+            }
           }}
           onPause={() => setPause(true)}
           onError={handleAudioError}

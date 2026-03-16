@@ -15,6 +15,7 @@ import Loader from "@/components/loader";
 import ManageAudio from "@/components/settings/audio";
 import LoginFooter from "@/components/login/loginFooter";
 import { useMask } from "@/contextApi/mask";
+import EqSettingsModal from "@/components/settings/eqSetting";
 
 function Page() {
   const router = useRouter();
@@ -102,6 +103,7 @@ function Page() {
         return (
           <>
             <StatusDisplay />
+            <EqSettingsModal/>
             <SettingCardRender onSettingSelect={handleSettingClick} />
           </>
         );
