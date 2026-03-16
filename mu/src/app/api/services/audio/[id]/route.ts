@@ -49,6 +49,7 @@ export async function GET(
       .select("-_id")
       .populate({
         path: "category",
+        select: "-_id",
         model: Category, 
       })
       .lean()) as unknown as IPopulatedTrack;

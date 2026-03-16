@@ -14,7 +14,7 @@ interface TrackData {
   id: string;
   name: string;
   artist: string;
-  category: Types.ObjectId;
+  category: { id: string; name: string };
   fileUrl: string;
   favourite: boolean;
   lastPlayedAt?: Date | null;
@@ -123,6 +123,11 @@ export async function GET(req: Request) {
         (t) => t._id?.toString() !== pick._id?.toString(),
       );
     }
+
+    await Upload.populate(orderedQueue, {
+      path: "category",
+      select: "-_id -__v",
+    });
 
     const queue = await Promise.all(
       orderedQueue.map(async (track) => {
