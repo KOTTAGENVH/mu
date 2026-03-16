@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { JwtPayload, verify } from "jsonwebtoken";
 import { CookieGenerator } from "../cookierGenerator/generateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
+import { checkRateLimit } from "@/app/helper/rateLimiter";
 
 //Validate Cookie from passed token
 export async function POST(req: Request) {
@@ -30,7 +31,32 @@ export async function POST(req: Request) {
       throw new Error("No token provided");
     }
 
-    const decoded = verify(token, secret) as JwtPayload;
+    const isAllowedToProceed = await checkRateLimit(
+      ip,
+      "totp-auth",
+      5,
+      15 * 60 * 1000,
+    );
+    if (!isAllowedToProceed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Too many login attempts. Please try again in 15 minutes.",
+        },
+        { status: 429 },
+      );
+    }
+
+    let decoded: JwtPayload;
+
+    try {
+      decoded = verify(token, secret) as JwtPayload;
+    } catch (err: any) {
+      return NextResponse.json(
+        { success: false, message: "Invalid or malformed login link." },
+        { status: 400 }, 
+      );
+    }
 
     //Check if the Token is expired
     if (decoded.iat && Date.now() >= decoded.iat * 1000 + 24 * 60 * 60 * 1000) {

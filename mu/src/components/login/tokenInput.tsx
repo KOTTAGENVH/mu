@@ -71,18 +71,19 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
         formik.setTouched({ token: false });
         if (!response.success) {
           alert(response.message);
+          return;
         }
-        if (response.success) {
-          setIsSuccess(true);
-          setTimeout(() => {
-            setIsSuccess(false);
-          }, 4000);
-        }
+
+        setIsSuccess(true);
+        setTimeout(() => {
+          setIsSuccess(false);
+        }, 4000);
+        
       } catch (error) {
         formik.setFieldValue("token", "");
         formik.setTouched({ token: false });
         // console.error("Error verifying token:", error);
-        alert("Failed to verify token. Please try again.");
+        alert("A network error occurred. Please check your connection.");
       } finally {
         setLoading(false);
       }

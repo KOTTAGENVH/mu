@@ -14,7 +14,7 @@ export default function EqSettingsModal() {
   ];
 
   return (
-    <div className="bg-white/10 dark:bg-black/40 p-6 rounded-2xl backdrop-blur-xl border border-white/10 shadow-2xl w-full max-w-md mx-auto space-y-8">
+    <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-auto w-full max-w-sm max-w-md  mx-auto px-3  lg:px-6 mt-8 mb-8">
       
       <div className="flex justify-between items-center border-b border-white/10 pb-4">
         <h3 className={`${inter.className} text-xl font-bold text-black dark:text-white`}>

@@ -74,7 +74,7 @@ function Page() {
           if (response.success) {
             router.push(`/home`);
           } else {
-            alert("Error validating token");
+            alert(response.message);
           }
         } catch (error) {
           alert("Sorry, an error occurred while validating the token.");
