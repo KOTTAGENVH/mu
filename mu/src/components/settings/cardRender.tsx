@@ -7,6 +7,8 @@ import {
   faShieldHalved,
   faMusic,
   faMask,
+  faRotateLeft,
+  faArrowsLeftRight,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface RenderProps {
@@ -14,6 +16,7 @@ interface RenderProps {
 }
 
 function SettingCardRender({ onSettingSelect }: RenderProps) {
+
   const settings = [
     {
       id: 1,
@@ -44,8 +47,19 @@ function SettingCardRender({ onSettingSelect }: RenderProps) {
       id: 6,
       title: "Mask Songs",
       icon: faMask,
+    },
+    {
+      id: 7,
+      title: "Reset Equalizer",
+      icon: faRotateLeft,
+    },
+    {
+      id: 8,
+      title: "Volume Leveler",
+      icon: faArrowsLeftRight,
     }
   ];
+  
 
   return (
     <div className="justify-center items-center w-auto h-auto  mx-4 px-3 lg:mx-16 lg:px-6 flex flex-row gap-6 flex-wrap mt-8 mb-8">

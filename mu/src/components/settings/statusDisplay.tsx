@@ -6,13 +6,20 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useAudioEq, EqBand } from "@/contextApi/audioEnhance";
 import {
   Chart,
   DoughnutController,
   ArcElement,
+  ChartConfiguration,
+  Chart as ChartJS,
+  RadarController,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
   Tooltip,
   Legend,
-  ChartConfiguration,
 } from "chart.js";
 import {
   databaseStatus,
@@ -41,11 +48,25 @@ export interface LeastListenedResponse {
   candidates: Candidate[];
 }
 
-Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
+Chart.register(
+  DoughnutController,
+  ArcElement,
+  Tooltip,
+  Legend,
+  RadarController,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+);
 
 function StatusDisplay() {
   const dbCanvasRef = useRef<HTMLCanvasElement>(null);
   const r2CanvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<HTMLCanvasElement | null>(null);
+  const chartInstanceRef = useRef<ChartJS | null>(null);
   const dbChartInstance = useRef<Chart | null>(null);
   const r2ChartInstance = useRef<Chart | null>(null);
   const [dbStats, setDbStats] = useState({
@@ -65,11 +86,21 @@ function StatusDisplay() {
     leastlistened: boolean;
   }>({ isOpen: false, songId: "", songName: "", leastlistened: false });
   const { maskStatus } = useMask();
+  const { eqValues, setEqValue, pan, setPan } = useAudioEq();
+  const bands: { key: EqBand; label: string }[] = [
+    { key: "100", label: "Bass" },
+    { key: "300", label: "Low Mid" },
+    { key: "1000", label: "Mid" },
+    { key: "4000", label: "High Mid" },
+    { key: "12000", label: "Treble" },
+  ];
   const toGB = (bytes: number) => (bytes / 1024 ** 3).toFixed(2);
   const dbFree = dbStats.total - dbStats.used;
   const dbPercent = ((dbStats.used / dbStats.total) * 100).toFixed(1);
   const r2Free = r2Stats.total - r2Stats.used;
   const r2Percent = ((r2Stats.used / r2Stats.total) * 100).toFixed(1);
+  const isDarkMode = document.documentElement.classList.contains("dark");
+  const labelColor = isDarkMode ? "#94a3b8" : "#475569";
 
   useEffect(() => {
     if (!dbCanvasRef.current) return;
@@ -159,6 +190,91 @@ function StatusDisplay() {
       }
     };
   }, [r2Stats, r2Free]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const currentData = [
+      eqValues["100"] || 0,
+      eqValues["300"] || 0,
+      eqValues["1000"] || 0,
+      eqValues["4000"] || 0,
+      eqValues["12000"] || 0,
+    ];
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.data.datasets[0].data = currentData;
+      chartInstanceRef.current.update();
+    } else {
+      const ctx = chartRef.current.getContext("2d");
+      if (ctx) {
+        chartInstanceRef.current = new ChartJS(ctx, {
+          type: "radar",
+          data: {
+            labels: bands.map((b) => b.label),
+            datasets: [
+              {
+                label: "EQ Level (dB)",
+                data: currentData,
+                backgroundColor: "rgba(59, 130, 246, 0.2)",
+                borderColor: "rgba(59, 130, 246, 1)",
+                borderWidth: 2,
+                pointBackgroundColor: "rgba(59, 130, 246, 1)",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "rgba(59, 130, 246, 1)",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                min: -15,
+                max: 15,
+                ticks: {
+                  stepSize: 5,
+                  backdropColor: "transparent",
+                  color: "gray",
+                },
+                grid: {
+                  color: "rgba(128, 128, 128, 0.2)",
+                },
+                angleLines: {
+                  color: "rgba(128, 128, 128, 0.2)",
+                },
+                pointLabels: {
+                  color: labelColor,
+                  font: {
+                    size: 14,
+                  },
+                },
+              },
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => `${context.raw} dB`,
+                },
+              },
+            },
+          },
+        });
+      }
+    }
+  }, [eqValues, bands]);
+
+  useEffect(() => {
+    return () => {
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+        chartInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   //get data for r2 storage status
   const handleStorageStatus = useCallback(async () => {
@@ -336,7 +452,7 @@ function StatusDisplay() {
 
   return (
     <>
-      <div className="flex flex-col justify-center items-center w-auto h-auto mt-8 md:mt-20 mx-4 px-3 lg:mx-16 lg:px-6 py-4">
+      <div className="flex flex-col justify-center items-center w-auto h-auto mt-8 mb-8 mx-4 px-3 lg:mx-16 lg:px-6 ">
         <div className="flex flex-wrap justify-center gap-8 max-w-[1600px] w-full">
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
             {" "}
@@ -391,6 +507,136 @@ function StatusDisplay() {
                 </div>
               </>
             )}
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
+            <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
+              Audio Enhancements
+            </h3>
+            <div className="w-full h-full relative">
+              <canvas ref={chartRef} />
+            </div>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
+            <div className="w-full h-full flex flex-col overflow-hidden">
+              <div className="flex justify-between items-end mb-5">
+                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
+                  Audio Equalizer
+                </h3>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-600 dark:text-slate-400">
+                  Range: ±15dB
+                </span>
+              </div>
+              <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+                <div className="w-full space-y-4">
+                  {bands.map((band) => (
+                    <div key={band.key} className="flex items-center group">
+                      <span className="w-16 text-right text-sm text-slate-600 dark:text-slate-400 font-medium group-hover:text-blue-500 transition-colors duration-200">
+                        {band.label}
+                      </span>
+                      <div className="flex-1 mx-2 md:mx-4 flex items-center">
+                        <input
+                          type="range"
+                          min="-15"
+                          max="15"
+                          step="1"
+                          value={eqValues[band.key]}
+                          onChange={(e) =>
+                            setEqValue(band.key, parseFloat(e.target.value))
+                          }
+                          className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xl appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow
+                      [&::-webkit-slider-thumb]:appearance-none 
+                      [&::-webkit-slider-thumb]:w-4 
+                      [&::-webkit-slider-thumb]:h-4 
+                      [&::-webkit-slider-thumb]:bg-gray-800 
+                      dark:[&::-webkit-slider-thumb]:bg-gray-400
+                      [&::-webkit-slider-thumb]:border-2 
+                      [&::-webkit-slider-thumb]:border-blue-500 
+                      [&::-webkit-slider-thumb]:rounded-full 
+                      hover:[&::-webkit-slider-thumb]:bg-blue-500
+                      dark:hover:[&::-webkit-slider-thumb]:bg-blue-500
+                      hover:[&::-webkit-slider-thumb]:scale-125 
+                      [&::-webkit-slider-thumb]:transition-all
+                      [&::-webkit-slider-thumb]:shadow-sm"
+                        />
+                      </div>
+                      <div className="w-14 flex justify-end">
+                        <span
+                          className={`text-sm font-mono font-semibold px-2 py-1 rounded-md transition-colors ${
+                            eqValues[band.key] === 0
+                              ? "bg-gray-100 text-slate-600 dark:text-slate-400 dark:bg-gray-800 "
+                              : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                          }`}
+                        >
+                          {eqValues[band.key] > 0
+                            ? `+${eqValues[band.key]}`
+                            : eqValues[band.key]}{" "}
+                          dB
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="w-full pt-6 mt-6 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4
+                      className={` text-sm font-semibold text-slate-600 dark:text-slate-400`}
+                    >
+                      L/R Balance
+                    </h4>
+                    <span
+                      className={`text-sm font-mono font-semibold px-2 py-1 rounded-md transition-colors ${
+                        pan === 0
+                          ? "bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400"
+                          : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                      }`}
+                    >
+                      {pan === 0
+                        ? "Center"
+                        : pan < 0
+                          ? `L ${Math.abs(Math.round(pan * 100))}%`
+                          : `R ${Math.round(pan * 100)}%`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center w-full group">
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-blue-500 transition-colors w-4 text-center">
+                      L
+                    </span>
+
+                    <div className="flex-1 mx-3 flex items-center relative">
+                      <div className="absolute left-1/2 -translate-x-1/2 w-[2px] h-3 bg-gray-300 dark:bg-gray-600 rounded-full pointer-events-none -z-10"></div>
+                      <input
+                        type="range"
+                        min="-1"
+                        max="1"
+                        step="0.1"
+                        value={pan}
+                        onChange={(e) => setPan(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow z-10
+                [&::-webkit-slider-thumb]:appearance-none 
+                      [&::-webkit-slider-thumb]:w-4 
+                      [&::-webkit-slider-thumb]:h-4 
+                      [&::-webkit-slider-thumb]:bg-gray-800 
+                      dark:[&::-webkit-slider-thumb]:bg-gray-400
+                      [&::-webkit-slider-thumb]:border-2 
+                      [&::-webkit-slider-thumb]:border-blue-500 
+                      [&::-webkit-slider-thumb]:rounded-full 
+                      hover:[&::-webkit-slider-thumb]:bg-blue-500
+                      dark:hover:[&::-webkit-slider-thumb]:bg-blue-500
+                      hover:[&::-webkit-slider-thumb]:scale-125 
+                      [&::-webkit-slider-thumb]:transition-all
+                      [&::-webkit-slider-thumb]:shadow-sm"
+                      />
+                    </div>
+
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-blue-500 transition-colors w-4 text-center">
+                      R
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
             {" "}
@@ -448,7 +694,7 @@ function StatusDisplay() {
                       {filteredLists.candidates.map((list) => (
                         <div
                           key={list.id}
-                          className="flex items-center justify-between p-3 rounded-2xl bg-white/5 dark:bg-black/20 border-none hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
+                          className="flex items-center justify-between p-3 rounded-2xl bg-black/20 dark:bg-white/10 border-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                         >
                           <div className="min-w-0 flex-1 mr-3">
                             <p

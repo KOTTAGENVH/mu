@@ -750,7 +750,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="shuffle"
               disabled={isLoading || audioList.length === 0}
               onClick={() => setIsShuffling(!isShuffling)}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               <Shuffle
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isShuffling ? "text-blue-400" : "text-black dark:text-white"}`}
@@ -761,7 +761,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="previous"
               onClick={handlePrev}
               disabled={isLoading || audioList.length === 0}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white" />
             </button>
@@ -770,7 +770,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title={pause ? "play" : "pause"}
               disabled={isLoading || audioList.length === 0}
               onClick={handleAudio}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               {pause ? (
                 <Play
@@ -789,7 +789,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="next"
               disabled={isLoading || audioList.length === 0}
               onClick={handleNext}
-              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg ${isLoading ? "opacity-50" : ""}`}
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg  focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white" />
             </button>
@@ -798,7 +798,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="loop"
               disabled={isLoading || audioList.length === 0}
               onClick={() => setIsLooping(!isLooping)}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               <Repeat
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isLooping ? "text-blue-400" : "text-black dark:text-white"}`}
@@ -809,7 +809,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="favorite"
               disabled={isLoading || audioList.length === 0}
               onClick={handleFavoriteToggle}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               <Heart
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isFavorite ? "text-red-500 fill-red-500" : "text-black dark:text-white"}`}

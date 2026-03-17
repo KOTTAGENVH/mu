@@ -82,7 +82,7 @@ function Header() {
     : "transition-all duration-300 ease-out";
 
   const baseBtnClass =
-    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";
+    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4  focus-none outline-none border-none";
 
   const defaultBtnClass =
     "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700";
@@ -109,7 +109,7 @@ function Header() {
           />
         </div>
         <div className="flex items-center shrink-0 md:items-end">
-          {pathname?.includes("/legal") && (
+          {pathname?.includes("/legal") && ! authStatus &&(
             <button
               title="login"
               className={`${baseBtnClass} ${defaultBtnClass}`}
