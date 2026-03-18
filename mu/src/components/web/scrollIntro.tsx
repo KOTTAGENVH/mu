@@ -23,6 +23,7 @@ const quotes = [
   "Smart search, instant finds.",
   "Add you wishlist, download later.",
   "Your categories. Your flow.",
+  "Virtual Microphone",
   "2FA built in.",
   "Stats you can see. Storage you control.",
   "Private by design.",
@@ -50,7 +51,7 @@ function frameUrl(frameIndex1Based: number) {
 export default function ScrollIntro() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
+  const frameIndexRef = useRef(1);
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
     Array(total_frames).fill(null),
   );
@@ -126,7 +127,7 @@ export default function ScrollIntro() {
           setFirstFrameLoaded(true);
         }
 
-        if (idx1 === frameIndex) drawFrame(idx1);
+        if (idx1 === frameIndexRef.current) drawFrame(idx1);
       };
       img.onerror = () => {
         loadedRef.current[i] = false;
@@ -145,6 +146,10 @@ export default function ScrollIntro() {
     },
     [ensureLoaded],
   );
+
+  useEffect(() => {
+    frameIndexRef.current = frameIndex;
+  }, [frameIndex]);
 
   useEffect(() => {
     ensureLoaded(1);
@@ -262,7 +267,7 @@ export default function ScrollIntro() {
                 fontFamily: "sans-serif",
               }}
             >
-             <WebLoader/>
+              <WebLoader />
             </div>
           )}
           <canvas

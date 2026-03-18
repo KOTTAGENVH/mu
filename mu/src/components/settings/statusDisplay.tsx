@@ -87,20 +87,27 @@ function StatusDisplay() {
   }>({ isOpen: false, songId: "", songName: "", leastlistened: false });
   const { maskStatus } = useMask();
   const { eqValues, setEqValue, pan, setPan } = useAudioEq();
-  const bands: { key: EqBand; label: string }[] = [
-    { key: "100", label: "Bass" },
-    { key: "300", label: "Low Mid" },
-    { key: "1000", label: "Mid" },
-    { key: "4000", label: "High Mid" },
-    { key: "12000", label: "Treble" },
-  ];
+  const bands = useMemo(
+    (): { key: EqBand; label: string }[] => [
+      { key: "100", label: "Bass" },
+      { key: "300", label: "Low Mid" },
+      { key: "1000", label: "Mid" },
+      { key: "4000", label: "High Mid" },
+      { key: "12000", label: "Treble" },
+    ],
+    [],
+  );
   const toGB = (bytes: number) => (bytes / 1024 ** 3).toFixed(2);
   const dbFree = dbStats.total - dbStats.used;
   const dbPercent = ((dbStats.used / dbStats.total) * 100).toFixed(1);
   const r2Free = r2Stats.total - r2Stats.used;
   const r2Percent = ((r2Stats.used / r2Stats.total) * 100).toFixed(1);
-  const isDarkMode = document.documentElement.classList.contains("dark");
-  const labelColor = isDarkMode ? "#94a3b8" : "#475569";
+  const labelColor = useMemo(() => {
+    const isDarkMode =
+      typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark");
+    return isDarkMode ? "#94a3b8" : "#475569";
+  }, []);
 
   useEffect(() => {
     if (!dbCanvasRef.current) return;
@@ -265,7 +272,7 @@ function StatusDisplay() {
         });
       }
     }
-  }, [eqValues, bands]);
+  }, [eqValues, bands, labelColor]);
 
   useEffect(() => {
     return () => {

@@ -72,17 +72,24 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const compressorRef = useRef<DynamicsCompressorNode | null>(null);
   const pannerRef = useRef<StereoPannerNode | null>(null);
+  const audioListRef = useRef<AudioItem[]>([]);
+  const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
 
-  const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
+  useEffect(() => {
+    audioListRef.current = audioList;
+  }, [audioList]);
 
   useEffect(() => {
     if (!audioRef.current || sourceRef.current) return;
 
     try {
       const audioCtx = new (
-        window.AudioContext || (window as any).webkitAudioContext
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
       )();
+
       audioCtxRef.current = audioCtx;
 
       const source = audioCtx.createMediaElementSource(audioRef.current);
@@ -182,7 +189,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (isLoadingRef.current) return;
     try {
       setIsLoadingSync(true);
-      const lastSong = audioList.at(-1);
+      const lastSong = audioListRef.current.at(-1);
       const response = await streamSongs(lastSong?.artist);
       const data = await response;
 
@@ -250,11 +257,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   const handleNext = useCallback(async () => {
     if (isRecovering.current) return;
+
+    const currentList = audioListRef.current;
+    const len = currentList.length;
+    if (len === 0) return;
+
     const el = audioRef.current;
     if (el && el.duration > 0) {
       const percentPlayed = el.currentTime / el.duration;
       if (percentPlayed < 0.9) {
-        const currentTrackId = audioList[currentAudioIndex]?.id;
+        const currentTrackId = currentList[currentAudioIndex]?.id;
         if (currentTrackId) {
           handleSkipPlayCount(currentTrackId, "skip").catch(() => {
             // console.error("Failed to update skip count");
@@ -263,15 +275,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       }
     }
-    setPause(false);
 
-    const len = audioList.length;
-    if (len === 0) return;
+    setPause(false);
 
     if (isShuffling) {
       let rand = Math.floor(Math.random() * len);
       if (len > 1 && rand === currentAudioIndex) rand = (rand + 1) % len;
-      const nextId = audioList[rand]?.id || "";
+      const nextId = currentList[rand]?.id || "";
       if (nextId) handleId(nextId);
       setCurrentAudioIndex(rand);
       return;
@@ -280,10 +290,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const isBatchExpired = Date.now() - batchFetchedAt > 3000000;
     const nextIndex = currentAudioIndex + 1;
 
-    if (nextIndex >= audioList.length || isBatchExpired) {
+    if (nextIndex >= len || isBatchExpired) {
       if (audioRef.current) audioRef.current.src = "";
       setIsLoadingSync(true);
-      const lastSong = audioList.at(-1);
+      const lastSong = currentList.at(-1);
       const response = await streamSongs(lastSong?.artist);
       const moreTracks = Array.isArray(response) ? response : response?.uploads;
 
@@ -300,11 +310,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       return;
     }
 
-    const nextId = audioList[nextIndex]?.id || "";
+    const nextId = currentList[nextIndex]?.id || "";
     if (nextId) handleId(nextId);
     setCurrentAudioIndex(nextIndex);
   }, [
-    audioList,
     currentAudioIndex,
     isShuffling,
     handleId,
@@ -359,7 +368,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
     };
-  }, [audioList, currentTrackUrl, currentAudioIndex, handleSkipPlayCount]);
+  }, [currentTrackUrl]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -622,7 +631,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       });
     }
-  }, [currentAudioIndex, audioList, handlePrev]);
+  }, [currentAudioIndex, audioList, handlePrev, maskStatus]);
 
   //hande favourite edit
   const handleFavoriteToggle = async () => {

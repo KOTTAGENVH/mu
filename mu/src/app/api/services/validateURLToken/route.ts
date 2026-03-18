@@ -51,10 +51,10 @@ export async function POST(req: Request) {
 
     try {
       decoded = verify(token, secret) as JwtPayload;
-    } catch (err: any) {
+    } catch {
       return NextResponse.json(
         { success: false, message: "Invalid or malformed login link." },
-        { status: 400 }, 
+        { status: 400 },
       );
     }
 
