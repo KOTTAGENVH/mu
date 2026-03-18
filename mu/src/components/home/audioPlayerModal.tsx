@@ -333,7 +333,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     //   audioRef.current.load();
     // }
     const onLoaded = () => {
-      const currentTrackId = audioList[currentAudioIndex]?.id;
+      const currentTrackId = audioListRef.current[currentAudioIndex]?.id;
       setDuration(el.duration || 0);
       if (currentTrackId && lastCountedTrackIdRef.current !== currentTrackId) {
         lastCountedTrackIdRef.current = currentTrackId;
@@ -368,7 +368,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
     };
-  }, [currentTrackUrl]);
+  }, [currentTrackUrl, currentAudioIndex, handleSkipPlayCount]);
 
   useEffect(() => {
     const el = audioRef.current;

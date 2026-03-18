@@ -367,7 +367,7 @@ function Page() {
       destinationRef.current = null;
       dataArrayRef.current = null;
     };
-  }, [isClicked, selectedMic?.deviceId, selectedSpeaker?.deviceId]);
+  }, [isClicked, selectedMic, selectedSpeaker]);
 
   return (
     <div

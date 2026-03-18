@@ -165,7 +165,7 @@ function AudioList() {
           data-filter-button
           title="Category filter"
           className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => {
             setCategoryListClicked((v) => !v);
@@ -199,7 +199,7 @@ function AudioList() {
         <button
           title="Search"
           className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onClick={() => {
             fetchAudio(search, "");
           }}
@@ -212,7 +212,7 @@ function AudioList() {
           data-filter-button
           title="Category filter"
           className="md:hidden inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => {
             setCategoryListClicked((v) => !v);
@@ -223,7 +223,7 @@ function AudioList() {
         <button
           title="Search"
           className="md:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onClick={() => {
             fetchAudio(search, "");
           }}

@@ -158,6 +158,24 @@ const FileUpload: React.FC = () => {
     }
   }, []);
 
+  //Clear all states
+  const handleClearUpload = useCallback(() => {
+    setMp3Files([]);
+    setCategory("");
+    setArtistName("");
+    setCurrentFile(null);
+    setCurrentPlay(null);
+    setProgress(0);
+
+    if (audioRef.current) {
+      audioRef.current?.pause();
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
   //upload audio
   const handleUpload = useCallback(async () => {
     if (audioRef.current) {
@@ -200,29 +218,11 @@ const FileUpload: React.FC = () => {
       handleClearUpload();
       setIsLoading(false);
     }
-  }, [mp3Files, isCategory, artistName]);
+  }, [mp3Files, isCategory, artistName, handleClearUpload]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
-
-  //Clear all states
-  const handleClearUpload = useCallback(() => {
-    setMp3Files([]);
-    setCategory("");
-    setArtistName("");
-    setCurrentFile(null);
-    setCurrentPlay(null);
-    setProgress(0);
-
-    if (audioRef.current) {
-      audioRef.current?.pause();
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -376,7 +376,9 @@ const FileUpload: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className={`relative overflow-hidden md:w-[680px] w-[260px]  ${isLoading ? "disabled:opacity-50 disabled:cursor-not-allowed" : "cursor-pointer"} min-h-[360px] rounded-[2rem] bg-white/5 hover:bg-white/10 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] outline-none focus-none transition-all duration-500`}>
+      <div
+        className={`relative overflow-hidden md:w-[680px] w-[260px]  ${isLoading ? "disabled:opacity-50 disabled:cursor-not-allowed" : "cursor-pointer"} min-h-[360px] rounded-[2rem] bg-white/5 hover:bg-white/10 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] outline-none focus-none transition-all duration-500`}
+      >
         <div
           className={`w-full h-full min-h-[360px] flex flex-col items-center justify-center p-6 relative z-10 ${isLoading && "disabled:opacity-50 disabled:cursor-not-allowed"}`}
           onDragOver={handleDragOver}
