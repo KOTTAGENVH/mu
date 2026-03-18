@@ -17,6 +17,7 @@ import Loader from "./loader";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
 import { uploadSong } from "@/app/api/client/services/audio/api";
 import WishListMoadal from "./listModal";
+import { Play, Pause } from "lucide-react";
 
 interface Category {
   id: string;
@@ -25,6 +26,7 @@ interface Category {
 
 const FileUpload: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mp3Files, setMp3Files] = useState<File[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,7 +34,11 @@ const FileUpload: React.FC = () => {
   const [isCategory, setCategory] = useState("");
   const [artistName, setArtistName] = useState("");
   const [wishListModal, setWishListModal] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentPlay, setCurrentPlay] = useState<number | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
 
   const totalSizeMB = useMemo(() => {
     const totalBytes = mp3Files.reduce((acc, file) => acc + file.size, 0);
@@ -41,6 +47,21 @@ const FileUpload: React.FC = () => {
 
   const selectClass =
     "w-auto min-w-[160px] px-4 py-3 rounded-2xl border border-white/35 dark:border-white/20 bg-white/65 dark:bg-black/35 backdrop-blur-md text-slate-900 dark:text-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 flex items-center gap-2";
+
+  useEffect(() => {
+    if (currentFile && audioRef.current) {
+      const objectUrl = URL.createObjectURL(currentFile);
+      audioRef.current.src = objectUrl;
+      audioRef.current.play();
+
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+      };
+    } else if (!currentFile && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
+  }, [currentFile]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -76,6 +97,12 @@ const FileUpload: React.FC = () => {
 
     if (validMp3Files.length > 0) {
       setMp3Files(validMp3Files);
+      setCurrentFile(null);
+      setCurrentPlay(null);
+      setProgress(0);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     } else {
       alert("Only MP3 files are allowed.");
     }
@@ -131,8 +158,29 @@ const FileUpload: React.FC = () => {
     }
   }, []);
 
+  //Clear all states
+  const handleClearUpload = useCallback(() => {
+    setMp3Files([]);
+    setCategory("");
+    setArtistName("");
+    setCurrentFile(null);
+    setCurrentPlay(null);
+    setProgress(0);
+
+    if (audioRef.current) {
+      audioRef.current?.pause();
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
   //upload audio
   const handleUpload = useCallback(async () => {
+    if (audioRef.current) {
+      audioRef?.current.pause();
+    }
     if (mp3Files.length === 0) {
       alert("Please select at least one MP3 file to upload.");
       return;
@@ -167,24 +215,14 @@ const FileUpload: React.FC = () => {
         alert("An unknown error occurred during upload.");
       }
     } finally {
+      handleClearUpload();
       setIsLoading(false);
     }
-  }, [mp3Files, isCategory, artistName]);
+  }, [mp3Files, isCategory, artistName, handleClearUpload]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
-
-  //Clear all states
-  const handleClearUpload = useCallback(() => {
-    setMp3Files([]);
-    setCategory("");
-    setArtistName("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -210,9 +248,22 @@ const FileUpload: React.FC = () => {
     return selected ? selected.name : "Select category…";
   }, [isCategory, categories]);
 
+  const handleAudio = (index: number) => {
+    if (index === currentPlay) {
+      if (isPlaying) {
+        audioRef.current?.pause();
+      } else {
+        audioRef.current?.play();
+      }
+      return;
+    }
+    setCurrentPlay(index);
+    setCurrentFile(mp3Files[index]);
+  };
+
   return (
-    <div className="uploadRoot">
-      <div className="uploadControls">
+    <div className="flex-1 justify-center items-center w-auto  mx-4 px-3 lg:mx-16 lg:px-6 flex flex-col justify-center mt-20 md:mt-24 mb-20">
+      <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-4 w-full mb-6 w-full md:w-auto">
         {categories.length === 0 ? (
           <div className={`${selectClass} cursor-wait opacity-80`}>
             <FontAwesomeIcon
@@ -240,7 +291,7 @@ const FileUpload: React.FC = () => {
               <div
                 ref={dropdownRef}
                 className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2  w-60 md:w-96 h-auto max-h-60 overflow-y-auto
-    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300"
               >
                 {" "}
                 <button
@@ -253,7 +304,7 @@ const FileUpload: React.FC = () => {
                     isCategory === ""
                       ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
                       : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-                  } transition-colors duration-200`}
+                  } transition-colors duration-200 `}
                 >
                   Select category…
                 </button>
@@ -285,9 +336,9 @@ const FileUpload: React.FC = () => {
           placeholder="Artist Name"
           value={artistName}
           onChange={(e) => setArtistName(e.target.value)}
-          className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+          className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50  disabled:opacity-50 disabled:cursor-not-allowed"
         />
-        <div className="uploadControls">
+        <div className="hidden sm:flex items-center px-2">
           <p className="font-mono text-sm text-slate-600 dark:text-slate-400">
             Total: {mp3Files.length > 0 ? `${totalSizeMB} MB` : "0 MB"}
           </p>
@@ -298,7 +349,7 @@ const FileUpload: React.FC = () => {
             disabled={isLoading}
             title="Wishlist"
             aria-label="Wishlist"
-            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700  disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setWishListModal(true)}
           >
             <FontAwesomeIcon icon={faList} className={"w-4 h-4"} />
@@ -308,7 +359,7 @@ const FileUpload: React.FC = () => {
             disabled={isLoading}
             title="Upload"
             aria-label="Upload"
-            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700  disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => handleUpload()}
           >
             <FontAwesomeIcon icon={faUpload} className={"w-4 h-4"} />
@@ -318,16 +369,18 @@ const FileUpload: React.FC = () => {
             disabled={isLoading}
             title="Clear"
             aria-label="Clear"
-            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-red-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
+            className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4 bg-gray-100 text-red-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700  disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => handleClearUpload()}
           >
             <FontAwesomeIcon icon={faX} className={"w-4 h-4"} />
           </button>
         </div>
       </div>
-      <div className="uploadDropzoneWrap">
+      <div
+        className={`relative overflow-hidden md:w-[680px] w-[260px]  ${isLoading ? "disabled:opacity-50 disabled:cursor-not-allowed" : "cursor-pointer"} min-h-[360px] rounded-[2rem] bg-white/5 hover:bg-white/10 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] outline-none focus-none transition-all duration-500`}
+      >
         <div
-          className="uploadDropzone"
+          className={`w-full h-full min-h-[360px] flex flex-col items-center justify-center p-6 relative z-10 ${isLoading && "disabled:opacity-50 disabled:cursor-not-allowed"}`}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragLeave={handleDragLeave}
@@ -338,30 +391,95 @@ const FileUpload: React.FC = () => {
           ) : (
             <>
               {mp3Files.length === 0 && (
-                <>
-                  <FontAwesomeIcon
-                    icon={faUpload}
-                    className="w-[72px] h-[72px] md:w-[88px] md:h-[88px] animate-bounce text-black dark:text-white"
-                  />
-                  <h1 className="text-lg md:text-xl text-black dark:text-white font-bold p-3 md:p-4 max-w-prose">
-                    Drag and Drop your MP3 file here or click to select
+                <div className="flex flex-col items-center gap-6 text-center w-full mx-auto">
+                  {" "}
+                  <div className="p-6 rounded-full bg-transparent border-none dark:border-white/10">
+                    <FontAwesomeIcon
+                      icon={faUpload}
+                      className="w-10 h-10 md:w-12 md:h-12  text-black dark:text-white"
+                    />
+                  </div>
+                  <h1 className="text-lg md:text-xl text-black break-words dark:text-white font-bold">
+                    Drag and Drop your MP3 files here or click to select
                   </h1>
-                </>
+                </div>
               )}
 
               {mp3Files.length > 0 && (
-                <div className="w-full max-h-60 overflow-y-auto flex flex-col items-center [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                <div className="w-full max-h-60 p-4 overflow-y-auto flex flex-col items-center [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                   {mp3Files.map((file, index) => (
                     <div
                       key={index}
-                      className="w-full max-w-[760px] mt-4 p-4 rounded-xl bg-gray-200 dark:bg-gray-700 text-left"
+                      className="w-full mt-4 p-4 rounded-2xl bg-gray-200 dark:bg-gray-700 text-left"
                     >
-                      <p className="m-0 text-sm opacity-90 truncate break-words text-slate-900 dark:text-white">
-                        {index + 1}. {file.name}
-                      </p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                        {(file.size / 1048576).toFixed(2)} MB
-                      </p>
+                      <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4 overflow-hidden">
+                        {" "}
+                        <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
+                          {index === currentPlay && (
+                            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
+                              <circle
+                                cx="50%"
+                                cy="50%"
+                                r="46%"
+                                className="stroke-gray-300 dark:stroke-gray-600 opacity-50"
+                                strokeWidth="2"
+                                fill="none"
+                              />
+                              <circle
+                                cx="50%"
+                                cy="50%"
+                                r="46%"
+                                className="stroke-blue-500 transition-all duration-100 ease-linear"
+                                strokeWidth="2"
+                                fill="none"
+                                strokeLinecap="round"
+                                style={{
+                                  strokeDasharray: 100,
+                                  strokeDashoffset: 100 - progress,
+                                }}
+                                pathLength="100"
+                              />
+                            </svg>
+                          )}
+                          <button
+                            aria-label={
+                              index === currentPlay && isPlaying
+                                ? "play"
+                                : "pause"
+                            }
+                            title={
+                              index === currentPlay && isPlaying
+                                ? "play"
+                                : "pause"
+                            }
+                            disabled={isLoading || mp3Files.length === 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (index !== currentPlay) setProgress(0);
+                              handleAudio(index);
+                            }}
+                            className="relative z-10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 backdrop-blur-md shadow-none outline-none focus-none"
+                          >
+                            {index === currentPlay && isPlaying ? (
+                              <Pause
+                                fill="currentColor"
+                                className="w-4 h-4 sm:w-5 sm:h-5 text-black dark:text-white"
+                              />
+                            ) : (
+                              <Play
+                                fill="currentColor"
+                                className="w-4 h-4 sm:w-5 sm:h-5 text-black dark:text-white ml-0.5"
+                              />
+                            )}
+                          </button>
+                        </div>
+                        <p className="m-0 text-sm opacity-90 truncate break-all text-slate-900 dark:text-white">
+                          {index + 1}. {file.name}
+                        </p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                          {(file.size / 1048576).toFixed(2)} MB
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -380,6 +498,27 @@ const FileUpload: React.FC = () => {
           )}
         </div>
       </div>
+      {currentFile !== null && (
+        <audio
+          preload="metadata"
+          ref={audioRef}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              const current = audioRef.current.currentTime;
+              const total = audioRef.current.duration;
+              setProgress((current / total) * 100 || 0);
+            }
+          }}
+          onEnded={() => {
+            setProgress(0);
+            setCurrentPlay(null);
+            setCurrentFile(null);
+          }}
+          onError={() => alert("Sorry an error occured in playing audio!!!")}
+        />
+      )}
       {wishListModal && (
         <WishListMoadal handleClose={() => setWishListModal(false)} />
       )}

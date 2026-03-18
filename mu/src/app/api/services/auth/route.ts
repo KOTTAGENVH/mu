@@ -8,6 +8,7 @@ import { decrypt } from "@/config/decryption";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
+import { checkRateLimit } from "@/app/helper/rateLimiter";
 
 // 14min validity
 const max_age = 60 * 14;
@@ -21,6 +22,24 @@ export async function POST(req: Request) {
     }
 
     const { ip, token } = await req.json();
+
+    const isAllowedToProceed = await checkRateLimit(
+      ip,
+      "totp-auth",
+      5,
+      15 * 60 * 1000,
+    );
+
+    if (!isAllowedToProceed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Too many login attempts. Please try again in 15 minutes.",
+        },
+        { status: 429 },
+      );
+    }
+
     const email = process.env.EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");

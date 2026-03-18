@@ -14,7 +14,7 @@ interface TrackData {
   id: string;
   name: string;
   artist: string;
-  category: Types.ObjectId;
+  category: { id: string; name: string };
   fileUrl: string;
   favourite: boolean;
   lastPlayedAt?: Date | null;
@@ -71,12 +71,17 @@ export async function GET(req: Request) {
           ],
         },
       },
+      { $sort: { lastPlayedAt: 1 } },
+      { $limit: 1000 },
       { $sample: { size: 50 } },
     ])) as TrackData[];
 
-    //if tracks<50 get random 50 tracks
-    if (!candidates || candidates.length === 0 || candidates.length < 50) {
+    //if tracks<50 get random 50 tracks which were played last
+    //Would recommend to index lastPlayedAt at mongo db
+    if (!candidates || candidates.length < 50) {
       candidates = (await Upload.aggregate([
+        { $sort: { lastPlayedAt: 1 } },
+        { $limit: 1000 },
         { $sample: { size: 50 } },
       ])) as TrackData[];
     }
@@ -119,11 +124,10 @@ export async function GET(req: Request) {
       );
     }
 
-    const candidateIds = orderedQueue.map((track) => track._id);
-    await Upload.updateMany(
-      { _id: { $in: candidateIds } },
-      { $set: { lastPlayedAt: new Date() } },
-    );
+    await Upload.populate(orderedQueue, {
+      path: "category",
+      select: "-_id -__v",
+    });
 
     const queue = await Promise.all(
       orderedQueue.map(async (track) => {
@@ -185,11 +189,16 @@ export async function PATCH(req: Request) {
       );
     }
 
+    //1-skip
+    //2-play
     let updateQuery: UpdateQuery<typeof Upload> = {};
     if (action === "skip") {
       updateQuery = { $inc: { skipCount: 1 } };
     } else if (action === "play") {
-      updateQuery = { $inc: { playCount: 1 } };
+      updateQuery = {
+        $inc: { playCount: 1 },
+        $set: { lastPlayedAt: new Date() },
+      };
     } else {
       return NextResponse.json(
         {
