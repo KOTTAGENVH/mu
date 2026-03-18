@@ -4,8 +4,7 @@
   # MU 3.0
   **Smart Self-Hosted Audio Player & Virtual Microphone**
 
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
+**License:** `MIT` &nbsp; | &nbsp; **Package Manager:** `pnpm` &nbsp; | &nbsp; **Version:** `3.0.0`
 </div>
 
 ---
