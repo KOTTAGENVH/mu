@@ -1,8 +1,32 @@
-#Welcome to MU 3.0 
->>
->A smart web based audio player.
->>
-##Instructions
+<div align="center">
+<img width="500" height="500" alt="MU 3.0 Logo" src="https://github.com/user-attachments/assets/648bb75d-a893-4d25-bcff-cf76f19adb9c" />
+
+  # MU 3.0
+  **Smart Self-Hosted Audio Player & Virtual Microphone**
+
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
+</div>
+
+---
+
+## 🎧 About the Project
+
+**MU 3.0** is a sophisticated, self-hosted audio ecosystem designed for users who want full control over their media. It functions as both a high-fidelity web-based audio player and a virtual microphone application, bridging the gap between your personal library and your digital communication tools.
+
+> [!IMPORTANT]
+> **Audio Responsibility:** MU 3.0 does not provide pre-loaded audio files. Users are solely responsible for the content they upload and host on the application.
+
+### 📖 Documentation & Blog
+For an in-depth look at the architecture, features, and full documentation, check out our official blog:
+👉 **[Blog Link Coming Soon]**
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to get your local instance of MU 3.0 up and running.
+
 - Clone Repository
 ```
 git clone https://github.com/KOTTAGENVH/mu
@@ -40,9 +64,3 @@ NEXT_PUBLIC_R2_PUBLIC_BUCKET_IMG="YOUR_SECRET"
 pnpm run dev
 ```
 >
-
-## Gallery
-
-><img width="1908" height="900" alt="mu home" src="https://github.com/user-attachments/assets/7d0360b1-028e-44e7-a78c-8ca4e651cc45" />
-
-
