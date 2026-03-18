@@ -20,6 +20,10 @@ import MicrophoneModal from "@/components/mictalk/microphoneModal";
 
 const WORD_LIMIT = 1000;
 
+interface HTMLAudioElementWithSink extends HTMLAudioElement {
+  setSinkId(sinkId: string): Promise<void>;
+}
+
 type HighlightRange = {
   start: number;
   end: number;
@@ -315,7 +319,9 @@ function Page() {
 
         if (selectedSpeaker && "setSinkId" in audioEl) {
           try {
-            await (audioEl as any).setSinkId(selectedSpeaker.deviceId);
+            await (audioEl as HTMLAudioElementWithSink).setSinkId(
+              selectedSpeaker.deviceId,
+            );
           } catch (e) {
             console.warn("setSinkId failed; using default output.", e);
           }
