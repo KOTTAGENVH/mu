@@ -186,7 +186,7 @@ export async function streamSongById(id: string) {
 }
 
 //Update skip count for a song
-export async function updateSkipCount(id: string, action: "skip" | "play") {
+export async function updateSkipPlayCount(id: string, action: "skip" | "play") {
   const response = await fetch("/api/services/listen", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

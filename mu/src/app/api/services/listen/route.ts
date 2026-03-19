@@ -7,7 +7,36 @@ import { s3Client } from "@/app/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { UpdateQuery } from "mongoose";
+import { Types } from "mongoose";
 
+interface TrackData {
+  _id?: Types.ObjectId;
+  id: string;
+  name: string;
+  artist: string;
+  category: { id: string; name: string };
+  fileUrl: string;
+  favourite: boolean;
+  lastPlayedAt?: Date | null;
+  playCount: number;
+  skipCount: number;
+}
+
+interface ScoredTrackData extends TrackData {
+  score?: number;
+}
+
+function weightedRandomPick(candidates: ScoredTrackData[]) {
+  const minScore = Math.min(...candidates.map((c) => c.score || 0));
+  const weights = candidates.map((c) => (c.score || 0) - minScore + 1);
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < candidates.length; i++) {
+    random -= weights[i];
+    if (random <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
 
 export async function GET(req: Request) {
   await dbConnect();
@@ -31,8 +60,8 @@ export async function GET(req: Request) {
 
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
-    //get 20 random candidates that are not recently played
-    let candidates = await Upload.aggregate([
+    //get 50 random candidates that are not recently played
+    let candidates = (await Upload.aggregate([
       {
         $match: {
           $or: [
@@ -42,12 +71,19 @@ export async function GET(req: Request) {
           ],
         },
       },
-      { $sample: { size: 20 } },
-    ]);
+      { $sort: { lastPlayedAt: 1 } },
+      { $limit: 1000 },
+      { $sample: { size: 50 } },
+    ])) as TrackData[];
 
-    //if tracks<20 get random 20 tracks
-    if (!candidates || candidates.length === 0 || candidates.length < 20) {
-      candidates = await Upload.aggregate([{ $sample: { size: 20 } }]);
+    //if tracks<50 get random 50 tracks which were played last
+    //Would recommend to index lastPlayedAt at mongo db
+    if (!candidates || candidates.length < 50) {
+      candidates = (await Upload.aggregate([
+        { $sort: { lastPlayedAt: 1 } },
+        { $limit: 1000 },
+        { $sample: { size: 50 } },
+      ])) as TrackData[];
     }
 
     //Score each candidate to determine queue order
@@ -68,7 +104,8 @@ export async function GET(req: Request) {
       // Variety Penalty: -20 points if it's the same artist as the last track
       if (
         previousArtist &&
-        track.artist.toLowerCase() === previousArtist.toLowerCase()
+        track.artist.replace(/\s+/g, "").toLowerCase() ===
+          previousArtist.replace(/\s+/g, "").toLowerCase()
       ) {
         score -= 20;
       }
@@ -77,16 +114,23 @@ export async function GET(req: Request) {
     });
 
     //Sort highest score first
-    scoredCandidates.sort((a, b) => b.score - a.score);
+    const orderedQueue: ScoredTrackData[] = [];
+    let remaining = [...scoredCandidates];
+    while (remaining.length > 0) {
+      const pick = weightedRandomPick(remaining);
+      orderedQueue.push(pick);
+      remaining = remaining.filter(
+        (t) => t._id?.toString() !== pick._id?.toString(),
+      );
+    }
 
-    const candidateIds = scoredCandidates.map((track) => track._id);
-    await Upload.updateMany(
-      { _id: { $in: candidateIds } },
-      { $set: { lastPlayedAt: new Date() } },
-    );
+    await Upload.populate(orderedQueue, {
+      path: "category",
+      select: "-_id -__v",
+    });
 
     const queue = await Promise.all(
-      scoredCandidates.map(async (track) => {
+      orderedQueue.map(async (track) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.R2_BUCKET_NAME,
           Key: track.fileUrl,
@@ -145,11 +189,16 @@ export async function PATCH(req: Request) {
       );
     }
 
+    //1-skip
+    //2-play
     let updateQuery: UpdateQuery<typeof Upload> = {};
     if (action === "skip") {
       updateQuery = { $inc: { skipCount: 1 } };
     } else if (action === "play") {
-      updateQuery = { $inc: { playCount: 1 } };
+      updateQuery = {
+        $inc: { playCount: 1 },
+        $set: { lastPlayedAt: new Date() },
+      };
     } else {
       return NextResponse.json(
         {

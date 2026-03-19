@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import "@/models/category"; 
+import "@/models/upload";
+import "@/models/user";
+import "@/models/rateLimit";
+import "@/models/list";
 
 const connection: { isConnected?: number } = {};
 

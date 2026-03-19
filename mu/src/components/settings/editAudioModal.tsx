@@ -54,7 +54,7 @@ export default function EditAudioModal({
       if (data.success) {
         setNewName(data.track.name);
         setNewArtist(data.track.artist);
-        setCategory(data.track.category.name);
+        setCategory(data.track.category.id);
       } else {
         alert("Failed to fetch audio details.");
       }

@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGear,
   faHouse,
+  faMicrophone,
   faRightFromBracket,
   faRightToBracket,
   faUpload,
@@ -56,6 +57,10 @@ function Header() {
     router.push("/settings");
   };
 
+  const handleMicTalk = () => {
+    router.push("/mictalk");
+  };
+
   const handleLogout = async () => {
     try {
       const response = await logout();
@@ -77,7 +82,7 @@ function Header() {
     : "transition-all duration-300 ease-out";
 
   const baseBtnClass =
-    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";
+    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4  focus-none outline-none border-none";
 
   const defaultBtnClass =
     "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700";
@@ -104,7 +109,7 @@ function Header() {
           />
         </div>
         <div className="flex items-center shrink-0 md:items-end">
-          {pathname?.includes("/legal") && (
+          {pathname?.includes("/legal") && ! authStatus &&(
             <button
               title="login"
               className={`${baseBtnClass} ${defaultBtnClass}`}
@@ -133,6 +138,15 @@ function Header() {
                 onClick={handleAdd}
               >
                 <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
+              </button>
+
+              <button
+                title="mictalk"
+                aria-label="mictalk"
+                className={getBtnClass("/mictalk")}
+                onClick={handleMicTalk}
+              >
+                <FontAwesomeIcon icon={faMicrophone} className="w-4 h-4" />
               </button>
 
               <button

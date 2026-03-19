@@ -18,11 +18,7 @@ export async function verifyAuthToken(ip: string, token: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token: token, ip }),
   });
-  if (response.ok) {
-    return await response.json();
-  } else {
-    throw new Error("Failed to update verification status");
-  }
+  return await response.json();
 }
 
 //validate url token and generate cookie
@@ -32,11 +28,7 @@ export async function validateGenCookie(ip: string, token: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token: token, ip: ip }),
   });
-  if (response.ok) {
-    return await response.json();
-  } else {
-    throw new Error("Failed to validate URL token and generate cookie");
-  }
+  return await response.json();
 }
 
 //Verify cookie on protected routes

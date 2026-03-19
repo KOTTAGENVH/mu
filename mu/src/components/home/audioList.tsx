@@ -165,7 +165,7 @@ function AudioList() {
           data-filter-button
           title="Category filter"
           className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => {
             setCategoryListClicked((v) => !v);
@@ -178,6 +178,11 @@ function AudioList() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                fetchAudio(search, "");
+              }
+            }}
             className="text-sm w-full pl-6 pr-10 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
             placeholder="What are you in the mood for?"
           />
@@ -194,7 +199,7 @@ function AudioList() {
         <button
           title="Search"
           className="hidden md:inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onClick={() => {
             fetchAudio(search, "");
           }}
@@ -207,7 +212,7 @@ function AudioList() {
           data-filter-button
           title="Category filter"
           className="md:hidden inline-flex flex-none items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => {
             setCategoryListClicked((v) => !v);
@@ -218,7 +223,7 @@ function AudioList() {
         <button
           title="Search"
           className="md:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
-          aria-hidden="true"
+          // aria-hidden="true"
           onClick={() => {
             fetchAudio(search, "");
           }}
@@ -231,7 +236,7 @@ function AudioList() {
         <div
           ref={dropdownRef}
           className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96 h-auto max-h-60 overflow-y-auto
-    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg"
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300"
         >
           <button
             onClick={() => {
@@ -302,7 +307,7 @@ function AudioList() {
 
       <div
         ref={listRef}
-        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
+        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
         {allAudio &&
           allAudio.length > 0 &&

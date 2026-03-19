@@ -137,7 +137,7 @@ export async function POST(req: Request) {
       const totalDocs = result[0]?.metadata[0]?.total || 0;
       const uploads = result[0]?.data || [];
 
-      await Upload.populate(uploads, { path: "category" });
+      await Upload.populate(uploads, { path: "category", select: "-_id" });
 
       return NextResponse.json({
         success: true,
@@ -165,11 +165,11 @@ export async function POST(req: Request) {
     }
 
     const uploadsPromise = Upload.find(query)
-      .sort({ createdAt: -1, _id: -1 })
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limitNumber)
       .select("-_id")
-      .populate("category")
+      .populate("category", "-_id")
       .lean();
 
     const countPromise = Upload.countDocuments(query);

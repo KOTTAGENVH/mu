@@ -15,12 +15,14 @@ import Loader from "@/components/loader";
 import ManageAudio from "@/components/settings/audio";
 import LoginFooter from "@/components/login/loginFooter";
 import { useMask } from "@/contextApi/mask";
+import { useAudioEq } from "@/contextApi/audioEnhance";
 
 function Page() {
   const router = useRouter();
   const { toggleAuth } = useAuth();
   const { toggleSearch, sematicSearch } = useSearch();
   const { maskStatus, toggleMask } = useMask();
+  const { useCompressor, setUseCompressor, resetEq } = useAudioEq();
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -85,6 +87,14 @@ function Page() {
     }
     if (id === 6) {
       toggleMask(!maskStatus);
+      return;
+    }
+    if (id === 7) {
+      resetEq();
+      return;
+    }
+    if (id === 8) {
+      setUseCompressor(!useCompressor);
       return;
     }
     setActiveSetting(id);

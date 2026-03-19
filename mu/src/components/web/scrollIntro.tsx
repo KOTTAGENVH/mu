@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import NextImage from "next/image";
+import WebLoader from "./webLoader";
 
 const total_frames = 415;
 const file_ext = "png";
@@ -22,6 +23,7 @@ const quotes = [
   "Smart search, instant finds.",
   "Add you wishlist, download later.",
   "Your categories. Your flow.",
+  "Virtual Microphone.",
   "2FA built in.",
   "Stats you can see. Storage you control.",
   "Private by design.",
@@ -49,7 +51,7 @@ function frameUrl(frameIndex1Based: number) {
 export default function ScrollIntro() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
+  const frameIndexRef = useRef(1);
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
     Array(total_frames).fill(null),
   );
@@ -125,7 +127,7 @@ export default function ScrollIntro() {
           setFirstFrameLoaded(true);
         }
 
-        if (idx1 === frameIndex) drawFrame(idx1);
+        if (idx1 === frameIndexRef.current) drawFrame(idx1);
       };
       img.onerror = () => {
         loadedRef.current[i] = false;
@@ -144,6 +146,10 @@ export default function ScrollIntro() {
     },
     [ensureLoaded],
   );
+
+  useEffect(() => {
+    frameIndexRef.current = frameIndex;
+  }, [frameIndex]);
 
   useEffect(() => {
     ensureLoaded(1);
@@ -246,6 +252,24 @@ export default function ScrollIntro() {
             background: "#000",
           }}
         >
+          {!firstFrameLoaded && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#000",
+                zIndex: 50,
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "1.2rem",
+                fontFamily: "sans-serif",
+              }}
+            >
+              <WebLoader />
+            </div>
+          )}
           <canvas
             ref={canvasRef}
             style={{

@@ -40,7 +40,7 @@ export default function AudioCard({
         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
           <button
             onClick={handlePlay}
-            className={`p-3 bg-blue-50 dark:bg-blue-900/20 ${isCurrentlyPlaying ? "hover:bg-red-400 dark:hover:bg-red-600" : "hover:bg-green-400 dark:hover:bg-green-500"} text-black dark:text-white rounded-full `}
+            className={`p-3 bg-blue-50 dark:bg-blue-900/20 ${isCurrentlyPlaying ? "hover:bg-red-400 dark:hover:bg-red-600" : "hover:bg-green-400 dark:hover:bg-green-500"} text-black dark:text-white rounded-full border-none focus-none outline-none`}
             title={isCurrentlyPlaying ? "Pause" : "Play"}
           >
             {isCurrentlyPlaying ? (
