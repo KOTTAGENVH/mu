@@ -23,7 +23,7 @@ const quotes = [
   "Smart search, instant finds.",
   "Add you wishlist, download later.",
   "Your categories. Your flow.",
-  "Virtual Microphone",
+  "Virtual Microphone.",
   "2FA built in.",
   "Stats you can see. Storage you control.",
   "Private by design.",
