@@ -584,7 +584,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-  }, [id, fetchStreamAudioById]);
+  }, [id, currentAudioIndex, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
