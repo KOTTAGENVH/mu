@@ -479,50 +479,40 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     retryCountRef.current += 1;
 
     try {
-      const lastSong = audioList.at(-1);
-      const response = await streamSongs(lastSong?.artist);
-      const freshBatch = response?.uploads || [];
+      const freshTrackData = await fetchStreamAudioById(trackId);
 
-      if (freshBatch.length > 0) {
-        const updatedCurrentTrack = freshBatch.find(
-          (t: AudioItem) => t.id === trackId,
-        );
+      if (freshTrackData && freshTrackData.fileUrl) {
+        setAudioList((prev) => {
+          const newList = [...prev];
+          newList[currentAudioIndex] = {
+            ...newList[currentAudioIndex],
+            fileUrl: freshTrackData.fileUrl,
+          };
+          return newList;
+        });
 
-        setAudioList(freshBatch);
+        if (audioRef.current) {
+          audioRef.current.src = freshTrackData.fileUrl;
+          audioRef.current.load();
+          const restoreTime = () => {
+            if (audioRef.current) {
+              audioRef.current.currentTime = savedTime;
+              audioRef.current.removeEventListener(
+                "loadedmetadata",
+                restoreTime,
+              );
+            }
+          };
 
-        if (updatedCurrentTrack) {
-          const newIdx = freshBatch.findIndex(
-            (t: AudioItem) => t.id === trackId,
-          );
-          setCurrentAudioIndex(newIdx);
-
-          if (audioRef.current) {
-            audioRef.current.src = updatedCurrentTrack.fileUrl;
-            audioRef.current.load();
-            const restoreTime = () => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = savedTime;
-                audioRef.current.removeEventListener(
-                  "loadedmetadata",
-                  restoreTime,
-                );
-              }
-            };
-
-            audioRef.current.addEventListener("loadedmetadata", restoreTime);
-          }
-        } else {
-          setCurrentAudioIndex(0);
+          audioRef.current.addEventListener("loadedmetadata", restoreTime);
         }
-
-        setBatchFetchedAt(Date.now());
 
         setTimeout(() => {
           setPause(false);
           cleanupRecovery();
         }, 500);
       } else {
-        throw new Error("Empty batch received");
+        throw new Error("Empty track received during recovery");
       }
     } catch (error) {
       // console.error("Critical recovery failure:", error);
