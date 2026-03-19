@@ -453,11 +453,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     setIsLoadingSync(true);
     setPause(true);
 
-    const savedTime = audioRef.current?.currentTime || 0;
+    const savedTime = audioRef.current?.currentTime || currentTime;
 
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = "";
+      audioRef.current.removeAttribute("src");
       audioRef.current.load();
     }
 
