@@ -534,13 +534,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         setPause(true);
         return;
       }
-      const currentlyPlayingId = audioList[currentAudioIndex]?.id;
+      const currentlyPlayingId = audioListRef.current[currentAudioIndex]?.id;
       if (id === currentlyPlayingId) {
         setPause(false);
         return;
       }
 
-      const existingIndex = audioList.findIndex((track) => track.id === id);
+      const existingIndex = audioListRef.current.findIndex((track) => track.id === id);
 
       if (existingIndex !== -1) {
         setCurrentAudioIndex(existingIndex);
@@ -573,9 +573,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             }
           });
 
-          setCurrentAudioIndex((prev) =>
-            prev === audioList.length ? 0 : prev + 1,
-          );
+          // setCurrentAudioIndex((prev) =>
+          //   prev === audioListRef.current.length ? 0 : prev + 1,
+          // );
           setCurrentAudioIndex(insertedIndex);
           setPause(false);
         }
@@ -584,7 +584,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-  }, [id, audioList, currentAudioIndex, fetchStreamAudioById]);
+  }, [id, currentAudioIndex, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
