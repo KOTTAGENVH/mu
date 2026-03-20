@@ -33,6 +33,7 @@ interface AudioList {
   lastPlayed: string;
   playCount: number;
   skipCount: number;
+  fetchedAt?: number;
 }
 
 export interface AudioItem {
@@ -42,6 +43,7 @@ export interface AudioItem {
   category: string;
   fileUrl: string;
   favourite: boolean;
+  fetchedAt?: number;
 }
 
 interface AudioPlayerModalProps {
@@ -59,7 +61,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isShuffling, setIsShuffling] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [batchFetchedAt, setBatchFetchedAt] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
   const [pause, setPause] = useState<boolean>(true);
@@ -74,11 +75,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const pannerRef = useRef<StereoPannerNode | null>(null);
   const audioListRef = useRef<AudioItem[]>([]);
   const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
+  const currentAudioIndexRef = useRef<number>(currentAudioIndex);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
 
   useEffect(() => {
     audioListRef.current = audioList;
   }, [audioList]);
+
+  useEffect(() => {
+    currentAudioIndexRef.current = currentAudioIndex;
+  }, [currentAudioIndex]);
 
   useEffect(() => {
     if (!audioRef.current || sourceRef.current) return;
@@ -194,11 +200,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       const data = await response;
 
       if (data && data.success) {
+        const stampedUploads = data.uploads.map((track: any) => ({
+          ...track,
+          fetchedAt: Date.now(),
+        }));
         setAudioList((prev) =>
-          prev.length === 0 || forceRefresh ? data.uploads : prev,
+          prev.length === 0 || forceRefresh ? stampedUploads : prev,
         );
-        setBatchFetchedAt(Date.now());
-
         return data;
       } else {
         setAudioList([]);
@@ -225,7 +233,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         const data = await response;
 
         if (data && data.success) {
-          return data.track ?? null;
+          return { ...data.track, fetchedAt: Date.now() ?? null };
         } else {
           return null;
         }
@@ -287,10 +295,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       return;
     }
 
-    const isBatchExpired = Date.now() - batchFetchedAt > 3000000;
+    // const isBatchExpired = Date.now() - batchFetchedAt > 3000000;
     const nextIndex = currentAudioIndex + 1;
 
-    if (nextIndex >= len || isBatchExpired) {
+    if (nextIndex >= len) {
       if (audioRef.current) audioRef.current.src = "";
       setIsLoadingSync(true);
       const lastSong = currentList.at(-1);
@@ -298,11 +306,19 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       const moreTracks = Array.isArray(response) ? response : response?.uploads;
 
       if (moreTracks && moreTracks.length > 0) {
-        setAudioList((prev) => [...prev, ...moreTracks]);
+        //sliding window of 30
+        const maxHistory = 30;
+        const previousTracksToKeep = currentList.slice(-maxHistory);
+        const stampedTracks = moreTracks.map((track: any) => ({
+          ...track,
+          fetchedAt: Date.now(),
+        }));
+        setAudioList([...previousTracksToKeep, ...stampedTracks]);
+        const newTrackIndex = previousTracksToKeep.length;
 
         const nextId = moreTracks[0]?.id || "";
         if (nextId) handleId(nextId);
-        setCurrentAudioIndex(nextIndex);
+        setCurrentAudioIndex(newTrackIndex);
       } else {
         setCurrentAudioIndex(0);
       }
@@ -317,7 +333,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     currentAudioIndex,
     isShuffling,
     handleId,
-    batchFetchedAt,
+    // batchFetchedAt,
     handleSkipPlayCount,
   ]);
 
@@ -487,6 +503,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           newList[currentAudioIndex] = {
             ...newList[currentAudioIndex],
             fileUrl: freshTrackData.fileUrl,
+            fetchedAt: Date.now(),
           };
           return newList;
         });
@@ -534,13 +551,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         setPause(true);
         return;
       }
-      const currentlyPlayingId = audioList[currentAudioIndex]?.id;
+
+      const currentIndex = currentAudioIndexRef.current;
+      const currentList = audioListRef.current;
+      const currentlyPlayingId = currentList[currentIndex]?.id;
       if (id === currentlyPlayingId) {
         setPause(false);
         return;
       }
 
-      const existingIndex = audioList.findIndex((track) => track.id === id);
+      const existingIndex = currentList.findIndex((track) => track.id === id);
 
       if (existingIndex !== -1) {
         setCurrentAudioIndex(existingIndex);
@@ -557,26 +577,33 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             category: newTrack.categotry?.name ?? "",
             fileUrl: newTrack.fileUrl,
             favourite: newTrack.favourite,
+            fetchedAt: newTrack.fetchedAt || Date.now(),
           };
 
-          let insertedIndex = 0;
+          let finalInsertedIndex = 0;
           setAudioList((prev) => {
-            const newList = [...prev];
+            let newList = [...prev];
+
             if (newList.length === 0) {
-              insertedIndex = 0;
+              finalInsertedIndex = 0;
               return [newTrackAsItem];
-            } else {
-              const insertAt = currentAudioIndex + 1;
-              newList.splice(insertAt, 0, newTrackAsItem);
-              insertedIndex = insertAt;
-              return newList;
             }
+
+            const insertAt = currentAudioIndex + 1;
+            newList.splice(insertAt, 0, newTrackAsItem);
+
+            const maxListSize = 60;
+            if (newList.length > maxListSize) {
+              const trimAmount = newList.length - maxListSize;
+              newList = newList.slice(trimAmount);
+              finalInsertedIndex = Math.max(0, insertAt - trimAmount);
+            } else {
+              finalInsertedIndex = insertAt;
+            }
+            return newList;
           });
 
-          setCurrentAudioIndex((prev) =>
-            prev === audioList.length ? 0 : prev + 1,
-          );
-          setCurrentAudioIndex(insertedIndex);
+          setCurrentAudioIndex(finalInsertedIndex);
           setPause(false);
         }
         setIsLoadingSync(false);
@@ -584,7 +611,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-  }, [id, audioList, currentAudioIndex, fetchStreamAudioById]);
+  }, [id, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
