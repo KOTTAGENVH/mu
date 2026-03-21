@@ -586,7 +586,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   useEffect(() => {
     const playExternalSong = async () => {
-      if (!id) return;
+      if (!id) {
+        setPause(true);
+        return;
+      }
 
       const currentIndex = currentAudioIndexRef.current;
       const currentList = audioListRef.current;
