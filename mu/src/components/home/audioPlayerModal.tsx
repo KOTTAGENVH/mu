@@ -438,12 +438,30 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   }, [currentAudioIndex, pause]);
 
   const handlePrev = useCallback(() => {
-    setPause(false);
     const el = audioRef.current;
+
     if (el && typeof el.currentTime === "number" && el.currentTime > 5) {
       el.currentTime = 0;
+      el.play().catch((err) => {
+        if (err.name !== "AbortError") {
+          // console.error("Play failed:", err);
+        } else {
+          // console.error("Unknown error: ", err);
+        }
+      });
+      setPause(false);
       return;
     }
+
+    el?.play().catch((err) => {
+      if (err.name !== "AbortError") {
+        // console.error("Play failed:", err);
+      } else {
+        // console.error("Unknown error: ", err);
+      }
+    });
+    setPause(false);
+
     const nextIdx =
       currentAudioIndex === 0 ? audioList.length - 1 : currentAudioIndex - 1;
     const nextId = audioList[nextIdx]?.id || "";
