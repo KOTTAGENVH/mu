@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -547,10 +547,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   useEffect(() => {
     const playExternalSong = async () => {
-      if (!id) {
-        setPause(true);
-        return;
-      }
+      if (!id) return;
 
       const currentIndex = currentAudioIndexRef.current;
       const currentList = audioListRef.current;
@@ -589,7 +586,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               return [newTrackAsItem];
             }
 
-            const insertAt = currentAudioIndex + 1;
+            const insertAt = currentAudioIndexRef.current + 1;
             newList.splice(insertAt, 0, newTrackAsItem);
 
             const maxListSize = 60;
@@ -611,7 +608,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     };
 
     playExternalSong();
-  }, [id, fetchStreamAudioById]);
+  }, [id, audioList, fetchStreamAudioById]);
 
   useEffect(() => {
     if (audioList.length > 0 && audioList[currentAudioIndex]) {
@@ -747,7 +744,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               <input
                 disabled={isLoading || audioList.length === 0}
                 type="range"
-                className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full outline-none focus-none border-none"
                 min="0"
                 max={duration || 0}
                 value={currentTime}
@@ -775,7 +772,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               aria-label="shuffle"
               title="shuffle"
               disabled={isLoading || audioList.length === 0}
-              onClick={() => setIsShuffling(!isShuffling)}
+              onClick={() => {
+                setIsShuffling(!isShuffling);
+              }}
               className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
             >
               <Shuffle
