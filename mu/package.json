@@ -9,10 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1012.0",
-    "@aws-sdk/s3-request-presigner": "^3.1012.0",
+    "@aws-sdk/client-s3": "^3.1014.0",
+    "@aws-sdk/s3-request-presigner": "^3.1014.0",
     "@firebase/app": "^0.10.18",
-    "@tanstack/react-query": "^5.91.0",
     "chart.js": "^4.5.1",
     "cookie": "^1.1.1",
     "dotenv": "^16.6.1",
@@ -21,7 +20,7 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.544.0",
     "mongoose": "^8.23.0",
-    "next": "^16.2.0",
+    "next": "^16.2.1",
     "nodemailer": "^8.0.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -29,14 +28,14 @@
   },
   "devDependencies": {
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
-    "@fortawesome/react-fontawesome": "^3.2.0",
+    "@fortawesome/react-fontawesome": "^3.3.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.37",
     "@types/nodemailer": "^6.4.23",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.0",
+    "eslint-config-next": "^16.2.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3"
