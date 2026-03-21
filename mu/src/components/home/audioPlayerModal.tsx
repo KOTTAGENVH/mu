@@ -283,7 +283,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       }
     }
-
+    el?.play().catch((err) => {
+      if (err.name !== "AbortError") {
+        // console.error("Play failed:", err);
+      } else {
+        // console.error("Unknown error: ", err);
+      }
+    });
     setPause(false);
 
     if (isShuffling) {
@@ -446,10 +452,25 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   }, [audioList, currentAudioIndex, handleId]);
 
   const handleAudio = () => {
+    const el = audioRef.current;
+    if (!el) return;
+
     const currentTrackId = audioList[currentAudioIndex]?.id || "";
     if (currentTrackId) handleId(currentTrackId);
     if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
       audioCtxRef.current.resume();
+    }
+
+    if (pause) {
+      el.play().catch((err) => {
+        if (err.name !== "AbortError") {
+          // console.error("Play failed:", err);
+        } else {
+          // console.error("Unknown error: ", err);
+        }
+      });
+    } else {
+      el.pause();
     }
 
     setPause((prev) => !prev);
@@ -775,7 +796,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               onClick={() => {
                 setIsShuffling(!isShuffling);
               }}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               <Shuffle
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isShuffling ? "text-blue-400" : "text-black dark:text-white"}`}
@@ -786,7 +807,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="previous"
               onClick={handlePrev}
               disabled={isLoading || audioList.length === 0}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 text-black dark:text-white" />
             </button>
@@ -795,7 +816,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title={pause ? "play" : "pause"}
               disabled={isLoading || audioList.length === 0}
               onClick={handleAudio}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               {pause ? (
                 <Play
@@ -823,7 +844,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="loop"
               disabled={isLoading || audioList.length === 0}
               onClick={() => setIsLooping(!isLooping)}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               <Repeat
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isLooping ? "text-blue-400" : "text-black dark:text-white"}`}
@@ -834,7 +855,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title="favorite"
               disabled={isLoading || audioList.length === 0}
               onClick={handleFavoriteToggle}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none"
+              className={`p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg focus-none outline-none border-none ${isLoading ? "opacity-50" : ""}`}
             >
               <Heart
                 className={`w-4 h-4 sm:w-6 sm:h-6 ${isFavorite ? "text-red-500 fill-red-500" : "text-black dark:text-white"}`}
