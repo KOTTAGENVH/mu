@@ -20,8 +20,6 @@
 For an in-depth look at the architecture, features, and full documentation, check out our official blog:
 👉 **https://www.nowenkottage.com/mu**
 
----
-
 ## 🚀 Getting Started
 
 Follow these steps to get your local instance of MU 3.0 up and running.
