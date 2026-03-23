@@ -18,9 +18,7 @@
 
 ### 📖 Documentation & Blog
 For an in-depth look at the architecture, features, and full documentation, check out our official blog:
-👉 **[Blog Link Coming Soon]**
-
----
+👉 **https://www.nowenkottage.com/mu**
 
 ## 🚀 Getting Started
 
