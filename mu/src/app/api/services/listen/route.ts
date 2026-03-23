@@ -90,6 +90,11 @@ export async function GET(req: Request) {
     const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
 
+      //Allows to compete with favourites score which may go 20+
+      if (!track.playCount || track.playCount === 0) {
+        score += 15; 
+      }
+
       // Play Bonus: +0.5 per play (Capped at +10 points)
       const playBonus = Math.min((track.playCount || 0) * 0.5, 10);
       score += playBonus;
