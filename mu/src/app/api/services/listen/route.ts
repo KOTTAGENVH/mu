@@ -58,8 +58,6 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const previousArtist = searchParams.get("previousArtist");
 
-    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
-
     //get 50 candidates that are not recently played
     let candidates = (await Upload.aggregate([
       // {
@@ -75,7 +73,7 @@ export async function GET(req: Request) {
       { $limit: 50 },
     ])) as TrackData[];
 
-    if (!candidates) {
+    if (!candidates || candidates.length === 0) {
       return NextResponse.json(
         {
           success: false,
