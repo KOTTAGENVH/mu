@@ -60,7 +60,7 @@ export async function GET(req: Request) {
 
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
-    //get 50 random candidates that are not recently played
+    //get 50 candidates that are not recently played
     let candidates = (await Upload.aggregate([
       // {
       //   $match: {
@@ -72,27 +72,26 @@ export async function GET(req: Request) {
       //   },
       // },
       { $sort: { lastPlayedAt: 1 } },
-      { $limit: 1000 },
-      { $sample: { size: 50 } },
+      { $limit: 50 },
     ])) as TrackData[];
 
-    //if tracks<50 get random 50 tracks which were played last
-    //Would recommend to index lastPlayedAt at mongo db
-    if (!candidates || candidates.length < 50) {
-      candidates = (await Upload.aggregate([
-        { $sort: { lastPlayedAt: 1 } },
-        { $limit: 1000 },
-        { $sample: { size: 50 } },
-      ])) as TrackData[];
+    if (!candidates) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Sorry, no audio is being uploaded!",
+          uploads: [],
+        },
+        { status: 404 },
+      );
     }
-
     //Score each candidate to determine queue order
     const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
 
       //Allows to compete with favourites score which may go 20+
       if (!track.playCount || track.playCount === 0) {
-        score += 15; 
+        score += 15;
       }
 
       // Play Bonus: +0.5 per play (Capped at +10 points)
