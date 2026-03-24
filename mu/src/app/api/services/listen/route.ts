@@ -62,15 +62,15 @@ export async function GET(req: Request) {
 
     //get 50 random candidates that are not recently played
     let candidates = (await Upload.aggregate([
-      {
-        $match: {
-          $or: [
-            { lastPlayedAt: { $exists: false } },
-            { lastPlayedAt: null },
-            { lastPlayedAt: { $lt: fourHoursAgo } },
-          ],
-        },
-      },
+      // {
+      //   $match: {
+      //     $or: [
+      //       { lastPlayedAt: { $exists: false } },
+      //       { lastPlayedAt: null },
+      //       { lastPlayedAt: { $lt: fourHoursAgo } },
+      //     ],
+      //   },
+      // },
       { $sort: { lastPlayedAt: 1 } },
       { $limit: 1000 },
       { $sample: { size: 50 } },
