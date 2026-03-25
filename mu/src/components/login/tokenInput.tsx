@@ -4,7 +4,10 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import { verifyAuthToken } from "@/app/api/client/services/auth/api";
+import {
+  getIPAddress,
+  verifyAuthToken,
+} from "@/app/api/client/services/auth/api";
 import Loader from "../loader";
 import OTPInput from "./otpInputField";
 import { ArrowLeft, Mail } from "lucide-react";
@@ -22,24 +25,15 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
   const handleGetIp = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/services/ipChecker", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      const ip = await getIPAddress();
 
-      if (response.ok) {
-        const data = await response.json();
-        setLoading(false);
-        return data.ip;
-      } else {
-        setLoading(false);
-        alert("Error fetching IP address");
-        return null;
-      }
+      return ip;
     } catch (error) {
-      setLoading(false);
+      // console.error(error);
       alert("Error fetching IP address");
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +72,6 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
         setTimeout(() => {
           setIsSuccess(false);
         }, 4000);
-        
       } catch (error) {
         formik.setFieldValue("token", "");
         formik.setTouched({ token: false });

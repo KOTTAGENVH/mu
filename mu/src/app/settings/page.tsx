@@ -16,6 +16,7 @@ import ManageAudio from "@/components/settings/audio";
 import LoginFooter from "@/components/login/loginFooter";
 import { useMask } from "@/contextApi/mask";
 import { useAudioEq } from "@/contextApi/audioEnhance";
+import ManageActivty from "@/components/settings/activityManager";
 
 function Page() {
   const router = useRouter();
@@ -108,6 +109,8 @@ function Page() {
         return <ManageWishList />;
       case 5:
         return <ManageAudio />;
+      case 9:
+        return <ManageActivty />;
       default:
         return (
           <>

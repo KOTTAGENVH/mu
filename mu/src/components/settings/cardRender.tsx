@@ -9,6 +9,7 @@ import {
   faMask,
   faRotateLeft,
   faArrowsLeftRight,
+  faHistory,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface RenderProps {
@@ -57,6 +58,11 @@ function SettingCardRender({ onSettingSelect }: RenderProps) {
       id: 8,
       title: "Volume Leveler",
       icon: faArrowsLeftRight,
+    },
+    {
+      id: 9,
+      title: "Activity Manager",
+      icon: faHistory,
     }
   ];
   
