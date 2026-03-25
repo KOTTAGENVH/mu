@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
-import { customEmail } from "@/config/customEmail";
 import Category from "@/models/category";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { generateId } from "@/app/helper/uniqueIdGenerator";
 import Upload from "@/models/upload";
+import Activity, { ActionType, ActivityType } from "@/models/activity";
 
 //Post new category
 export async function POST(req: Request) {
@@ -60,17 +60,53 @@ export async function POST(req: Request) {
       name: name,
     });
 
-    const email = process.env.EMAIL || "";
-    if (email) {
-      try {
-        await customEmail(
-          email,
-          `New Category Created`,
-          `A new category named "${newCategory.name}" has been created with ID: ${newCategory.id}`,
-        );
-      } catch (emailError) {
-        console.error("Failed to send email notification:", emailError);
+    // Add Activty
+    let uniqueActivtyId = "";
+    let activityIdLength = 6;
+    let isActivtyUnique = false;
+
+    while (!isActivtyUnique) {
+      uniqueActivtyId = generateId(activityIdLength);
+
+      const existingActivityID = await Activity.findOne({
+        id: uniqueActivtyId,
+      });
+
+      if (!existingActivityID) {
+        isActivtyUnique = true;
+      } else {
+        activityIdLength++;
       }
+    }
+
+    const IST_TIMEZONE = "Asia/Kolkata";
+    const now = new Date();
+
+    const activity = await Activity.create({
+      id: uniqueActivtyId,
+      taskname: `A new category named "${newCategory.name}" has been created with ID: ${newCategory.id}`,
+      type: ActivityType.CATEGORY,
+      action: ActionType.ADD,
+      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      time: now.toLocaleTimeString("en-IN", {
+        timeZone: IST_TIMEZONE,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
+      timezone: "IST",
+    });
+
+    if (!activity) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sorry, an error occurred while recording the creating category activity.",
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json(
@@ -196,16 +232,54 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const email = process.env.EMAIL || "";
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
+    // Add Activty
+    let uniqueActivtyId = "";
+    let activityIdLength = 6;
+    let isActivtyUnique = false;
+
+    while (!isActivtyUnique) {
+      uniqueActivtyId = generateId(activityIdLength);
+
+      const existingActivityID = await Activity.findOne({
+        id: uniqueActivtyId,
+      });
+
+      if (!existingActivityID) {
+        isActivtyUnique = true;
+      } else {
+        activityIdLength++;
+      }
     }
 
-    await customEmail(
-      email,
-      `Category ${category.name} has been updated`,
-      `The category ${category.name} has been updated`,
-    );
+    const IST_TIMEZONE = "Asia/Kolkata";
+    const now = new Date();
+
+    const activity = await Activity.create({
+      id: uniqueActivtyId,
+      taskname: `The category ${category.name} has been updated`,
+      type: ActivityType.CATEGORY,
+      action: ActionType.EDIT,
+      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      time: now.toLocaleTimeString("en-IN", {
+        timeZone: IST_TIMEZONE,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
+      timezone: "IST",
+    });
+
+    if (!activity) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sorry, an error occurred while recording the category update activity.",
+        },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -271,17 +345,54 @@ export async function DELETE(req: Request) {
 
     await Category.findOneAndDelete({ id: id });
 
-    // Send email notification
-    const email = process.env.EMAIL || "";
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
+    // Add Activty
+    let uniqueActivtyId = "";
+    let activityIdLength = 6;
+    let isActivtyUnique = false;
+
+    while (!isActivtyUnique) {
+      uniqueActivtyId = generateId(activityIdLength);
+
+      const existingActivityID = await Activity.findOne({
+        id: uniqueActivtyId,
+      });
+
+      if (!existingActivityID) {
+        isActivtyUnique = true;
+      } else {
+        activityIdLength++;
+      }
     }
 
-    await customEmail(
-      email,
-      `Category Deleted`,
-      `The category "${categoryToDelete.name}" has been deleted.`,
-    );
+    const IST_TIMEZONE = "Asia/Kolkata";
+    const now = new Date();
+
+    const activity = await Activity.create({
+      id: uniqueActivtyId,
+      taskname: `The category "${categoryToDelete.name}" has been deleted.`,
+      type: ActivityType.CATEGORY,
+      action: ActionType.DELETE,
+      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      time: now.toLocaleTimeString("en-IN", {
+        timeZone: IST_TIMEZONE,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
+      timezone: "IST",
+    });
+
+    if (!activity) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sorry, an error occurred while recording the category delete activity.",
+        },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       success: true,

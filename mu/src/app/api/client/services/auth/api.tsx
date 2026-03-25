@@ -74,3 +74,20 @@ export async function deleteAccount() {
     throw new Error("Failed to delete account and reset authenticator");
   }
 }
+
+export async function getIPAddress() {
+  const response = await fetch("/api/services/ipChecker", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (response.ok) {
+    const data = await response.json();
+    return data.ip;
+  } else {
+    const errorData = await response.json().catch((err) => {
+      // console.error("JSON Parsing Error:", err);
+      return {};
+    });
+    throw new Error(errorData.message || "Failed to fetch IP address");
+  }
+}

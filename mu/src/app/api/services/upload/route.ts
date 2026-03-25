@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
-import { customEmail } from "@/config/customEmail";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/app/lib/r2";
@@ -9,6 +8,7 @@ import { stegMP3Checker, stegWavChecker } from "@/app/helper/stegnographyCheck";
 import { generateId } from "@/app/helper/uniqueIdGenerator";
 import { isAllowed } from "@/app/helper/origin_helper";
 import Category from "@/models/category";
+import Activity, { ActionType, ActivityType } from "@/models/activity";
 
 // Handle the POST request for audio
 export async function POST(req: Request) {
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     if (!categoryDoc) {
       return NextResponse.json(
         { success: false, message: `Category '${category}' not found.` },
-        { status: 400 }
+        { status: 400 },
       );
     }
     // Remove inverted commas from the name
@@ -149,18 +149,56 @@ export async function POST(req: Request) {
         { success: false, message: "Upload not created" },
         { status: 500 },
       );
-    } else {
-      const email = process.env.EMAIL || "";
-      if (!email) {
-        throw new Error("EMAIL environment variable is not set.");
+    }
+
+    // Add Activty
+    let uniqueActivtyId = "";
+    let activityIdLength = 6;
+    let isActivtyUnique = false;
+
+    while (!isActivtyUnique) {
+      uniqueActivtyId = generateId(activityIdLength);
+
+      const existingActivityID = await Activity.findOne({
+        id: uniqueActivtyId,
+      });
+
+      if (!existingActivityID) {
+        isActivtyUnique = true;
+      } else {
+        activityIdLength++;
       }
-      // Send email
-      await customEmail(
-        email,
-        "Welcome to MU",
-        `You have successfully uploaded ${name} to MU.`,
+    }
+
+    const IST_TIMEZONE = "Asia/Kolkata";
+    const now = new Date();
+
+    const activity = await Activity.create({
+      id: uniqueActivtyId,
+      taskname: `You have successfully uploaded ${name} to MU.`,
+      type: ActivityType.AUDIO,
+      action: ActionType.ADD,
+      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      time: now.toLocaleTimeString("en-IN", {
+        timeZone: IST_TIMEZONE,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
+      timezone: "IST",
+    });
+
+    if (!activity) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Sorry, an error occurred while recording the upload activity.",
+        },
+        { status: 500 },
       );
     }
+
     // Respond with success
     return NextResponse.json({ success: true, data: upload }, { status: 201 });
   } catch (error: unknown) {
