@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -193,7 +193,8 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, an error occurred while recording the upload activity.",
+          message:
+            "Sorry, an error occurred while recording the upload activity.",
         },
         { status: 500 },
       );

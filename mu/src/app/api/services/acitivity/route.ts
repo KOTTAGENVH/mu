@@ -4,6 +4,7 @@ import { validateCookie } from "@/app/api/services/cookieValidator/validateCooki
 import { isAllowed } from "@/app/helper/origin_helper";
 import Activity from "@/models/activity";
 import { customEmail } from "@/config/customEmail";
+import { getClientIp } from "@/app/helper/ipChecker";
 
 //Get all Activity
 export async function POST(req: Request) {
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -76,14 +77,21 @@ export async function DELETE(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
 
+    const { ip } = await getClientIp(req);
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+    }
     const IST_TIMEZONE = "Asia/Kolkata";
     const now = new Date().toLocaleString("en-IN", { timeZone: IST_TIMEZONE });
-    const { id, ip } = await req.json();
+    const { id } = await body;
     const email = process.env.EMAIL || "";
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");

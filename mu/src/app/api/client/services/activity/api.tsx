@@ -14,11 +14,11 @@ export async function getAllActivity(page: number = 1, limit: number = 10) {
 }
 
 //delete activity
-export async function deleteActivity(id: string, ip: string) {
+export async function deleteActivity(id: string) {
   const response = await fetch(`/api/services/acitivity`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, ip }),
+    body: JSON.stringify({ id}),
   });
   if (response.ok) {
     return await response.json();

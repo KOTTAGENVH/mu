@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -147,7 +147,7 @@ export async function GET(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -191,7 +191,7 @@ export async function PATCH(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -313,7 +313,7 @@ export async function DELETE(req: Request) {
     if (!validationResult.valid) {
       // console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
