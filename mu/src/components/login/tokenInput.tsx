@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import {
-  getIPAddress,
   verifyAuthToken,
 } from "@/app/api/client/services/auth/api";
 import Loader from "../loader";
@@ -20,22 +19,6 @@ interface TokenInputProps {
 function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
   const [isLoading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  //Get ip address
-  const handleGetIp = async () => {
-    try {
-      setLoading(true);
-      const ip = await getIPAddress();
-
-      return ip;
-    } catch (error) {
-      // console.error(error);
-      alert("Error fetching IP address");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSecretView = () => {
     setLoading(true);
@@ -55,12 +38,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
     onSubmit: async (values) => {
       try {
         setLoading(true);
-        const ipAddress = await handleGetIp();
-        if (!ipAddress) {
-          setLoading(false);
-          return;
-        }
-        const response = await verifyAuthToken(ipAddress, values.token);
+        const response = await verifyAuthToken(values.token);
         formik.setFieldValue("token", "");
         formik.setTouched({ token: false });
         if (!response.success) {

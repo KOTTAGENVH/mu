@@ -23,24 +23,12 @@ function parseIp(ip: string | null) {
 }
 
 //Get the IP address of the client by takung into account possible proxies
-export async function GET(req: NextRequest) {
-  try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
-    const xff = req.headers.get("x-forwarded-for"); // Check for X-Forwarded-For header
-    const rawIp =
-      (xff && xff.split(",")[0].trim()) || // Get the first IP in the list
-      req.headers.get("x-real-ip") || // Check for X-Real-IP header
-      "unknown"; // Fallback if no IP found
+export async function getClientIp(req: Request) {
+  const xff = req.headers.get("x-forwarded-for"); // Check for X-Forwarded-For header
+  const rawIp =
+    (xff && xff.split(",")[0].trim()) || // Get the first IP in the list
+    req.headers.get("x-real-ip") || // Check for X-Real-IP header
+    "unknown"; // Fallback if no IP found
 
-    const result = parseIp(rawIp);
-
-    return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 },
-    );
-  }
+  return parseIp(rawIp);
 }

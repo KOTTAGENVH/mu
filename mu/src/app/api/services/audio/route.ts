@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const validationResult = await validateCookie(req);
     if (!validationResult.valid) {
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -225,7 +225,7 @@ export async function PATCH(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -314,7 +314,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, an error occurred while recording the update activity.",
+          message:
+            "Sorry, an error occurred while recording the update activity.",
         },
         { status: 500 },
       );
@@ -352,7 +353,7 @@ export async function DELETE(req: Request) {
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -438,7 +439,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, an error occurred while recording the delete activity.",
+          message:
+            "Sorry, an error occurred while recording the delete activity.",
         },
         { status: 500 },
       );

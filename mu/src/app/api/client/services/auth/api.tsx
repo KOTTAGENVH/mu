@@ -12,21 +12,21 @@ export async function checkAuthStatus() {
 }
 
 //update verification status after 2FA setup
-export async function verifyAuthToken(ip: string, token: string) {
+export async function verifyAuthToken(token: string) {
   const response = await fetch("/api/services/auth", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: token, ip }),
+    body: JSON.stringify({ token: token}),
   });
   return await response.json();
 }
 
 //validate url token and generate cookie
-export async function validateGenCookie(ip: string, token: string) {
+export async function validateGenCookie(token: string) {
   const response = await fetch("/api/services/validateURLToken", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: token, ip: ip }),
+    body: JSON.stringify({ token: token}),
   });
   return await response.json();
 }
@@ -75,19 +75,3 @@ export async function deleteAccount() {
   }
 }
 
-export async function getIPAddress() {
-  const response = await fetch("/api/services/ipChecker", {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (response.ok) {
-    const data = await response.json();
-    return data.ip;
-  } else {
-    const errorData = await response.json().catch((err) => {
-      // console.error("JSON Parsing Error:", err);
-      return {};
-    });
-    throw new Error(errorData.message || "Failed to fetch IP address");
-  }
-}

@@ -9,6 +9,7 @@ import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { checkRateLimit } from "@/app/helper/rateLimiter";
+import { getClientIp } from "@/app/helper/ipChecker";
 
 // 14min validity
 const max_age = 60 * 14;
@@ -21,7 +22,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const { ip, token } = await req.json();
+    const { ip } = await getClientIp(req);
+
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { message: "Invalid JSON payload" },
+        { status: 400 },
+      );
+    }
+
+    const { token } = body;
+
+    const isSixDigitData = /^\d{6}$/.test(token);
+
+    if (!token || typeof token !== "string" || !isSixDigitData) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid token format. Expected a 6-digit code.",
+        },
+        { status: 400 },
+      );
+    }
 
     const isAllowedToProceed = await checkRateLimit(
       ip,
@@ -276,7 +301,17 @@ function verifyToken(token: string, secret: string, window = 1) {
     const otp = binary % 1000000;
     const generatedToken = otp.toString().padStart(6, "0");
 
-    if (token === generatedToken) return true;
+    if (typeof token !== "string" || !/^\d{4}$/.test(token)) {
+      return NextResponse.json({ message: "Invalid format" }, { status: 400 });
+    }
+
+    //To prevent timing attack when comparing between digits
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(token),
+      Buffer.from(generatedToken),
+    );
+
+    if (isValid) return true;
   }
 
   return false;

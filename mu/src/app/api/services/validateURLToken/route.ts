@@ -1,9 +1,10 @@
 import { customEmail } from "@/config/customEmail";
 import { NextResponse } from "next/server";
-import { JwtPayload, verify } from "jsonwebtoken";
+import { JwtPayload, TokenExpiredError, verify } from "jsonwebtoken";
 import { CookieGenerator } from "../cookierGenerator/generateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { checkRateLimit } from "@/app/helper/rateLimiter";
+import { getClientIp } from "../../../helper/ipChecker";
 
 //Validate Cookie from passed token
 export async function POST(req: Request) {
@@ -12,24 +13,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { message: "Invalid JSON payload" },
+        { status: 400 },
+      );
+    }
+
     const secret = process.env.JWT_SECRET || "";
     const email = process.env.EMAIL || "";
     const brand = process.env.BRAND || "";
-    const { token, ip } = await req.json();
+    const { token } = body;
 
-    if (!secret) {
-      throw new Error("JWT_SECRET environment variable is not set.");
-    }
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
-    }
-    if (!brand) {
-      throw new Error("BRAND environment variable is not set.");
+    if (!secret || !email || !brand) {
+      throw new Error(
+        "Server configuration error: Missing environment variables.",
+      );
     }
 
-    if (!token) {
-      throw new Error("No token provided");
+    if (!token || typeof token !== "string") {
+      return NextResponse.json(
+        { message: "Invalid token format" },
+        { status: 400 },
+      );
     }
+
+    const { ip } = await getClientIp(req);
 
     const isAllowedToProceed = await checkRateLimit(
       ip,
@@ -51,42 +63,29 @@ export async function POST(req: Request) {
 
     try {
       decoded = verify(token, secret) as JwtPayload;
-    } catch {
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Token expired. Please request a new login link.",
+          },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         { success: false, message: "Invalid or malformed login link." },
         { status: 400 },
       );
     }
 
-    //Check if the Token is expired
-    if (decoded.iat && Date.now() >= decoded.iat * 1000 + 24 * 60 * 60 * 1000) {
-      return NextResponse.json(
-        { success: false, message: "Token expired" },
-        { status: 400 },
-      );
-    } else if (!decoded.exp) {
-      return NextResponse.json(
-        { success: false, message: "Token does not contain exp" },
-        { status: 400 },
-      );
-    } else if (Date.now() >= decoded.exp * 1000) {
-      return NextResponse.json(
-        { success: false, message: "Token expired" },
-        { status: 400 },
-      );
-    }
-
     // Verify email and brand
-    if (decoded.email && decoded.brand) {
-      if (decoded.email !== email || decoded.brand !== brand) {
-        return NextResponse.json(
-          { success: false, message: "Token email or brand does not match" },
-          { status: 400 },
-        );
-      }
-    } else {
+    if (decoded.email !== email || decoded.brand !== brand) {
       return NextResponse.json(
-        { success: false, message: "Token does not contain email or brand" },
+        {
+          success: false,
+          message: "Token validation failed. Identity mismatch.",
+        },
         { status: 400 },
       );
     }
@@ -120,15 +119,14 @@ export async function POST(req: Request) {
     );
   } catch (error: unknown) {
     if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
+      console.error("[Auth Route Error]:", error.message);
     }
+    return NextResponse.json(
+      {
+        success: false,
+        message: "An unexpected internal server error occurred.",
+      },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json(
-    { success: false, message: "An unexpected error occurred" },
-    { status: 500 },
-  );
 }

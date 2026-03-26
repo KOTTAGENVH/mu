@@ -63,14 +63,8 @@ function Page() {
 
       if (token) {
         try {
-          const ipAddress = await handleGetIp();
-          if (!ipAddress) {
-            setLoading(false);
-            return;
-          }
-
           // Validate token
-          const response = await validateGenCookie(ipAddress, token);
+          const response = await validateGenCookie(token);
           if (response.success) {
             router.push(`/home`);
           } else {
@@ -96,30 +90,6 @@ function Page() {
     validateAndGenerateToken();
   }, [router]);
 
-  //Get ip address
-  const handleGetIp = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/services/ipChecker", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLoading(false);
-        return data.ip;
-      } else {
-        setLoading(false);
-        alert("Error fetching IP address");
-        return null;
-      }
-    } catch (error) {
-      setLoading(false);
-      alert("Error fetching IP address");
-      return null;
-    }
-  };
 
   return (
     <div

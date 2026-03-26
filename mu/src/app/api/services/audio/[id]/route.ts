@@ -40,7 +40,7 @@ export async function GET(
     if (!validationResult.valid) {
       console.log("Validation failed: ", validationResult.error);
       return NextResponse.json(
-        { success: false, message: validationResult.error },
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }

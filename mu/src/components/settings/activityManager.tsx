@@ -13,7 +13,6 @@ import {
   getAllActivity,
   deleteActivity,
 } from "@/app/api/client/services/activity/api";
-import { getIPAddress } from "@/app/api/client/services/auth/api";
 import DeleteActivityModal from "./activityDeleteModal";
 
 interface ActivityList {
@@ -63,22 +62,6 @@ function ManageActivity() {
   const defaultBtnClass =
     "bg-gray-100 text-black enabled:hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:enabled:hover:bg-gray-700";
 
-  //Get ip address
-  const handleGetIp = async () => {
-    try {
-      setIsLoading(true);
-      const ip = await getIPAddress();
-
-      return ip;
-    } catch (error) {
-      // console.error(error);
-      alert("Error fetching IP address");
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fetchActivities = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -118,8 +101,7 @@ function ManageActivity() {
     async (id: string) => {
       try {
         setActivities((prev) => prev.filter((activity) => activity.id !== id));
-        const ip = await handleGetIp();
-        const data = await deleteActivity(id, ip || "");
+        const data = await deleteActivity(id);
 
         if (!data.success) {
           alert("Failed to delete: " + data.message);
@@ -138,8 +120,7 @@ function ManageActivity() {
 
   const executeClearAll = async () => {
     try {
-      const ip = await handleGetIp();
-      const data = await deleteActivity("", ip || "");
+      const data = await deleteActivity("");
 
       if (data.success) {
         setActivities([]);
