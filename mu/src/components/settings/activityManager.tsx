@@ -287,7 +287,7 @@ function ManageActivity() {
             <Loader />
           </div>
         ) : filteredActivities.length > 0 ? (
-          <div className="overflow-x-auto bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+          <div className="overflow-x-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
