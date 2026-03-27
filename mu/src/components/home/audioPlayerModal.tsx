@@ -518,7 +518,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
     const currentTrack = audioList[currentAudioIndex];
     const trackId = currentTrack?.id;
-    const nexttrackId = audioList[currentAudioIndex + 1]?.id;
 
     if (!trackId) {
       cleanupRecovery();
@@ -534,38 +533,49 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
     retryCountRef.current += 1;
 
-    try {
-      const freshTrackData = await fetchStreamAudioById(trackId);
-      const nextcacheTrackData = nexttrackId
-        ? await fetchStreamAudioById(nexttrackId)
-        : null;
+    const tracksToFetch = [{ index: currentAudioIndex, id: trackId }];
+    const cacheLookahead = 5;
 
-      if (freshTrackData && freshTrackData.fileUrl) {
+    for (let i = 1; i <= cacheLookahead; i++) {
+      const nextIndex = currentAudioIndex + i;
+      if (nextIndex < audioList.length && audioList[nextIndex]?.id) {
+        tracksToFetch.push({ index: nextIndex, id: audioList[nextIndex].id });
+      }
+    }
+
+    try {
+      const fetchCacheTracks = tracksToFetch.map((track) =>
+        fetchStreamAudioById(track.id).then((data) => ({
+          index: track.index,
+          data,
+        })),
+      );
+
+      const fetchedResults = await Promise.all(fetchCacheTracks);
+
+      const currentTrackResult = fetchedResults.find(
+        (r) => r.index === currentAudioIndex,
+      );
+
+      if (currentTrackResult?.data?.fileUrl) {
         setAudioList((prev) => {
           const newList = [...prev];
-          newList[currentAudioIndex] = {
-            ...newList[currentAudioIndex],
-            fileUrl: freshTrackData.fileUrl,
-            fetchedAt: Date.now(),
-          };
 
-          if (
-            nextcacheTrackData &&
-            nextcacheTrackData.fileUrl &&
-            newList[currentAudioIndex + 1]
-          ) {
-            newList[currentAudioIndex + 1] = {
-              ...newList[currentAudioIndex + 1],
-              fileUrl: nextcacheTrackData.fileUrl,
-              fetchedAt: Date.now(),
-            };
-          }
+          fetchedResults.forEach((result) => {
+            if (result.data && result.data.fileUrl && newList[result.index]) {
+              newList[result.index] = {
+                ...newList[result.index],
+                fileUrl: result.data.fileUrl,
+                fetchedAt: Date.now(),
+              };
+            }
+          });
 
           return newList;
         });
 
         if (audioRef.current) {
-          audioRef.current.src = freshTrackData.fileUrl;
+          audioRef.current.src = currentTrackResult.data.fileUrl;
           audioRef.current.load();
           const restoreTime = () => {
             if (audioRef.current) {
