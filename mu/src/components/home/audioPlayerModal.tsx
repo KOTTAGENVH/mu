@@ -518,6 +518,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
     const currentTrack = audioList[currentAudioIndex];
     const trackId = currentTrack?.id;
+    const nexttrackId = audioList[currentAudioIndex + 1]?.id;
 
     if (!trackId) {
       cleanupRecovery();
@@ -535,6 +536,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
     try {
       const freshTrackData = await fetchStreamAudioById(trackId);
+      const nextcacheTrackData = nexttrackId
+        ? await fetchStreamAudioById(nexttrackId)
+        : null;
 
       if (freshTrackData && freshTrackData.fileUrl) {
         setAudioList((prev) => {
@@ -544,6 +548,19 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             fileUrl: freshTrackData.fileUrl,
             fetchedAt: Date.now(),
           };
+
+          if (
+            nextcacheTrackData &&
+            nextcacheTrackData.fileUrl &&
+            newList[currentAudioIndex + 1]
+          ) {
+            newList[currentAudioIndex + 1] = {
+              ...newList[currentAudioIndex + 1],
+              fileUrl: nextcacheTrackData.fileUrl,
+              fetchedAt: Date.now(),
+            };
+          }
+
           return newList;
         });
 
