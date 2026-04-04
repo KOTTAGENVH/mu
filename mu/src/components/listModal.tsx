@@ -18,7 +18,7 @@ export default function WishListMoadal({ handleClose }: WishListModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState("id");
   const [wishLists, setWishLists] = useState<WishList[]>([]);
 
   useEffect(() => {
@@ -78,11 +78,11 @@ export default function WishListMoadal({ handleClose }: WishListModalProps) {
     [fetchWishLists],
   );
 
-  const handleCopy = (id: string) => {
-    navigator.clipboard.writeText(id);
+  const handleCopy = (id: string, name: string) => {
+    navigator.clipboard.writeText(name);
 
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    setIsCopied(id);
+    setTimeout(() => setIsCopied(""), 2000);
   };
 
   const filteredLists = useMemo(() => {
@@ -183,11 +183,11 @@ export default function WishListMoadal({ handleClose }: WishListModalProps) {
 
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleCopy(list.id)}
+                          onClick={() => handleCopy(list.id, list.name)}
                           title="Copy ID"
-                          className={`${actionBtnClass} ${isCopied ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-800"}`}
+                          className={`${actionBtnClass} ${isCopied == list.id ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-800"}`}
                         >
-                          {isCopied ? (
+                          {isCopied == list.id ? (
                             <svg
                               className="w-4 h-4"
                               fill="none"
