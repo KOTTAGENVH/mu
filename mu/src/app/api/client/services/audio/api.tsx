@@ -152,17 +152,25 @@ export async function getSongById(id: string) {
 }
 
 //stream songs
-export async function streamSongs(lastArtist = "") {
-  let url = "/api/services/listen";
+export async function streamSongs(lastArtist = "", category = "All") {
+  const params = new URLSearchParams();
 
   if (lastArtist) {
-    url += `?previousArtist=${encodeURIComponent(lastArtist)}`;
+    params.append("previousArtist", lastArtist);
   }
+
+  if (category && category !== "All") {
+    params.append("categoryid", category);
+  }
+
+  const queryString = params.toString();
+  const url = queryString ? `/api/services/listen?${queryString}` : "/api/services/listen";
 
   const response = await fetch(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
+  
   if (response.ok) {
     return await response.json();
   } else {

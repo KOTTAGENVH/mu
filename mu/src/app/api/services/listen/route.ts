@@ -8,6 +8,7 @@ import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
 import { UpdateQuery } from "mongoose";
 import { Types } from "mongoose";
+import Category from "@/models/category";
 
 interface TrackData {
   _id?: Types.ObjectId;
@@ -57,32 +58,49 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const previousArtist = searchParams.get("previousArtist");
+    const categoryid = searchParams.get("categoryid");
+
+    const searchCategory = categoryid || "All";
+
+    const fetchCandidates = async (categoryToSearch: string) => {
+      const pipeline: any[] = [];
+
+      if (categoryToSearch !== "All") {
+        const categoryDoc = await Category.findOne({ id: categoryToSearch });
+        if (categoryDoc) {
+          pipeline.push({
+            $match: {
+              category: categoryDoc._id,
+            },
+          });
+        }
+      }
+
+      pipeline.push({ $sort: { lastPlayedAt: 1 } }, { $limit: 50 });
+
+      return (await Upload.aggregate(pipeline)) as TrackData[];
+    };
 
     //get 50 candidates that are not recently played
-    let candidates = (await Upload.aggregate([
-      // {
-      //   $match: {
-      //     $or: [
-      //       { lastPlayedAt: { $exists: false } },
-      //       { lastPlayedAt: null },
-      //       { lastPlayedAt: { $lt: fourHoursAgo } },
-      //     ],
-      //   },
-      // },
-      { $sort: { lastPlayedAt: 1 } },
-      { $limit: 50 },
-    ])) as TrackData[];
+    let candidates = await fetchCandidates(searchCategory);
+
+    let usedFallback = false;
+    if ((!candidates || candidates.length === 0) && searchCategory !== "All") {
+      candidates = await fetchCandidates("All");
+      usedFallback = true;
+    }
 
     if (!candidates || candidates.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, no audio is being uploaded!",
+          message: "Sorry, no audio is being uploaded in the entire library!",
           uploads: [],
         },
         { status: 404 },
       );
     }
+
     //Score each candidate to determine queue order
     const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
@@ -152,6 +170,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
+      usedFallback: usedFallback,
       uploads: queue,
     });
   } catch (error: unknown) {
