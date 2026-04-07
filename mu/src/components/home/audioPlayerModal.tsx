@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Filter,
   Heart,
   Pause,
   Play,
   Repeat,
   Shuffle,
+  X,
 } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import {
@@ -17,6 +19,7 @@ import {
 } from "@/app/api/client/services/audio/api";
 import { useMask } from "@/contextApi/mask";
 import { useAudioEq } from "@/contextApi/audioEnhance";
+import { getAllCategories } from "@/app/api/client/services/categories/api";
 
 interface Category {
   id: string;
@@ -57,6 +60,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isLoading, setIsLoadingSync] = useState(false);
   const [audioList, setAudioList] = useState<AudioItem[]>([]);
   const [currentAudioIndex, setCurrentAudioIndex] = useState<number>(0);
+  const [categoryListClicked, setCategoryListClicked] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLooping, setIsLooping] = useState<boolean>(false);
   const [isShuffling, setIsShuffling] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -65,8 +71,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const playerRef = useRef<HTMLDivElement | null>(null);
   const [pause, setPause] = useState<boolean>(true);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
   const isRecovering = useRef(false);
   const isLoadingRef = useRef(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const lastCountedTrackIdRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -76,7 +84,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const audioListRef = useRef<AudioItem[]>([]);
   const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
   const currentAudioIndexRef = useRef<number>(currentAudioIndex);
-  const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
+  const activeCategoryName =
+    categories.find((cat) => cat.id === selectedCategory)?.name || "";
 
   useEffect(() => {
     audioListRef.current = audioList;
@@ -191,39 +200,117 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (pannerRef.current) pannerRef.current.pan.value = pan;
   }, [pan]);
 
-  const fetchStreamAudio = useCallback(async (forceRefresh = false) => {
-    if (isLoadingRef.current) return;
-    try {
-      setIsLoadingSync(true);
-      const lastSong = audioListRef.current.at(-1);
-      const response = await streamSongs(lastSong?.artist);
-      const data = await response;
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!categoryListClicked) return;
 
-      if (data && data.success) {
-        const stampedUploads = data.uploads.map((track: any) => ({
-          ...track,
-          fetchedAt: Date.now(),
-        }));
-        setAudioList((prev) =>
-          prev.length === 0 || forceRefresh ? stampedUploads : prev,
-        );
-        return data;
-      } else {
-        setAudioList([]);
-        return [];
+      const target = event.target as Node;
+
+      if (
+        (dropdownRef.current && dropdownRef.current.contains(target)) ||
+        (event.target as HTMLElement).closest("[data-filter-button]")
+      ) {
+        return;
       }
-    } catch (error) {
-      // console.error("Failed to fetch streaming audios", error);
-      alert("Error in fetchStreamAudio (Bulk fetch failed)");
-    } finally {
-      setIsLoadingSync(false);
-      isLoadingRef.current = false;
+
+      setCategoryListClicked(false);
     }
-  }, []);
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [categoryListClicked]);
+
+  const getGradientClass = (name: string) => {
+    if (!name) return "bg-gradient-to-br from-gray-500 to-gray-700";
+
+    const gradients = [
+      "bg-gradient-to-br from-pink-500 to-orange-400",
+      "bg-gradient-to-br from-blue-500 to-purple-500",
+      "bg-gradient-to-br from-green-400 to-blue-500",
+      "bg-gradient-to-br from-yellow-400 to-red-500",
+      "bg-gradient-to-br from-indigo-500 to-pink-500",
+      "bg-gradient-to-br from-teal-400 to-emerald-600",
+    ];
+
+    const index = name.charCodeAt(0) % gradients.length;
+    return gradients[index];
+  };
+
+  const fetchStreamAudio = useCallback(
+    async (forceRefresh = false, category?: string) => {
+      if (isLoadingRef.current) return;
+      try {
+        setIsLoadingSync(true);
+        const lastSong = audioListRef.current.at(-1);
+        const response = await streamSongs(lastSong?.artist, category);
+        const data = await response;
+
+        if (data && data.success) {
+          const newUploads = data.uploads.map((track: any) => ({
+            ...track,
+            fetchedAt: Date.now(),
+          }));
+          if (forceRefresh) {
+            const currentlyPlayingTrack =
+              audioListRef.current[currentAudioIndexRef.current];
+            if (currentlyPlayingTrack) {
+              const filteredUploads = newUploads.filter(
+                (track: any) => track.id !== currentlyPlayingTrack.id,
+              );
+              setAudioList([currentlyPlayingTrack, ...filteredUploads]);
+            } else {
+              setAudioList(newUploads);
+            }
+            setCurrentAudioIndex(0);
+            setPause(false);
+          } else {
+            setAudioList((prev) => (prev.length === 0 ? newUploads : prev));
+          }
+          return data;
+        } else {
+          setAudioList([]);
+          return [];
+        }
+      } catch (error) {
+        // console.error("Failed to fetch streaming audios", error);
+        alert("Error in fetchStreamAudio (Bulk fetch failed)");
+      } finally {
+        setIsLoadingSync(false);
+        isLoadingRef.current = false;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     fetchStreamAudio();
   }, [fetchStreamAudio]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      setIsLoadingSync(true);
+      const response = await getAllCategories();
+      const data = await response;
+
+      if (data.success) {
+        setCategories(data.category);
+      } else {
+        setCategories([]);
+      }
+    } catch (error) {
+      //   console.error("Failed to fetch categories", error);
+      alert("An error occurred while fetching categories.");
+    } finally {
+      setIsLoadingSync(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const fetchStreamAudioById = useCallback(
     async (id: string): Promise<AudioList | null> => {
@@ -836,7 +923,81 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 relative">
+            {categoryListClicked && (
+              <div
+                ref={dropdownRef}
+                className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-3 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96 h-auto max-h-60 overflow-y-auto bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300"
+              >
+                <button
+                  onClick={() => {
+                    setSelectedCategory("");
+                    fetchStreamAudio(true, "");
+                    setCategoryListClicked(false);
+                  }}
+                  className={`px-4 py-2 rounded-xl border-none cursor-pointer ${
+                    selectedCategory === ""
+                      ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                      : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                  } transition-colors duration-200`}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat?.id);
+                      fetchStreamAudio(true, cat?.id);
+                      setCategoryListClicked(false);
+                    }}
+                    className={`px-4 py-2 rounded-xl border-none cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
+                        : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                    } transition-colors duration-200`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              aria-label="filter categories"
+              title="Filter Categories"
+              data-filter-button
+              disabled={isLoading || audioList.length === 0}
+              onClick={() => setCategoryListClicked(!categoryListClicked)}
+              className={`p-3 rounded-full transition-colors backdrop-blur-md shadow-lg focus-none outline-none border-none ${
+                isLoading ? "opacity-50" : ""
+              } ${
+                categoryListClicked
+                  ? `bg-white/30 ring-2 ring-red-400`
+                  : `${
+                      selectedCategory !== "" && activeCategoryName
+                        ? getGradientClass(activeCategoryName)
+                        : "bg-white/10"
+                    } hover:bg-white/20`
+              }`}
+            >
+              {categoryListClicked ? (
+                <X className="w-4 h-4 sm:w-6 sm:h-6 text-red-400" />
+              ) : selectedCategory !== "" && activeCategoryName ? (
+                <div
+                  className={`w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center`}
+                >
+                  {activeCategoryName.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <Filter
+                  className={`w-4 h-4 sm:w-6 sm:h-6 ${
+                    selectedCategory !== ""
+                      ? "text-blue-400"
+                      : "text-black dark:text-white"
+                  }`}
+                />
+              )}
+            </button>
             <button
               aria-label="shuffle"
               title="shuffle"

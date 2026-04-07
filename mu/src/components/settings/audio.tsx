@@ -55,7 +55,7 @@ function ManageAudio() {
       const response = await getAllSongs(
         currentPage,
         30,
-        "",
+        searchQuery,
         "",
         sematicSearch,
       );
@@ -78,17 +78,11 @@ function ManageAudio() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, sematicSearch]);
+  }, [currentPage, sematicSearch, searchQuery]);
 
   useEffect(() => {
     fetchAudios();
   }, [fetchAudios]);
-
-  const filteredAudios = useMemo(() => {
-    if (!searchQuery) return audios;
-    const lowerQuery = searchQuery.toLowerCase();
-    return audios.filter((wl) => wl.name.toLowerCase().includes(lowerQuery));
-  }, [audios, searchQuery]);
 
   const handleEdit = useCallback((id: string) => {
     setEditAudioId(id);
@@ -242,9 +236,9 @@ function ManageAudio() {
         <div className="flex justify-center py-12">
           <Loader />
         </div>
-      ) : filteredAudios.length > 0 ? (
+      ) : audios.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAudios.map((audio) => (
+          {audios.map((audio) => (
             <div
               key={audio.id}
               className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border-none shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between"
