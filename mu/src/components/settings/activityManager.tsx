@@ -217,7 +217,7 @@ function ManageActivity() {
           );
         })}
         {endPage < totalPages - 2 && (
-          <span className={`px-2 text-black dark:text-white`}>...</span>
+          <span className={`mt-20 px-2 text-black dark:text-white`}>...</span>
         )}
         {endPage < totalPages && (
           <button
