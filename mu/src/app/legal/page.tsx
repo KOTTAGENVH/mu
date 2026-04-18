@@ -243,7 +243,6 @@ function Page() {
         min-h-screen w-full
         flex flex-col
         bg-slate-300 dark:bg-slate-950
-        overflow-y-auto
         supports-[height:100dvh]:min-h-[100dvh]
         supports-[height:100svh]:min-h-[100svh]
       "

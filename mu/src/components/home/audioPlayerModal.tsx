@@ -431,6 +431,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   ]);
 
   const handleNextRef = useRef(handleNext);
+
   useEffect(() => {
     handleNextRef.current = handleNext;
   }, [handleNext]);
@@ -523,6 +524,22 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       cancelled = true;
     };
   }, [currentAudioIndex, pause]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute("src");
+        audioRef.current.load();
+      }
+
+      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+        audioCtxRef.current.close().catch((err) => {
+          console.error("Error closing AudioContext on unmount", err);
+        });
+      }
+    };
+  }, []);
 
   const handlePrev = useCallback(() => {
     const el = audioRef.current;
