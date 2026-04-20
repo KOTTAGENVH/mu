@@ -9,7 +9,9 @@ export const customEmail = async (
   console.log("sending emails");
   try {
     const mailTransporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtppro.zoho.com",
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.AUTHEMAIL,
         pass: process.env.AUTHEMAILPASS,
