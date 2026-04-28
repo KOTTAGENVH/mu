@@ -33,7 +33,7 @@ export default function ControlBtn({
           ? "opacity-30 cursor-not-allowed text-white/50"
           : active
             ? "text-blue-400 bg-blue-400/10 hover:bg-blue-400/20"
-            : "text-white/70 bg-white/5 hover:bg-white/15 hover:text-white",
+            : "text-black/70 dark:text-white/70 bg-black/5 dark:bg-white/5 hover:bg-black/15 dark:hover:bg-white/15 ",
       ].join(" ")}
     >
       {children}

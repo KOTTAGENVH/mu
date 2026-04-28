@@ -772,9 +772,9 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         />
       )}
 
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-white/5 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-[2px] bg-black/5 dark:bg-white/5 overflow-hidden">
         <div
-          className="h-full bg-white/40 transition-all duration-300"
+          className="h-full bg-black/40 dark:bg-white/40 transition-all duration-300"
           style={{ width: `${progressPct}%` }}
         />
       </div>
@@ -783,7 +783,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         <div className="flex items-center gap-3 sm:gap-5">
           <div className="relative flex-shrink-0 hidden xs:flex sm:flex">
             <div
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${gradientClass} flex items-center justify-center shadow-lg overflow-hidden transition-all duration-500`}
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${gradientClass} flex items-center justify-center shadow-none overflow-hidden transition-all duration-500`}
               style={{
                 boxShadow: !pause
                   ? "0 0 18px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.5)"
@@ -791,10 +791,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               }}
             >
               {isLoading ? (
-                <div className="w-full h-full animate-pulse bg-white/10" />
+                <div className="w-full h-full bg-black/10 dark:bg-white/10" />
               ) : (
                 <>
-                  <Music2 className="w-6 h-6 text-white/60" />
+                  <Music2 className="w-6 h-6 text-black dark:text-white" />
                 </>
               )}
             </div>
@@ -802,15 +802,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             {isLoading || audioList.length === 0 ? (
               <div className="space-y-2">
-                <div className="h-5 w-44 bg-white/10 rounded-md animate-pulse" />
-                <div className="h-3.5 w-28 bg-white/5 rounded-md animate-pulse" />
+                <div className="h-5 w-44 bg-black/10 dark:bg-white/10 rounded-md animate-pulse" />
+                <div className="h-3.5 w-28 bg-black/5 dark:bg-white/5 rounded-md animate-pulse" />
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="overflow-hidden">
                     <h2
-                      className={`${inter.className} text-sm sm:text-base font-semibold text-white leading-tight truncate`}
+                      className={`${inter.className} text-sm sm:text-base font-semibold text-black dark:text-white leading-tight truncate`}
                       title={trackName}
                     >
                       {trackName || "—"}
@@ -818,12 +818,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <p
-                      className={`${roboto.className} text-xs text-white/50 truncate`}
+                      className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
                     >
                       {artistName || "Unknown Artist"}
                     </p>
                     {audioList.length > 1 && (
-                      <span className="text-[10px] text-white/25 font-mono tabular-nums flex-shrink-0">
+                      <span className="text-[10px] text-black/40 dark:text-white/25 font-mono tabular-nums flex-shrink-0">
                         {currentAudioIndex + 1}/{audioList.length}
                       </span>
                     )}
@@ -837,7 +837,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               </div>
             )}
           </div>
-          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+          <div className="flex flex-col items-center gap-2 flex-shrink-0 text-black/70 dark:text-white/70">
             <div className="flex items-center gap-1 sm:gap-2">
               <ControlBtn
                 label="shuffle"
@@ -866,17 +866,20 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none border-none
                   ${
                     isLoading || audioList.length === 0
-                      ? "opacity-40 cursor-not-allowed bg-white/10"
-                      : "bg-white hover:bg-white/90 active:scale-95 shadow-lg"
+                      ? "opacity-40 cursor-not-allowed bg-white/10 dark:bg-black/10"
+                      : "bg-white dark:bg-black hover:bg-white/90 dark:hover:bg-black/90"
                   }`}
               >
                 {pause ? (
                   <Play
                     fill="#000"
-                    className="w-5 h-5 text-black translate-x-0.5"
+                    className="w-5 h-5 text-black dark:text-white translate-x-0.5"
                   />
                 ) : (
-                  <Pause fill="#000" className="w-5 h-5 text-black" />
+                  <Pause
+                    fill="#000"
+                    className="w-5 h-5 text-black dark:text-white"
+                  />
                 )}
               </button>
               <ControlBtn
@@ -900,14 +903,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             </div>
             <div className="flex items-center gap-2 w-full max-w-xs sm:max-w-sm md:max-w-md">
               <span
-                className={`${roboto.className} text-[10px] tabular-nums text-white/40 w-8 text-right flex-shrink-0`}
+                className={`${roboto.className} text-[10px] tabular-nums text-black/40 dark:text-white/40 w-8 text-right flex-shrink-0`}
               >
                 {formatTime(currentTime)}
               </span>
               <div className="flex-1 relative group h-4 flex items-center">
-                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="w-full h-1 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-white/70 rounded-full transition-none"
+                    className="h-full bg-black/40 dark:bg-white/40 rounded-full transition-none"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -931,18 +934,18 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   }}
                 />
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3bg-black dark:bg-white rounded-full shadow pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                   style={{ left: `calc(${progressPct}% - 6px)` }}
                 />
               </div>
               <span
-                className={`${roboto.className} text-[10px] tabular-nums text-white/40 w-8 flex-shrink-0`}
+                className={`${roboto.className} text-[10px] tabular-nums text-black/50 dark:text-white/40 w-8 flex-shrink-0`}
               >
                 {formatTime(duration)}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 text-black/70 dark:text-white/70">
             <div ref={volumeRef} className="relative hidden sm:block">
               <ControlBtn
                 label={isMuted ? "unmute" : "mute"}
@@ -960,7 +963,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 )}
               </ControlBtn>
               {showVolume && (
-                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 bg-white/10 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/10">
+                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 bg-black/10 dark:bg-white/10 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/10">
                   <input
                     type="range"
                     min="0"
@@ -972,16 +975,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       setVolume(v);
                       setIsMuted(v === 0);
                     }}
-                    className="w-24 h-1 appearance-none bg-white/20 rounded-full cursor-pointer
+                    className="w-24 h-1 appearance-none bg-black/10 dark:bg-white/20 rounded-full cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5
-                      [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-white
+                      [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-blue-500
                       [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow"
                     style={{
-                      background: `linear-gradient(to right, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.15) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.15) 100%)`,
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, rgba(128,128,128,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(128,128,128,0.2) 100%)`,
                     }}
                   />
                   <span
-                    className={`${roboto.className} text-[10px] text-white/50 tabular-nums`}
+                    className={`${roboto.className} text-[10px] text-black/60 dark:text-white/50 tabular-nums`}
                   >
                     {Math.round((isMuted ? 0 : volume) * 100)}%
                   </span>
@@ -998,7 +1001,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                     [&::-webkit-scrollbar-thumb]:bg-white/20"
                 >
                   <p
-                    className={`${roboto.className} text-[10px] uppercase tracking-widest text-white/30 px-1 pb-1`}
+                    className={`${roboto.className} text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 px-1 pb-1`}
                   >
                     Category
                   </p>
@@ -1010,8 +1013,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                     }}
                     className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150 ${
                       selectedCategory === ""
-                        ? "bg-white/25 text-white font-medium"
-                        : "bg-transparent text-white/60 hover:bg-white/10 hover:text-white"
+                        ? "bg-black/10 dark:bg-white/25 text-black dark:text-white font-medium"
+                        : "bg-transparent text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     All
@@ -1026,8 +1029,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       }}
                       className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150 ${
                         selectedCategory === cat.id
-                          ? "bg-white/25 text-white font-medium"
-                          : "bg-transparent text-white/60 hover:bg-white/10 hover:text-white"
+                          ? "bg-black/10 dark:bg-white/25 text-black dark:text-white font-medium"
+                          : "bg-transparent text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                       }`}
                     >
                       {cat.name}
@@ -1046,7 +1049,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 {categoryListClicked ? (
                   <X className="w-4 h-4 text-red-400" />
                 ) : selectedCategory !== "" && activeCategoryName ? (
-                  <span className="text-xs font-bold">
+                  <span className="text-xs font-bold text-black dark:text-white">
+                    {" "}
                     {activeCategoryName.charAt(0).toUpperCase()}
                   </span>
                 ) : (
@@ -1067,7 +1071,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 className={`w-4 h-4 transition-all duration-200 ${
                   isFavorite
                     ? "text-red-500 fill-red-500 scale-110"
-                    : "text-white/70"
+                    : "text-black/30 dark:text-white/70"
                 }`}
               />
             </ControlBtn>
