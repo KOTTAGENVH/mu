@@ -27,16 +27,34 @@ interface ScoredTrackData extends TrackData {
   score?: number;
 }
 
-function weightedRandomPick(candidates: ScoredTrackData[]) {
-  const minScore = Math.min(...candidates.map((c) => c.score || 0));
-  const weights = candidates.map((c) => (c.score || 0) - minScore + 1);
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let random = Math.random() * totalWeight;
-  for (let i = 0; i < candidates.length; i++) {
-    random -= weights[i];
-    if (random <= 0) return candidates[i];
+function weightedRandomPick(
+  candidates: ScoredTrackData[],
+  prefixWeights: number[],
+  totalWeight: number,
+): ScoredTrackData {
+  const random = Math.random() * totalWeight;
+  let lo = 0,
+    hi = prefixWeights.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (prefixWeights[mid] < random) lo = mid + 1;
+    else hi = mid;
   }
-  return candidates[candidates.length - 1];
+  return candidates[lo];
+}
+
+function buildPrefixWeights(candidates: ScoredTrackData[]): {
+  prefixWeights: number[];
+  totalWeight: number;
+} {
+  const minScore = Math.min(...candidates.map((c) => c.score ?? 0));
+  const prefixWeights: number[] = [];
+  let running = 0;
+  for (const c of candidates) {
+    running += (c.score ?? 0) - minScore + 1;
+    prefixWeights.push(running);
+  }
+  return { prefixWeights, totalWeight: running };
 }
 
 export async function GET(req: Request) {
@@ -60,6 +78,11 @@ export async function GET(req: Request) {
     const previousArtist = searchParams.get("previousArtist");
     const categoryid = searchParams.get("categoryid");
 
+    const limit = Math.min(
+      parseInt(searchParams.get("limit") || "20", 10) || 20,
+      50,
+    );
+
     const searchCategory = categoryid || "All";
 
     const fetchCandidates = async (categoryToSearch: string) => {
@@ -76,12 +99,19 @@ export async function GET(req: Request) {
         }
       }
 
-      pipeline.push({ $sort: { lastPlayedAt: 1 } }, { $limit: 50 });
+      pipeline.push(
+        {
+          $addFields: {
+            sortKey: { $ifNull: ["$lastPlayedAt", new Date(0)] },
+          },
+        },
+        { $sort: { sortKey: 1 } },
+        { $limit: limit },
+      );
 
       return (await Upload.aggregate(pipeline)) as TrackData[];
     };
 
-    //get 50 candidates that are not recently played
     let candidates = await fetchCandidates(searchCategory);
 
     let usedFallback = false;
@@ -101,6 +131,8 @@ export async function GET(req: Request) {
       );
     }
 
+    const now = Date.now();
+
     //Score each candidate to determine queue order
     const scoredCandidates = candidates.map((track) => {
       let score = Math.random() * 10;
@@ -114,12 +146,25 @@ export async function GET(req: Request) {
       const playBonus = Math.min((track.playCount || 0) * 0.5, 10);
       score += playBonus;
 
-      // Skip Penalty: -2.0 per skip (Capped at -10 points)
-      const skipPenalty = Math.min((track.skipCount || 0) * 2, 10);
-      score -= skipPenalty;
+      //If track never played falls back to raw count or else
+      //assign a percentage ratio
+      if (track.playCount && track.playCount > 0) {
+        const skipRate = (track.skipCount || 0) / track.playCount;
+        score -= skipRate * 10;
+      } else {
+        const rawSkipPenalty = Math.min((track.skipCount || 0) * 2, 10);
+        score -= rawSkipPenalty;
+      }
 
       // Favorite Bonus: +5 points
       if (track.favourite) score += 5;
+
+      //time decay bonus: rewards tracks not played recently
+      if (track.lastPlayedAt) {
+        const hoursSince =
+          (now - new Date(track.lastPlayedAt).getTime()) / 3_600_000;
+        score += Math.min(hoursSince * 0.1, 10);
+      }
 
       // Variety Penalty: -20 points if it's the same artist as the last track
       if (
@@ -137,7 +182,8 @@ export async function GET(req: Request) {
     const orderedQueue: ScoredTrackData[] = [];
     let remaining = [...scoredCandidates];
     while (remaining.length > 0) {
-      const pick = weightedRandomPick(remaining);
+      const { prefixWeights, totalWeight } = buildPrefixWeights(remaining);
+      const pick = weightedRandomPick(remaining, prefixWeights, totalWeight);
       orderedQueue.push(pick);
       remaining = remaining.filter(
         (t) => t._id?.toString() !== pick._id?.toString(),
@@ -159,12 +205,12 @@ export async function GET(req: Request) {
           expiresIn: 3600,
         });
 
-        track.fileUrl = signedUrl;
+        const { _id, score, ...cleanTrack } = track as ScoredTrackData & {
+          _id: Types.ObjectId;
+          score: number;
+        };
 
-        delete track._id;
-        delete track.score;
-
-        return track;
+        return { ...cleanTrack, fileUrl: signedUrl };
       }),
     );
 
