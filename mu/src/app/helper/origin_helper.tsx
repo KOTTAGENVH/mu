@@ -29,29 +29,27 @@ export function isAllowed(req: Request) {
   const origin =
     normalizeOrigin(req.headers.get("origin")) ?? getOriginFromReferer(req);
 
-  if (!origin) {
-    return allowedHosts.has(url.host) || allowedHosts.has(url.hostname);
-  }
-  const o = new URL(origin);
-  return allowedHosts.has(o.host) || allowedHosts.has(o.hostname);
-}
-export function corsHeaders(req: Request) {
-  const h = new Headers({ Vary: "Origin" });
-  const origin = normalizeOrigin(req.headers.get("origin"));
   if (origin) {
     const o = new URL(origin);
-    if (allowedHosts.has(o.host) || allowedHosts.has(o.hostname)) {
-      h.set("Access-Control-Allow-Origin", origin);
-      h.set("Access-Control-Allow-Credentials", "true");
-      h.set("Access-Control-Allow-Headers", "Content-Type,x-csrf-token");
-      h.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    }
+    return allowedHosts.has(o.host) || allowedHosts.has(o.hostname);
   }
-  return h;
-}
 
-export function isSameOriginBrowserGet(req: Request) {
   if (req.method !== "GET") return false;
   const sfs = (req.headers.get("sec-fetch-site") || "").toLowerCase();
   return sfs === "same-origin" || sfs === "same-site";
 }
+
+// export function corsHeaders(req: Request) {
+//   const h = new Headers({ Vary: "Origin" });
+//   const origin = normalizeOrigin(req.headers.get("origin"));
+//   if (origin) {
+//     const o = new URL(origin);
+//     if (allowedHosts.has(o.host) || allowedHosts.has(o.hostname)) {
+//       h.set("Access-Control-Allow-Origin", origin);
+//       h.set("Access-Control-Allow-Credentials", "true");
+//       h.set("Access-Control-Allow-Headers", "Content-Type,x-csrf-token");
+//       h.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+//     }
+//   }
+//   return h;
+// }
