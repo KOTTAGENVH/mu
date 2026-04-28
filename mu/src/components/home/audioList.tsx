@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMusic, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faMusic } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAllSongs } from "@/app/api/client/services/audio/api";
 import { useSearch } from "@/contextApi/sematicSearch";
