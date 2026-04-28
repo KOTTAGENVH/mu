@@ -997,8 +997,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   ref={dropdownRef}
                   className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
                     bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
-                    [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
-                    [&::-webkit-scrollbar-thumb]:bg-white/20"
+                    [&::-webkit-scrollbar]:w-1.5
+              [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb]:bg-gray-300
+              dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
                 >
                   <p
                     className={`${roboto.className} text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1`}
@@ -1013,10 +1015,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                     }}
                     className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150       
                       ${
-                      !selectedCategory
-                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
+                        !selectedCategory
+                          ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                          : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
                   >
                     All
                   </button>
@@ -1030,10 +1032,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       }}
                       className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
                               ${
-                      selectedCategory === cat.id
-                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
+                                selectedCategory === cat.id
+                                  ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                                  : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                              }`}
                     >
                       {cat.name}
                     </button>
