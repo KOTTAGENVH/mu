@@ -1,6 +1,3 @@
-import { isAllowed } from "@/app/helper/origin_helper";
-import { NextRequest, NextResponse } from "next/server";
-
 // Helper: normalize and detect IP type
 function parseIp(ip: string | null) {
   if (!ip) return { ip: "unknown", type: "unknown" };

@@ -1,8 +1,7 @@
 "use client";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGear,
   faHouse,
@@ -13,6 +12,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/contextApi/auth";
 import { logout } from "@/app/api/client/services/auth/api";
+import NavButton from "./headerNavBtn";
+
 
 function Header() {
   const router = useRouter();
@@ -21,51 +22,21 @@ function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     handleScroll();
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle home click
-  const handleHome = () => {
-    router.push("/home");
-  };
-
-  // Handle login click
-  const handleLogin = () => {
-    router.push("/login");
-  };
-
-  //Handle add click
-  const handleAdd = () => {
-    router.push("/upload");
-  };
-
-  // Handle settings click
-  const handleSettings = () => {
-    router.push("/settings");
-  };
-
-  const handleMicTalk = () => {
-    router.push("/mictalk");
-  };
+  const handleHome = () => router.push("/home");
+  const handleLogin = () => router.push("/login");
+  const handleAdd = () => router.push("/upload");
+  const handleSettings = () => router.push("/settings");
+  const handleMicTalk = () => router.push("/mictalk");
 
   const handleLogout = async () => {
     try {
-      const response = await logout();
-
-      const data = await response;
+      const data = await logout();
       if (data.success) {
         router.push("/");
       } else {
@@ -77,98 +48,84 @@ function Header() {
     }
   };
 
-  const glassClasses = isScrolled
-    ? "bg-slate-900/40 backdrop-blur-xl dark:bg-slate-950/40 transition-all duration-300 ease-out"
-    : "transition-all duration-300 ease-out";
+  const isActive = (path: string) => !!pathname?.includes(path);
 
-  const baseBtnClass =
-    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4  focus-none outline-none border-none";
-
-  const defaultBtnClass =
-    "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700";
-
-  const activeBtnClass =
-    "bg-gray-300 text-black font-semibold shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] dark:bg-gray-600 dark:text-white dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)]";
-
-  // Helper to choose class based on route
-  const getBtnClass = (path: string) =>
-    `${baseBtnClass} ${pathname?.includes(path) ? activeBtnClass : defaultBtnClass}`;
+  const glassClass = isScrolled
+    ? "bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]"
+    : "bg-transparent";
 
   return (
-    <div className={`fixed top-0 left-0 w-full z-50 ${glassClasses}`}>
-      <nav className="flex items-center justify-center py-2 my-4 mx-4 px-3 lg:mx-16 lg:px-6 md:justify-between">
-        <div className="hidden md:block">
-          <Image
-            src="/mu.png"
-            alt="MU"
-            width={48}
-            height={48}
-            className="w-12 h-12 rounded-full cursor-pointer"
-            onClick={handleHome}
-            priority
-          />
+    <div
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-out ${glassClass}`}
+    >
+      <nav
+        className={`flex items-center justify-center py-3 my-3 mx-4 px-3 lg:mx-16 lg:px-6 md:justify-between transition-all duration-500 ease-out`}
+      >
+        <div className="hidden md:flex items-center gap-3">
+          <div className="relative group cursor-pointer" onClick={handleHome}>
+            <div className="absolute inset-0 rounded-full bg-slate-200/60 dark:bg-slate-700/40 scale-0 group-hover:scale-110 transition-transform duration-200 ease-out" />
+            <Image
+              src="/mu.png"
+              alt="MU"
+              width={44}
+              height={44}
+              className="relative w-11 h-11 rounded-full ring-2 ring-transparent group-hover:ring-slate-300 dark:group-hover:ring-slate-600 transition-all duration-200"
+              priority
+            />
+          </div>
         </div>
-        <div className="flex items-center shrink-0 md:items-end">
-          {pathname?.includes("/legal") && ! authStatus &&(
-            <button
-              title="login"
-              className={`${baseBtnClass} ${defaultBtnClass}`}
+        <div className="flex items-center gap-1.5">
+          {pathname?.includes("/legal") && !authStatus && (
+            <NavButton
+              icon={faRightToBracket}
+              label="Log in"
               onClick={handleLogin}
-              aria-label="Login"
-            >
-              <FontAwesomeIcon icon={faRightToBracket} className="w-4 h-4" />
-            </button>
+              ariaLabel="Login"
+            />
           )}
 
           {authStatus && (
             <>
-              <button
-                title="Home"
-                className={getBtnClass("/home")}
+              <NavButton
+                icon={faHouse}
+                label="Home"
+                active={isActive("/home")}
                 onClick={handleHome}
-                aria-label="Home"
-              >
-                <FontAwesomeIcon icon={faHouse} className="w-4 h-4" />
-              </button>
+                ariaLabel="Home"
+              />
 
-              <button
-                title="Upload Audio"
-                aria-label="Upload Audio"
-                className={getBtnClass("/upload")}
+              <NavButton
+                icon={faUpload}
+                label="Upload Audio"
+                active={isActive("/upload")}
                 onClick={handleAdd}
-              >
-                <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
-              </button>
+                ariaLabel="Upload Audio"
+              />
 
-              <button
-                title="mictalk"
-                aria-label="mictalk"
-                className={getBtnClass("/mictalk")}
+              <NavButton
+                icon={faMicrophone}
+                label="Mic Talk"
+                active={isActive("/mictalk")}
                 onClick={handleMicTalk}
-              >
-                <FontAwesomeIcon icon={faMicrophone} className="w-4 h-4" />
-              </button>
+                ariaLabel="Mic Talk"
+              />
 
-              <button
-                title="Settings"
-                aria-label=" Settings"
-                className={getBtnClass("/settings")}
+              <NavButton
+                icon={faGear}
+                label="Settings"
+                active={isActive("/settings")}
                 onClick={handleSettings}
-              >
-                <FontAwesomeIcon icon={faGear} className="w-4 h-4" />
-              </button>
+                ariaLabel="Settings"
+              />
+              <span className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 rounded-full" />
 
-              <button
-                title="Logout"
-                className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer transition-all duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-blue-500/65 focus-visible:outline-offset-2 active:translate-y-[0.5px] bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+              <NavButton
+                icon={faRightFromBracket}
+                label="Log out"
+                danger
                 onClick={handleLogout}
-                aria-label="Logout"
-              >
-                <FontAwesomeIcon
-                  icon={faRightFromBracket}
-                  className="w-4 h-4 text-red-500 dark:text-red-400"
-                />
-              </button>
+                ariaLabel="Logout"
+              />
             </>
           )}
         </div>
