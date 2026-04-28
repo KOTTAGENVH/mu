@@ -65,7 +65,7 @@ export default function AudioCard({
       <div
         className={`
           relative group bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm
-          flex items-center justify-between w-60 md:w-80 overflow-hidden
+          flex items-center justify-between w-60 md:w-80 mx-auto overflow-hidden
           transition-all duration-300 ease-out
           ${isPlaying
             ? "shadow-md shadow-blue-100 dark:shadow-blue-950 ring-1 ring-blue-200 dark:ring-blue-800"

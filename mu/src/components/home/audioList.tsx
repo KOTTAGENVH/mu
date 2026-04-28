@@ -354,7 +354,7 @@ function AudioList() {
       )}
       <div
         ref={listRef}
-        className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
+        className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start justify-items-center overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
         <AnimatePresence mode="popLayout">
           {allAudio &&
