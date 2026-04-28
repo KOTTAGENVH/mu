@@ -195,7 +195,7 @@ function AudioList() {
                 fetchAudio(search, selectedCategory?.id ?? "");
               if (e.key === "Escape") handleSearchClear();
             }}
-            className="text-sm w-full pl-10 pr-10 py-3 bg-black/10 dark:bg-white/10 backdrop-blur-sm border-none rounded-2xl
+            className="text-base  w-full pl-10 pr-10 py-3 bg-black/10 dark:bg-white/10 backdrop-blur-sm border-none rounded-2xl
               text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400
               focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
             placeholder="What are you in the mood for?"
@@ -310,7 +310,7 @@ function AudioList() {
       </AnimatePresence>
 
       {loading && (!allAudio || allAudio.length === 0) && (
-        <div className="justify-items-center justify-center flex-1 min-h-0 w-full grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start bg-transparent mt-6 p-4 rounded-2xl">
+        <div className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl">
           {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -354,7 +354,7 @@ function AudioList() {
       )}
       <div
         ref={listRef}
-        className="justify-items-center justify-center flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
+        className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
         <AnimatePresence mode="popLayout">
           {allAudio &&
@@ -385,7 +385,6 @@ function AudioList() {
       </div>
       {paginationData && currentPage < paginationData.totalPages && (
         <div className="w-full flex flex-col items-center gap-2 pb-6 mt-2">
-          {/* Progress hint */}
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Showing {totalLoaded} of {totalAudio} tracks
           </p>

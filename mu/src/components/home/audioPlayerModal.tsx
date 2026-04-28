@@ -992,8 +992,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               {categoryListClicked && (
                 <div
                   ref={dropdownRef}
-                  className="absolute z-50 bottom-full right-0 mb-3 p-3 rounded-2xl flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
-                    bg-white/10 backdrop-blur-md border border-white/10 shadow-xl
+                  className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
+                    bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
                     [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
                     [&::-webkit-scrollbar-thumb]:bg-white/20"
                 >
