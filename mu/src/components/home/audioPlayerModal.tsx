@@ -1001,7 +1001,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                     [&::-webkit-scrollbar-thumb]:bg-white/20"
                 >
                   <p
-                    className={`${roboto.className} text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 px-1 pb-1`}
+                    className={`${roboto.className} text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1`}
                   >
                     Category
                   </p>
@@ -1011,10 +1011,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       fetchStreamAudio(true, "");
                       setCategoryListClicked(false);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150 ${
-                      selectedCategory === ""
-                        ? "bg-black/10 dark:bg-white/25 text-black dark:text-white font-medium"
-                        : "bg-transparent text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
+                    className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150       
+                      ${
+                      !selectedCategory
+                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
                     All
@@ -1027,11 +1028,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                         fetchStreamAudio(true, cat.id);
                         setCategoryListClicked(false);
                       }}
-                      className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150 ${
-                        selectedCategory === cat.id
-                          ? "bg-black/10 dark:bg-white/25 text-black dark:text-white font-medium"
-                          : "bg-transparent text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
+                              ${
+                      selectedCategory === cat.id
+                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
                     >
                       {cat.name}
                     </button>
