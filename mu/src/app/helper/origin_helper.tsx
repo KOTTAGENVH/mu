@@ -39,17 +39,3 @@ export function isAllowed(req: Request) {
   return sfs === "same-origin" || sfs === "same-site";
 }
 
-// export function corsHeaders(req: Request) {
-//   const h = new Headers({ Vary: "Origin" });
-//   const origin = normalizeOrigin(req.headers.get("origin"));
-//   if (origin) {
-//     const o = new URL(origin);
-//     if (allowedHosts.has(o.host) || allowedHosts.has(o.hostname)) {
-//       h.set("Access-Control-Allow-Origin", origin);
-//       h.set("Access-Control-Allow-Credentials", "true");
-//       h.set("Access-Control-Allow-Headers", "Content-Type,x-csrf-token");
-//       h.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-//     }
-//   }
-//   return h;
-// }
