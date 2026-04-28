@@ -291,7 +291,11 @@ const FileUpload: React.FC = () => {
               <div
                 ref={dropdownRef}
                 className="absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2  w-60 md:w-96 h-auto max-h-60 overflow-y-auto
-    bg-white/10 dark:bg-white/5 backdrop-blur-md border-none shadow-lg [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300"
+    bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg  
+    [&::-webkit-scrollbar]:w-1.5
+              [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb]:bg-gray-300
+              dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
               >
                 {" "}
                 <button
@@ -302,9 +306,9 @@ const FileUpload: React.FC = () => {
                   }}
                   className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
                     isCategory === ""
-                      ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
-                      : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-                  } transition-colors duration-200 `}
+                      ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                      : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
                 >
                   Select category…
                 </button>
@@ -318,9 +322,9 @@ const FileUpload: React.FC = () => {
                     }}
                     className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
                       isCategory === cat.id
-                        ? "bg-blue-200 dark:bg-blue-700 text-black dark:text-white"
-                        : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-                    } transition-colors duration-200`}
+                           ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
                   >
                     {cat.name}
                   </button>
