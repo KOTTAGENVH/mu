@@ -1,4 +1,9 @@
 import { useAudioEq } from "@/contextApi/audioEnhance";
+import {
+  useVisualizer,
+  VISUALIZER_LABELS,
+  VisualizerMode,
+} from "@/contextApi/audioVizualizer";
 import { useMask } from "@/contextApi/mask";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -15,7 +20,8 @@ interface SettingCardProps {
 function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
   const { sematicSearch } = useSearch();
   const { maskStatus } = useMask();
-    const {useCompressor} = useAudioEq();
+  const { useCompressor } = useAudioEq();
+  const { mode } = useVisualizer();
 
   const baseBtnClass =
     "relative flex flex-col items-center justify-center gap-2 h-32 w-32 p-3 rounded-2xl border-none cursor-pointer";
@@ -47,6 +53,22 @@ function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
         <span
           className={`${useCompressor ? "bg-green-500 dark:bg-green-700" : "bg-red-500 dark:bg-red-700"} absolute top-2 right-2 text-xs font-mono text-white rounded-full px-2 py-0.5`}
         ></span>
+      )}
+
+      {id === 9 && (
+        <span
+          className={`
+            absolute top-2 right-2
+            text-xs font-mono text-white rounded-full px-2 py-0.5
+            ${
+              mode === VisualizerMode.Off
+                ? "bg-red-500 dark:bg-red-700"
+                : "bg-blue-500 dark:bg-blue-700"
+            }
+          `}
+        >
+          {VISUALIZER_LABELS[mode]}
+        </span>
       )}
     </button>
   );
