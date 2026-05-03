@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
   Music2,
+  Loader2,
 } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import {
@@ -23,8 +24,8 @@ import {
 import { useMask } from "@/contextApi/mask";
 import { useAudioEq } from "@/contextApi/audioEnhance";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
-import WaveformBars from "./waveform";
 import ControlBtn from "./controlBtn";
+import AudioVisualizer from "./audioVizualizer";
 
 interface Category {
   id: string;
@@ -59,6 +60,8 @@ interface AudioPlayerModalProps {
   handleId: (id: string) => void;
 }
 
+const URL_FRESH_MS = 50 * 60 * 1000;
+
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const { maskStatus } = useMask();
   const { eqValues, pan, useCompressor } = useAudioEq();
@@ -74,6 +77,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState<number>(1);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [showVolume, setShowVolume] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -91,11 +95,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const compressorRef = useRef<DynamicsCompressorNode | null>(null);
   const pannerRef = useRef<StereoPannerNode | null>(null);
   const audioListRef = useRef<AudioItem[]>([]);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
   const currentAudioIndexRef = useRef<number>(currentAudioIndex);
+  const selectedCategoryRef = useRef(selectedCategory);
   const volumeRef = useRef<HTMLDivElement>(null);
   const activeCategoryName =
     categories.find((cat) => cat.id === selectedCategory)?.name || "";
+
+  useEffect(() => {
+    selectedCategoryRef.current = selectedCategory;
+  }, [selectedCategory]);
 
   useEffect(() => {
     audioListRef.current = audioList;
@@ -145,6 +155,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       const panner = audioCtx.createStereoPanner();
       panner.pan.value = 0;
       pannerRef.current = panner;
+
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+
       const frequencies = [100, 300, 1000, 4000, 12000];
       const types: BiquadFilterType[] = [
         "lowshelf",
@@ -182,6 +198,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const firstFilter = filtersRef.current["100"];
     const lastFilter = filtersRef.current["12000"];
     const panner = pannerRef.current;
+
     try {
       source.disconnect();
     } catch (e) {}
@@ -191,6 +208,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     try {
       compressor.disconnect();
     } catch (e) {}
+    try {
+      panner.disconnect();
+    } catch (e) {}
+
     if (useCompressor) {
       source.connect(compressor);
       compressor.connect(firstFilter);
@@ -199,7 +220,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       source.connect(firstFilter);
     }
     lastFilter.connect(panner);
-    panner.connect(audioCtxRef.current.destination);
+    if (analyserRef.current) {
+      try {
+        analyserRef.current.disconnect();
+      } catch {}
+      panner.connect(analyserRef.current);
+      analyserRef.current.connect(audioCtxRef.current.destination);
+    } else {
+      panner.connect(audioCtxRef.current.destination);
+    }
   }, [useCompressor, audioList.length]);
 
   useEffect(() => {
@@ -244,10 +273,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const fetchStreamAudio = useCallback(
     async (forceRefresh = false, category?: string) => {
       if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
       try {
         setIsLoadingSync(true);
-        const lastSong = audioListRef.current.at(-1);
-        const response = await streamSongs(lastSong?.artist, category);
+        const currentSong = audioListRef.current[currentAudioIndexRef.current];
+        const response = await streamSongs(currentSong?.artist, category);
         const data = await response;
         if (data && data.success) {
           const newUploads = data.uploads.map((track: any) => ({
@@ -326,6 +356,90 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     [],
   );
 
+  const ensureFreshUrl = useCallback(
+    async (index: number): Promise<boolean> => {
+      const track = audioListRef.current[index];
+      if (!track?.id) return false;
+      const age = Date.now() - (track.fetchedAt ?? 0);
+      if (age < URL_FRESH_MS) return true;
+
+      const fresh = await fetchStreamAudioById(track.id);
+      if (!fresh?.fileUrl) return false;
+
+      setAudioList((prev) => {
+        const list = [...prev];
+        if (list[index]) {
+          list[index] = {
+            ...list[index],
+            fileUrl: fresh.fileUrl,
+            fetchedAt: Date.now(),
+          };
+        }
+        return list;
+      });
+      return true;
+    },
+    [fetchStreamAudioById],
+  );
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    let cancelled = false;
+
+    if (pause) {
+      try {
+        el.pause();
+      } catch {}
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const start = async () => {
+      const ok = await ensureFreshUrl(currentAudioIndexRef.current);
+      if (cancelled || !ok) return;
+
+      const expectedUrl =
+        audioListRef.current[currentAudioIndexRef.current]?.fileUrl;
+      if (expectedUrl && el.currentSrc !== expectedUrl) {
+        if (el.src !== expectedUrl) el.src = expectedUrl;
+        el.load();
+      }
+
+      if (audioCtxRef.current?.state === "suspended")
+        audioCtxRef.current.resume();
+
+      const tryPlay = () => {
+        if (cancelled) return;
+        el.play().catch((err) => {
+          if (err.name !== "AbortError") {
+            console.error("Play failed:", err);
+          }
+        });
+      };
+
+      if (el.readyState >= 3) tryPlay();
+      else {
+        const onCanPlay = () => {
+          el.removeEventListener("canplay", onCanPlay);
+          tryPlay();
+        };
+        el.addEventListener("canplay", onCanPlay);
+        const timeout = setTimeout(() => {
+          el.removeEventListener("canplay", onCanPlay);
+          if (!cancelled) tryPlay();
+        }, 3000);
+        return () => clearTimeout(timeout);
+      }
+    };
+
+    start();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentAudioIndex, pause, ensureFreshUrl]);
+
   const handleSkipPlayCount = useCallback(
     async (id: string, action: "skip" | "play") => {
       try {
@@ -356,11 +470,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
       }
     }
-    el?.play().catch((err) => {
-      if (err.name !== "AbortError") {
-      }
-    });
-    setPause(false);
+
     if (isShuffling) {
       let rand = Math.floor(Math.random() * len);
       if (len > 1 && rand === currentAudioIndex) rand = (rand + 1) % len;
@@ -371,11 +481,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
     const nextIndex = currentAudioIndex + 1;
     if (nextIndex >= len) {
-      if (audioRef.current) audioRef.current.src = "";
       setIsLoadingSync(true);
-      const lastSong = currentList.at(-1);
-      const response = await streamSongs(lastSong?.artist);
+
+      const currentSong = currentList[currentAudioIndex];
+      const response = await streamSongs(
+        currentSong?.artist,
+        selectedCategoryRef.current || undefined,
+      );
+
       const moreTracks = Array.isArray(response) ? response : response?.uploads;
+
       if (moreTracks && moreTracks.length > 0) {
         const maxHistory = 30;
         const previousTracksToKeep = currentList.slice(-maxHistory);
@@ -383,11 +498,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           ...track,
           fetchedAt: Date.now(),
         }));
-        setAudioList([...previousTracksToKeep, ...stampedTracks]);
+
+        const newList = [...previousTracksToKeep, ...stampedTracks];
         const newTrackIndex = previousTracksToKeep.length;
         const nextId = moreTracks[0]?.id || "";
-        if (nextId) handleId(nextId);
+
+        setAudioList(newList);
         setCurrentAudioIndex(newTrackIndex);
+        setPause(false);
+        if (nextId) handleId(nextId);
       } else {
         setCurrentAudioIndex(0);
       }
@@ -421,6 +540,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const onEnded = () => {
       if (handleNextRef.current) handleNextRef.current();
     };
+
+    const onWaiting = () => setIsBuffering(true);
+    const onStalled = () => setIsBuffering(true);
+    const onCanPlay = () => setIsBuffering(false);
+    const onPlaying = () => setIsBuffering(false);
+
+    el.addEventListener("waiting", onWaiting);
+    el.addEventListener("stalled", onStalled);
+    el.addEventListener("canplay", onCanPlay);
+    el.addEventListener("playing", onPlaying);
+
     const handleTimeUpdate = () => {
       if (!isDragging) setCurrentTime(el.currentTime);
       setDuration(el.duration);
@@ -432,53 +562,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     el.addEventListener("durationchange", onDurationChange);
     el.addEventListener("ended", onEnded);
     return () => {
+      el.removeEventListener("waiting", onWaiting);
+      el.removeEventListener("stalled", onStalled);
+      el.removeEventListener("canplay", onCanPlay);
+      el.removeEventListener("playing", onPlaying);
       el.removeEventListener("timeupdate", handleTimeUpdate);
       el.removeEventListener("loadedmetadata", onLoaded);
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
     };
   }, [currentTrackUrl, currentAudioIndex, handleSkipPlayCount, isDragging]);
-
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    let cancelled = false;
-    if (pause) {
-      try {
-        el.pause();
-      } catch {}
-      return () => {
-        cancelled = true;
-      };
-    }
-    const tryPlay = () => {
-      if (cancelled) return;
-      if (audioCtxRef.current && audioCtxRef.current.state === "suspended")
-        audioCtxRef.current.resume();
-      el.play().catch((err) => {
-        if (err.name !== "AbortError") {
-          alert("Audio Play failed an error occured!");
-          console.error("Play failed:", err);
-        }
-      });
-    };
-    if (el.readyState >= 2) {
-      tryPlay();
-    } else {
-      const onCanPlay = () => {
-        el.removeEventListener("canplay", onCanPlay);
-        tryPlay();
-      };
-      el.addEventListener("canplay", onCanPlay);
-      return () => {
-        cancelled = true;
-        el.removeEventListener("canplay", onCanPlay);
-      };
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [currentAudioIndex, pause]);
 
   useEffect(() => {
     return () => {
@@ -607,6 +700,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
         setTimeout(() => {
           setPause(false);
+          retryCountRef.current = 0;
           cleanupRecovery();
         }, 500);
       } else {
@@ -749,7 +843,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   return (
     <div
       ref={playerRef}
-      className="fixed bottom-0 left-0 w-full bg-white/5 backdrop-blur-2xl border-t border-white/10 shadow-2xl z-50"
+      className="fixed bottom-0 left-0 w-full bg-zinc-100 dark:bg-zinc-900 border-t border-white/10 shadow-2xl z-50"
     >
       {audioList.length > 0 && (
         <audio
@@ -780,69 +874,297 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex items-center gap-3 sm:gap-5">
-          <div className="relative flex-shrink-0 hidden xs:flex sm:flex">
+        <div className="flex flex-col gap-2 sm:hidden">
+          <div className="flex items-center gap-3">
             <div
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${gradientClass} flex items-center justify-center shadow-none overflow-hidden transition-all duration-500`}
-              style={{
-                boxShadow: !pause
-                  ? "0 0 18px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.5)"
-                  : "0 4px 16px rgba(0,0,0,0.4)",
-              }}
+              className={`w-10 h-10 rounded-lg ${gradientClass} flex items-center justify-center flex-shrink-0`}
             >
               {isLoading ? (
-                <div className="w-full h-full bg-black/10 dark:bg-white/10" />
+                <div className="w-full h-full bg-black/10 dark:bg-white/10 rounded-lg" />
+              ) : (
+                <Music2 className="w-5 h-5 text-black dark:text-white" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              {isLoading || audioList.length === 0 ? (
+                <>
+                  <div className="h-4 w-32 bg-black/10 dark:bg-white/10 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-20 bg-black/5 dark:bg-white/5 rounded animate-pulse" />
+                </>
               ) : (
                 <>
-                  <Music2 className="w-6 h-6 text-black dark:text-white" />
+                  <h2
+                    className={`${inter.className} text-sm font-semibold text-black dark:text-white truncate`}
+                    title={trackName}
+                  >
+                    {trackName || "—"}
+                  </h2>
+                  <p
+                    className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
+                  >
+                    {artistName || "Unknown Artist"}
+                  </p>
                 </>
               )}
             </div>
+
+            <ControlBtn
+              label="favorite"
+              title={
+                isFavorite ? "Remove from favourites" : "Add to favourites"
+              }
+              disabled={isLoading || isBuffering || audioList.length === 0}
+              onClick={handleFavoriteToggle}
+              active={isFavorite}
+            >
+              <Heart
+                className={`w-4 h-4 ${isFavorite ? "text-red-500 fill-red-500" : "text-black/40 dark:text-white/60"}`}
+              />
+            </ControlBtn>
           </div>
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            {isLoading || audioList.length === 0 ? (
-              <div className="space-y-2">
-                <div className="h-5 w-44 bg-black/10 dark:bg-white/10 rounded-md animate-pulse" />
-                <div className="h-3.5 w-28 bg-black/5 dark:bg-white/5 rounded-md animate-pulse" />
+          <div className="flex items-center gap-2">
+            <span
+              className={`${roboto.className} text-[10px] tabular-nums text-black/40 dark:text-white/40 w-8 text-right flex-shrink-0`}
+            >
+              {formatTime(currentTime)}
+            </span>
+            <div className="flex-1 relative h-4 flex items-center">
+              <div className="w-full h-1 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-black/40 dark:bg-white/40 rounded-full"
+                  style={{ width: `${progressPct}%` }}
+                />
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="overflow-hidden">
-                    <h2
-                      className={`${inter.className} text-sm sm:text-base font-semibold text-black dark:text-white leading-tight truncate`}
-                      title={trackName}
-                    >
-                      {trackName || "—"}
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
+              <input
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                type="range"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                min="0"
+                max={duration || 0}
+                step="0.1"
+                value={currentTime}
+                onMouseDown={() => setIsDragging(true)}
+                onMouseUp={() => setIsDragging(false)}
+                onTouchStart={() => setIsDragging(true)}
+                onTouchEnd={() => setIsDragging(false)}
+                onChange={(e) => {
+                  const newTime = parseFloat(e.target.value);
+                  setCurrentTime(newTime);
+                  if (audioRef.current) audioRef.current.currentTime = newTime;
+                }}
+              />
+            </div>
+            <span
+              className={`${roboto.className} text-[10px] tabular-nums text-black/50 dark:text-white/40 w-8 flex-shrink-0`}
+            >
+              {formatTime(duration)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <ControlBtn
+              label="shuffle"
+              title="Shuffle"
+              disabled={isLoading || isBuffering || audioList.length === 0}
+              active={isShuffling}
+              onClick={() => setIsShuffling(!isShuffling)}
+              small
+            >
+              <Shuffle className="w-4 h-4" />
+            </ControlBtn>
+
+            <div className="flex items-center gap-1">
+              <ControlBtn
+                label="previous"
+                title="Previous"
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                onClick={handlePrev}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </ControlBtn>
+
+              <button
+                aria-label={pause ? "play" : "pause"}
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                onClick={handleAudio}
+                className={`w-12 h-12 rounded-full flex items-center justify-center border-none transition-all
+            ${
+              isLoading || audioList.length === 0
+                ? "opacity-40 bg-white/10"
+                : "bg-gray-100 dark:bg-gray-800 active:scale-95"
+            }`}
+              >
+                {isLoading || isBuffering ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-black dark:text-white" />
+                ) : pause ? (
+                  <Play
+                    fill="#000"
+                    className="w-5 h-5 text-black dark:text-white translate-x-0.5"
+                  />
+                ) : (
+                  <Pause
+                    fill="#000"
+                    className="w-5 h-5 text-black dark:text-white"
+                  />
+                )}
+              </button>
+
+              <ControlBtn
+                label="next"
+                title="Next"
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                onClick={handleNext}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </ControlBtn>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <ControlBtn
+                label="loop"
+                title="Loop"
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                active={isLooping}
+                onClick={() => setIsLooping(!isLooping)}
+                small
+              >
+                <Repeat className="w-4 h-4" />
+              </ControlBtn>
+              <div className="relative">
+                {categoryListClicked && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 max-h-56 overflow-y-auto bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
+                  >
                     <p
-                      className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
+                      className={`${roboto.className} text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1`}
                     >
-                      {artistName || "Unknown Artist"}
+                      Category
                     </p>
-                    {audioList.length > 1 && (
-                      <span className="text-[10px] text-black/40 dark:text-white/25 font-mono tabular-nums flex-shrink-0">
-                        {currentAudioIndex + 1}/{audioList.length}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {!pause && (
-                  <div className="hidden sm:flex flex-shrink-0">
-                    <WaveformBars isPlaying={!pause} />
+                    <button
+                      onClick={() => {
+                        setSelectedCategory("");
+                        fetchStreamAudio(true, "");
+                        setCategoryListClicked(false);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer ${
+                        !selectedCategory
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                          : "text-black dark:text-white"
+                      }`}
+                    >
+                      All
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          fetchStreamAudio(true, cat.id);
+                          setCategoryListClicked(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer ${
+                          selectedCategory === cat.id
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                            : "text-black dark:text-white"
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
                   </div>
                 )}
+                <ControlBtn
+                  label="filter"
+                  title="Filter Categories"
+                  data-filter-button
+                  disabled={isLoading || isBuffering || audioList.length === 0}
+                  active={categoryListClicked || selectedCategory !== ""}
+                  onClick={() => setCategoryListClicked(!categoryListClicked)}
+                  small
+                >
+                  {categoryListClicked ? (
+                    <X className="w-4 h-4 text-red-400" />
+                  ) : selectedCategory !== "" && activeCategoryName ? (
+                    <span className="text-xs font-bold text-black dark:text-white">
+                      {activeCategoryName.charAt(0).toUpperCase()}
+                    </span>
+                  ) : (
+                    <Filter className="w-4 h-4" />
+                  )}
+                </ControlBtn>
               </div>
-            )}
+            </div>
+          </div>
+        </div>
+        <div className="hidden sm:flex items-center gap-3 sm:gap-5">
+          <div className="flex items-center gap-3 sm:gap-5 flex-1 basis-0 min-w-0">
+            <div className="relative flex-shrink-0 hidden xs:flex sm:flex">
+              <div
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${gradientClass} flex items-center justify-center shadow-none overflow-hidden transition-all duration-500`}
+                style={{
+                  boxShadow: !pause
+                    ? "0 0 18px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.5)"
+                    : "0 4px 16px rgba(0,0,0,0.4)",
+                }}
+              >
+                {isLoading ? (
+                  <div className="w-full h-full bg-black/10 dark:bg-white/10" />
+                ) : (
+                  <>
+                    <Music2 className="w-6 h-6 text-black dark:text-white" />
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              {isLoading || audioList.length === 0 ? (
+                <div className="space-y-2">
+                  <div className="h-5 w-44 bg-black/10 dark:bg-white/10 rounded-md animate-pulse" />
+                  <div className="h-3.5 w-28 bg-black/5 dark:bg-white/5 rounded-md animate-pulse" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="overflow-hidden">
+                      <h2
+                        className={`${inter.className} text-sm sm:text-base font-semibold text-black dark:text-white leading-tight truncate`}
+                        title={trackName}
+                      >
+                        {trackName || "—"}
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p
+                        className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
+                      >
+                        {artistName || "Unknown Artist"}
+                      </p>
+                      {audioList.length > 1 && (
+                        <span className="text-[10px] text-black/40 dark:text-white/25 font-mono tabular-nums flex-shrink-0">
+                          {currentAudioIndex + 1}/{audioList.length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {!pause && (
+                    <div className="hidden lg:flex flex-shrink-0">
+                      <AudioVisualizer
+                        analyser={analyserRef.current}
+                        isPlaying={!pause}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-col items-center gap-2 flex-shrink-0 text-black/70 dark:text-white/70">
             <div className="flex items-center gap-1 sm:gap-2">
               <ControlBtn
                 label="shuffle"
                 title="Shuffle"
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 active={isShuffling}
                 onClick={() => setIsShuffling(!isShuffling)}
                 small
@@ -853,7 +1175,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               <ControlBtn
                 label="previous"
                 title="Previous"
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 onClick={handlePrev}
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -861,16 +1183,18 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               <button
                 aria-label={pause ? "play" : "pause"}
                 title={pause ? "Play" : "Pause"}
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 onClick={handleAudio}
-                className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none border-none
+                className={`relative inline-flex items-center justify-center w-14 h-14 rounded-full border-none cursor-pointer outline-none transition-all duration-150 ease-out focus-none
                   ${
                     isLoading || audioList.length === 0
                       ? "opacity-40 cursor-not-allowed bg-white/10 dark:bg-black/10"
-                      : "bg-white dark:bg-black hover:bg-white/90 dark:hover:bg-black/90"
+                      : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
                   }`}
               >
-                {pause ? (
+                {isLoading || isBuffering ? (
+                  <Loader2 className="w-5 h-5 text-black dark:text-white animate-spin" />
+                ) : pause ? (
                   <Play
                     fill="#000"
                     className="w-5 h-5 text-black dark:text-white translate-x-0.5"
@@ -885,7 +1209,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               <ControlBtn
                 label="next"
                 title="Next"
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 onClick={handleNext}
               >
                 <ChevronRight className="w-5 h-5" />
@@ -893,7 +1217,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               <ControlBtn
                 label="loop"
                 title="Loop"
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 active={isLooping}
                 onClick={() => setIsLooping(!isLooping)}
                 small
@@ -915,7 +1239,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   />
                 </div>
                 <input
-                  disabled={isLoading || audioList.length === 0}
+                  disabled={isLoading || isBuffering || audioList.length === 0}
                   type="range"
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                   min="0"
@@ -945,12 +1269,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 text-black/70 dark:text-white/70">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 justify-end text-black/70 dark:text-white/70">
             <div ref={volumeRef} className="relative hidden sm:block">
               <ControlBtn
                 label={isMuted ? "unmute" : "mute"}
                 title={isMuted ? "Unmute" : "Mute"}
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 onClick={() => {
                   if (!showVolume) setShowVolume(true);
                   else setIsMuted(!isMuted);
@@ -963,7 +1287,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 )}
               </ControlBtn>
               {showVolume && (
-                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 bg-black/10 dark:bg-white/10 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/10">
+                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2  bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-2xl p-3">
                   <input
                     type="range"
                     min="0"
@@ -996,7 +1320,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 <div
                   ref={dropdownRef}
                   className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
-                    bg-white/20 dark:bg-black/20 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
+                    bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
                     [&::-webkit-scrollbar]:w-1.5
               [&::-webkit-scrollbar-thumb]:rounded-full
               [&::-webkit-scrollbar-thumb]:bg-gray-300
@@ -1046,7 +1370,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 label="filter categories"
                 title="Filter Categories"
                 data-filter-button
-                disabled={isLoading || audioList.length === 0}
+                disabled={isLoading || isBuffering || audioList.length === 0}
                 active={categoryListClicked || selectedCategory !== ""}
                 onClick={() => setCategoryListClicked(!categoryListClicked)}
               >
@@ -1067,7 +1391,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               title={
                 isFavorite ? "Remove from favourites" : "Add to favourites"
               }
-              disabled={isLoading || audioList.length === 0}
+              disabled={isLoading || isBuffering || audioList.length === 0}
               onClick={handleFavoriteToggle}
               active={isFavorite}
             >

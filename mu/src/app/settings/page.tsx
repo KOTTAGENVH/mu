@@ -17,6 +17,7 @@ import LoginFooter from "@/components/login/loginFooter";
 import { useMask } from "@/contextApi/mask";
 import { useAudioEq } from "@/contextApi/audioEnhance";
 import ManageActivty from "@/components/settings/activityManager";
+import { useVisualizer } from "@/contextApi/audioVizualizer";
 
 function Page() {
   const router = useRouter();
@@ -24,6 +25,7 @@ function Page() {
   const { toggleSearch, sematicSearch } = useSearch();
   const { maskStatus, toggleMask } = useMask();
   const { useCompressor, setUseCompressor, resetEq } = useAudioEq();
+  const { cycleMode } = useVisualizer();
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -98,6 +100,10 @@ function Page() {
       setUseCompressor(!useCompressor);
       return;
     }
+    if (id === 9) {
+      cycleMode();
+      return;
+    }
     setActiveSetting(id);
   };
 
@@ -109,7 +115,7 @@ function Page() {
         return <ManageWishList />;
       case 5:
         return <ManageAudio />;
-      case 9:
+      case 10:
         return <ManageActivty />;
       default:
         return (
