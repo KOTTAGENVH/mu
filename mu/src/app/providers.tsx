@@ -9,29 +9,32 @@ import { AudioEqProvider } from "@/contextApi/audioEnhance";
 import { MicrophoneProvider } from "@/contextApi/microphoneContext";
 import { SpeakerProvider } from "@/contextApi/speakerContext";
 import { MictalkModalProvider } from "@/contextApi/mictalkModal";
+import { VisualizerProvider } from "@/contextApi/audioVizualizer";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <MictalkModalProvider>
-      <SpeakerProvider>
-        <MicrophoneProvider>
-          <AudioEqProvider>
-            <MaskProvider>
-              <SearchProvider>
-                <AuthProvider>
-                  <ModalProvider>
-                    <CurrentPlayProvider>
-                      <CategoryStatusProvider>
-                        {children}
-                      </CategoryStatusProvider>
-                    </CurrentPlayProvider>
-                  </ModalProvider>
-                </AuthProvider>
-              </SearchProvider>
-            </MaskProvider>
-          </AudioEqProvider>
-        </MicrophoneProvider>
-      </SpeakerProvider>
-    </MictalkModalProvider>
+    <VisualizerProvider>
+      <MictalkModalProvider>
+        <SpeakerProvider>
+          <MicrophoneProvider>
+            <AudioEqProvider>
+              <MaskProvider>
+                <SearchProvider>
+                  <AuthProvider>
+                    <ModalProvider>
+                      <CurrentPlayProvider>
+                        <CategoryStatusProvider>
+                          {children}
+                        </CategoryStatusProvider>
+                      </CurrentPlayProvider>
+                    </ModalProvider>
+                  </AuthProvider>
+                </SearchProvider>
+              </MaskProvider>
+            </AudioEqProvider>
+          </MicrophoneProvider>
+        </SpeakerProvider>
+      </MictalkModalProvider>
+    </VisualizerProvider>
   );
 }

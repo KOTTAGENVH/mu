@@ -10,6 +10,7 @@ import {
   faRotateLeft,
   faArrowsLeftRight,
   faHistory,
+  faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface RenderProps {
@@ -17,7 +18,6 @@ interface RenderProps {
 }
 
 function SettingCardRender({ onSettingSelect }: RenderProps) {
-
   const settings = [
     {
       id: 1,
@@ -61,11 +61,15 @@ function SettingCardRender({ onSettingSelect }: RenderProps) {
     },
     {
       id: 9,
+      title: "Visualizer",
+      icon: faWaveSquare,
+    },
+    {
+      id: 10,
       title: "Activity Manager",
       icon: faHistory,
-    }
+    },
   ];
-  
 
   return (
     <div className="justify-center items-center w-auto h-auto  mx-4 px-3 lg:mx-16 lg:px-6 flex flex-row gap-6 flex-wrap mt-8 mb-8">

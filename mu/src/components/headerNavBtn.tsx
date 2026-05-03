@@ -23,7 +23,7 @@ export default function NavButton({
 }: NavButtonProps) {
  
   const base =
-    "relative inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer outline-none transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-1";
+    "relative inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer outline-none transition-all duration-150 ease-out focus-none";
  
   const variant = danger
     ? "bg-gray-100 hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-950/40"
