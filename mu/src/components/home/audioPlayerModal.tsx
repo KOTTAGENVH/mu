@@ -698,10 +698,18 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           };
           audioRef.current.addEventListener("loadedmetadata", restoreTime);
         }
-        setTimeout(() => {
+        setTimeout(async () => {
           setPause(false);
           retryCountRef.current = 0;
           cleanupRecovery();
+          try {
+            if (audioCtxRef.current?.state === "suspended") {
+              await audioCtxRef.current.resume();
+            }
+            await audioRef.current?.play();
+          } catch (err) {
+            console.error("Play after recovery failed:", err);
+          }
         }, 500);
       } else {
         throw new Error("Empty track received during recovery");
