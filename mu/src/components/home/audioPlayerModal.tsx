@@ -86,6 +86,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const currentTrackUrl = audioList[currentAudioIndex]?.fileUrl;
   const isRecovering = useRef(false);
+  const recoveryTimeRef = useRef<number | null>(null);
   const isLoadingRef = useRef(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastCountedTrackIdRef = useRef<string | null>(null);
@@ -412,6 +413,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
       const tryPlay = () => {
         if (cancelled) return;
+         if (recoveryTimeRef.current !== null) {
+    el.currentTime = recoveryTimeRef.current;
+    recoveryTimeRef.current = null;
+  }
         el.play().catch((err) => {
           if (err.name !== "AbortError") {
             console.error("Play failed:", err);
@@ -687,29 +692,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         if (audioRef.current) {
           audioRef.current.src = currentTrackResult.data.fileUrl;
           audioRef.current.load();
-          const restoreTime = () => {
-            if (audioRef.current) {
-              audioRef.current.currentTime = savedTime;
-              audioRef.current.removeEventListener(
-                "loadedmetadata",
-                restoreTime,
-              );
-            }
-          };
-          audioRef.current.addEventListener("loadedmetadata", restoreTime);
+          recoveryTimeRef.current = savedTime;
         }
         setTimeout(async () => {
           setPause(false);
           retryCountRef.current = 0;
           cleanupRecovery();
-          try {
-            if (audioCtxRef.current?.state === "suspended") {
-              await audioCtxRef.current.resume();
-            }
-            await audioRef.current?.play();
-          } catch (err) {
-            console.error("Play after recovery failed:", err);
-          }
         }, 500);
       } else {
         throw new Error("Empty track received during recovery");
@@ -887,7 +875,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             <div
               className={`w-10 h-10 rounded-lg ${gradientClass} flex items-center justify-center flex-shrink-0`}
             >
-              {isLoading ? (
+              {isLoading || isBuffering ? (
                 <div className="w-full h-full bg-black/10 dark:bg-white/10 rounded-lg" />
               ) : (
                 <Music2 className="w-5 h-5 text-black dark:text-white" />
@@ -895,7 +883,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-              {isLoading || audioList.length === 0 ? (
+              {isLoading || isBuffering || audioList.length === 0 ? (
                 <>
                   <div className="h-4 w-32 bg-black/10 dark:bg-white/10 rounded animate-pulse mb-1" />
                   <div className="h-3 w-20 bg-black/5 dark:bg-white/5 rounded animate-pulse" />
@@ -997,7 +985,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 onClick={handleAudio}
                 className={`w-12 h-12 rounded-full flex items-center justify-center border-none transition-all
             ${
-              isLoading || audioList.length === 0
+              isLoading || isBuffering || audioList.length === 0
                 ? "opacity-40 bg-white/10"
                 : "bg-gray-100 dark:bg-gray-800 active:scale-95"
             }`}
@@ -1126,7 +1114,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               </div>
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-              {isLoading || audioList.length === 0 ? (
+              {isLoading || isBuffering || audioList.length === 0 ? (
                 <div className="space-y-2">
                   <div className="h-5 w-44 bg-black/10 dark:bg-white/10 rounded-md animate-pulse" />
                   <div className="h-3.5 w-28 bg-black/5 dark:bg-white/5 rounded-md animate-pulse" />
@@ -1195,7 +1183,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 onClick={handleAudio}
                 className={`relative inline-flex items-center justify-center w-14 h-14 rounded-full border-none cursor-pointer outline-none transition-all duration-150 ease-out focus-none
                   ${
-                    isLoading || audioList.length === 0
+                    isLoading || isBuffering || audioList.length === 0
                       ? "opacity-40 cursor-not-allowed bg-white/10 dark:bg-black/10"
                       : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
                   }`}
