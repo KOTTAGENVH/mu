@@ -58,17 +58,18 @@ function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
       {id === 9 && (
         <span
           className={`
-            absolute top-2 right-2
-            text-xs font-mono text-white rounded-full px-2 py-0.5
-            ${
-              mode === VisualizerMode.Off
-                ? "bg-red-500 dark:bg-red-700"
-                : "bg-blue-500 dark:bg-blue-700"
-            }
-          `}
-        >
-          {VISUALIZER_LABELS[mode]}
-        </span>
+    absolute top-2 right-2
+    text-xs font-mono text-white rounded-full px-2 py-0.5
+    ${
+      {
+        [VisualizerMode.Off]: "bg-red-500 dark:bg-red-700",
+        [VisualizerMode.Matrix]: "bg-green-500 dark:bg-green-700",
+        [VisualizerMode.Bars]: "bg-cyan-500 dark:bg-cyan-700",
+        [VisualizerMode.Spiral]: "bg-pink-500 dark:bg-pink-700",
+      }[mode]
+    }
+  `}
+        />
       )}
     </button>
   );
