@@ -79,7 +79,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [showVolume, setShowVolume] = useState<boolean>(false);
-  const [isDragging, setIsDragging] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
   const [pause, setPause] = useState<boolean>(true);
@@ -101,8 +100,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const currentAudioIndexRef = useRef<number>(currentAudioIndex);
   const selectedCategoryRef = useRef(selectedCategory);
   const volumeRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+
   const activeCategoryName =
     categories.find((cat) => cat.id === selectedCategory)?.name || "";
+  const beginDrag = () => {
+    isDraggingRef.current = true;
+  };
+  const endDrag = () => {
+    isDraggingRef.current = false;
+  };
 
   useEffect(() => {
     selectedCategoryRef.current = selectedCategory;
@@ -358,14 +365,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   );
 
   const ensureFreshUrl = useCallback(
-    async (index: number): Promise<boolean> => {
+    async (index: number): Promise<string | null> => {
       const track = audioListRef.current[index];
-      if (!track?.id) return false;
+      if (!track?.id) return null;
       const age = Date.now() - (track.fetchedAt ?? 0);
-      if (age < URL_FRESH_MS) return true;
+      if (age < URL_FRESH_MS) return track.fileUrl;
 
       const fresh = await fetchStreamAudioById(track.id);
-      if (!fresh?.fileUrl) return false;
+      if (!fresh?.fileUrl) return null;
 
       setAudioList((prev) => {
         const list = [...prev];
@@ -378,7 +385,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         }
         return list;
       });
-      return true;
+
+      if (audioListRef.current[index]) {
+        audioListRef.current = audioListRef.current.map((t, i) =>
+          i === index
+            ? { ...t, fileUrl: fresh.fileUrl, fetchedAt: Date.now() }
+            : t,
+        );
+      }
+
+      return fresh.fileUrl;
     },
     [fetchStreamAudioById],
   );
@@ -387,6 +403,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const el = audioRef.current;
     if (!el) return;
     let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     if (pause) {
       try {
@@ -398,14 +415,18 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
 
     const start = async () => {
-      const ok = await ensureFreshUrl(currentAudioIndexRef.current);
-      if (cancelled || !ok) return;
+      const savedTime = el.currentTime;
 
-      const expectedUrl =
-        audioListRef.current[currentAudioIndexRef.current]?.fileUrl;
-      if (expectedUrl && el.currentSrc !== expectedUrl) {
-        if (el.src !== expectedUrl) el.src = expectedUrl;
+      const freshUrl = await ensureFreshUrl(currentAudioIndexRef.current);
+      if (cancelled || !freshUrl) return;
+
+      const needsReload = el.currentSrc !== freshUrl;
+      if (needsReload) {
+        el.src = freshUrl;
         el.load();
+        if (savedTime > 0 && recoveryTimeRef.current === null) {
+          recoveryTimeRef.current = savedTime;
+        }
       }
 
       if (audioCtxRef.current?.state === "suspended")
@@ -413,10 +434,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
       const tryPlay = () => {
         if (cancelled) return;
-         if (recoveryTimeRef.current !== null) {
-    el.currentTime = recoveryTimeRef.current;
-    recoveryTimeRef.current = null;
-  }
+        if (recoveryTimeRef.current !== null) {
+          el.currentTime = recoveryTimeRef.current;
+          recoveryTimeRef.current = null;
+        }
         el.play().catch((err) => {
           if (err.name !== "AbortError") {
             console.error("Play failed:", err);
@@ -431,17 +452,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           tryPlay();
         };
         el.addEventListener("canplay", onCanPlay);
-        const timeout = setTimeout(() => {
+        timeoutId = setTimeout(() => {    
           el.removeEventListener("canplay", onCanPlay);
           if (!cancelled) tryPlay();
         }, 3000);
-        return () => clearTimeout(timeout);
       }
     };
 
     start();
     return () => {
       cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [currentAudioIndex, pause, ensureFreshUrl]);
 
@@ -532,13 +553,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const el = audioRef.current;
     if (!el) return;
     const onLoaded = () => {
-      const currentTrackId = audioListRef.current[currentAudioIndex]?.id;
       setDuration(el.duration || 0);
-      if (currentTrackId && lastCountedTrackIdRef.current !== currentTrackId) {
-        lastCountedTrackIdRef.current = currentTrackId;
-        handleSkipPlayCount(currentTrackId, "play").catch(() => {
-          alert("An error occurred while updating play count.");
-        });
+      const id = audioListRef.current[currentAudioIndex]?.id;
+      if (id && lastCountedTrackIdRef.current !== id) {
+        lastCountedTrackIdRef.current = id;
+        handleSkipPlayCount(id, "play").catch(() => {});
       }
     };
     const onDurationChange = () => setDuration(el.duration || 0);
@@ -551,19 +570,17 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     const onCanPlay = () => setIsBuffering(false);
     const onPlaying = () => setIsBuffering(false);
 
+    const handleTimeUpdate = () => {
+      if (!isDraggingRef.current) setCurrentTime(el.currentTime);
+    };
+
     el.addEventListener("waiting", onWaiting);
     el.addEventListener("stalled", onStalled);
     el.addEventListener("canplay", onCanPlay);
     el.addEventListener("playing", onPlaying);
-
-    const handleTimeUpdate = () => {
-      if (!isDragging) setCurrentTime(el.currentTime);
-      setDuration(el.duration);
-    };
-    setCurrentTime(el.currentTime || 0);
-    setDuration(el.duration || 0);
     el.addEventListener("timeupdate", handleTimeUpdate);
     el.addEventListener("loadedmetadata", onLoaded);
+    
     el.addEventListener("durationchange", onDurationChange);
     el.addEventListener("ended", onEnded);
     return () => {
@@ -571,12 +588,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       el.removeEventListener("stalled", onStalled);
       el.removeEventListener("canplay", onCanPlay);
       el.removeEventListener("playing", onPlaying);
-      el.removeEventListener("timeupdate", handleTimeUpdate);
-      el.removeEventListener("loadedmetadata", onLoaded);
       el.removeEventListener("durationchange", onDurationChange);
       el.removeEventListener("ended", onEnded);
+      el.removeEventListener("timeupdate", handleTimeUpdate);
+      el.removeEventListener("loadedmetadata", onLoaded);
     };
-  }, [currentTrackUrl, currentAudioIndex, handleSkipPlayCount, isDragging]);
+  }, [currentTrackUrl, currentAudioIndex, handleSkipPlayCount]);
 
   useEffect(() => {
     return () => {
@@ -940,10 +957,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 max={duration || 0}
                 step="0.1"
                 value={currentTime}
-                onMouseDown={() => setIsDragging(true)}
-                onMouseUp={() => setIsDragging(false)}
-                onTouchStart={() => setIsDragging(true)}
-                onTouchEnd={() => setIsDragging(false)}
+                onMouseDown={beginDrag}
+                onMouseUp={endDrag}
+                onTouchStart={beginDrag}
+                onTouchEnd={endDrag}
                 onChange={(e) => {
                   const newTime = parseFloat(e.target.value);
                   setCurrentTime(newTime);
@@ -1242,10 +1259,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   max={duration || 0}
                   step="0.1"
                   value={currentTime}
-                  onMouseDown={() => setIsDragging(true)}
-                  onMouseUp={() => setIsDragging(false)}
-                  onTouchStart={() => setIsDragging(true)}
-                  onTouchEnd={() => setIsDragging(false)}
+                  onMouseDown={beginDrag}
+                  onMouseUp={endDrag}
+                  onTouchStart={beginDrag}
+                  onTouchEnd={endDrag}
                   onChange={(e) => {
                     const newTime = parseFloat(e.target.value);
                     setCurrentTime(newTime);
@@ -1254,7 +1271,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   }}
                 />
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3bg-black dark:bg-white rounded-full shadow pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-black dark:bg-white rounded-full shadow pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                   style={{ left: `calc(${progressPct}% - 6px)` }}
                 />
               </div>
