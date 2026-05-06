@@ -452,7 +452,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           tryPlay();
         };
         el.addEventListener("canplay", onCanPlay);
-        timeoutId = setTimeout(() => {    
+        timeoutId = setTimeout(() => {
           el.removeEventListener("canplay", onCanPlay);
           if (!cancelled) tryPlay();
         }, 3000);
@@ -580,7 +580,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     el.addEventListener("playing", onPlaying);
     el.addEventListener("timeupdate", handleTimeUpdate);
     el.addEventListener("loadedmetadata", onLoaded);
-    
+
     el.addEventListener("durationchange", onDurationChange);
     el.addEventListener("ended", onEnded);
     return () => {
@@ -693,6 +693,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         (r) => r.index === currentAudioIndex,
       );
       if (currentTrackResult?.data?.fileUrl) {
+        recoveryTimeRef.current = savedTime;
+
         setAudioList((prev) => {
           const newList = [...prev];
           fetchedResults.forEach((result) => {
@@ -706,16 +708,56 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
           });
           return newList;
         });
-        if (audioRef.current) {
-          audioRef.current.src = currentTrackResult.data.fileUrl;
-          audioRef.current.load();
-          recoveryTimeRef.current = savedTime;
-        }
-        setTimeout(async () => {
-          setPause(false);
-          retryCountRef.current = 0;
+
+        const el = audioRef.current;
+        if (!el) {
           cleanupRecovery();
-        }, 500);
+          return;
+        }
+
+        el.src = currentTrackResult.data.fileUrl;
+        el.load();
+
+        const playWhenReady = () => {
+          if (recoveryTimeRef.current !== null) {
+            try {
+              el.currentTime = recoveryTimeRef.current;
+            } catch {}
+            recoveryTimeRef.current = null;
+          }
+          if (audioCtxRef.current?.state === "suspended") {
+            audioCtxRef.current.resume().catch(() => {});
+          }
+
+          el.play()
+            .then(() => {
+              setPause(false);
+              retryCountRef.current = 0;
+            })
+            .catch((err) => {
+              if (err.name !== "AbortError")
+                console.warn("Recovery play failed:", err);
+              setPause(true);
+            })
+            .finally(() => {
+              cleanupRecovery();
+            });
+        };
+
+        if (el.readyState >= 3) {
+          playWhenReady();
+        } else {
+          const onReady = () => {
+            el.removeEventListener("canplay", onReady);
+            clearTimeout(safety);
+            playWhenReady();
+          };
+          const safety = setTimeout(() => {
+            el.removeEventListener("canplay", onReady);
+            playWhenReady();
+          }, 5000);
+          el.addEventListener("canplay", onReady);
+        }
       } else {
         throw new Error("Empty track received during recovery");
       }
