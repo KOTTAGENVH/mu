@@ -74,7 +74,7 @@ export function CoffeeContent({ hovered }: { hovered?: boolean }) {
             transition: "color 0.35s ease",
           }}
         >
-          Buy me a coffee
+          Read the blog
         </span>
         <span
           style={{
@@ -87,7 +87,7 @@ export function CoffeeContent({ hovered }: { hovered?: boolean }) {
             transition: "color 0.35s ease",
           }}
         >
-          Support the project
+          MU
         </span>
       </div>
     </>

@@ -264,6 +264,28 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [categoryListClicked]);
 
+  useEffect(() => {
+  function handleClickOutside(event: MouseEvent | TouchEvent) {
+    if (!categoryListClicked) return;
+    const target = (
+      event instanceof TouchEvent ? event.touches[0]?.target : event.target
+    ) as Node | null;
+    if (!target) return;
+    if (
+      (dropdownRef.current && dropdownRef.current.contains(target)) ||
+      (target as HTMLElement).closest?.("[data-filter-button]")
+    )
+      return;
+    setCategoryListClicked(false);
+  }
+  document.addEventListener("mousedown", handleClickOutside);
+  document.addEventListener("touchstart", handleClickOutside as EventListener);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+    document.removeEventListener("touchstart", handleClickOutside as EventListener);
+  };
+}, [categoryListClicked]);
+
   const getGradientClass = (name: string) => {
     if (!name) return "bg-gradient-to-br from-gray-500 to-gray-700";
     const gradients = [
@@ -1089,6 +1111,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 {categoryListClicked && (
                   <div
                     ref={dropdownRef}
+                    onTouchStart={(e) => e.stopPropagation()} 
                     className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 max-h-56 overflow-y-auto bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
                   >
                     <p

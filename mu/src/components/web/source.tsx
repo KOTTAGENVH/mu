@@ -72,7 +72,7 @@ function SourceAndSupport() {
             <Card href="https://github.com/KOTTAGENVH/mu" delay={0.1}>
               <GitHubContent />
             </Card>
-            <Card href="https://buymeacoffee.com/nowenportfj" delay={0.2}>
+            <Card href="https://www.nowenkottage.com/mu?page=1" delay={0.2}>
               <CoffeeContent />
             </Card>
           </div>
