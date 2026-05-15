@@ -250,41 +250,32 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   }, [pan]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (!categoryListClicked) return;
-      const target = event.target as Node;
+      const target = (
+        event instanceof TouchEvent ? event.touches[0]?.target : event.target
+      ) as Node | null;
+      if (!target) return;
       if (
         (dropdownRef.current && dropdownRef.current.contains(target)) ||
-        (event.target as HTMLElement).closest("[data-filter-button]")
+        (target as HTMLElement).closest?.("[data-filter-button]")
       )
         return;
       setCategoryListClicked(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener(
+      "touchstart",
+      handleClickOutside as EventListener,
+    );
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener(
+        "touchstart",
+        handleClickOutside as EventListener,
+      );
+    };
   }, [categoryListClicked]);
-
-  useEffect(() => {
-  function handleClickOutside(event: MouseEvent | TouchEvent) {
-    if (!categoryListClicked) return;
-    const target = (
-      event instanceof TouchEvent ? event.touches[0]?.target : event.target
-    ) as Node | null;
-    if (!target) return;
-    if (
-      (dropdownRef.current && dropdownRef.current.contains(target)) ||
-      (target as HTMLElement).closest?.("[data-filter-button]")
-    )
-      return;
-    setCategoryListClicked(false);
-  }
-  document.addEventListener("mousedown", handleClickOutside);
-  document.addEventListener("touchstart", handleClickOutside as EventListener);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-    document.removeEventListener("touchstart", handleClickOutside as EventListener);
-  };
-}, [categoryListClicked]);
 
   const getGradientClass = (name: string) => {
     if (!name) return "bg-gradient-to-br from-gray-500 to-gray-700";
@@ -1111,7 +1102,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 {categoryListClicked && (
                   <div
                     ref={dropdownRef}
-                    onTouchStart={(e) => e.stopPropagation()} 
+                    onTouchStart={(e) => e.stopPropagation()}
                     className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 max-h-56 overflow-y-auto bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
                   >
                     <p
@@ -1424,24 +1415,30 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   >
                     All
                   </button>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        fetchStreamAudio(true, cat.id);
-                        setCategoryListClicked(false);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
+                  {categories.length === 0 && isLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-black/60 dark:text-white/60" />
+                    </div>
+                  ) : (
+                    categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          fetchStreamAudio(true, cat.id);
+                          setCategoryListClicked(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
                               ${
                                 selectedCategory === cat.id
                                   ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
                                   : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                               }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
+                      >
+                        {cat.name}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
               <ControlBtn
