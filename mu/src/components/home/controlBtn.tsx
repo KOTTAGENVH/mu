@@ -23,6 +23,7 @@ export default function ControlBtn({
       title={title}
       disabled={disabled}
       onClick={onClick}
+      onMouseDown={(e) => e.stopPropagation()} 
       {...rest}
       className={[
         "relative inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer outline-none transition-all duration-150 ease-out focus-none",
