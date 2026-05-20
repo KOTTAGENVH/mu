@@ -251,18 +251,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   useEffect(() => {
     if (!categoryListClicked) return;
-
-    function handleClickOutside(event: PointerEvent) {
+    function handleClickOutside(event: MouseEvent) {
       const target = event.target as Element | null;
       if (!target) return;
       if (target.closest("[data-dropdown-content]")) return;
-      if (target.closest("[data-filter-button]")) return;
       setCategoryListClicked(false);
     }
-
-    document.addEventListener("pointerdown", handleClickOutside, true);
-    return () =>
-      document.removeEventListener("pointerdown", handleClickOutside, true);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [categoryListClicked]);
 
   const getGradientClass = (name: string) => {
@@ -1376,6 +1372,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               {categoryListClicked && (
                 <div
                   ref={dropdownRef}
+                  data-dropdown-content
                   className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
                     bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
                     [&::-webkit-scrollbar]:w-1.5
