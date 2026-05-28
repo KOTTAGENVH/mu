@@ -18,7 +18,6 @@ if (
 export const s3Client = new S3Client({
   region: "auto",
   endpoint: `${process.env.S3_ENDPOINT}`,
-  forcePathStyle: true,
   credentials: {
     accessKeyId: process.env.CLOUDFLARE_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.CLOUDFLARE_SECRET_ACCESS_KEY || "",
@@ -28,7 +27,6 @@ export const s3Client = new S3Client({
 export const s3Client2 = new S3Client({
   region: "auto",
   endpoint: `${process.env.S3_ENDPOINT_IMG}`,
-  forcePathStyle: true,
   credentials: {
     accessKeyId: process.env.CLOUDFLARE_IMG_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.CLOUDFLARE_IMG_SECRET_ACCESS_KEY || "",
