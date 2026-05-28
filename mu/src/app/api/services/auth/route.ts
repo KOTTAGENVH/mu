@@ -274,7 +274,7 @@ function generateSecret(length = 20) {
 //   return otp.toString().padStart(6, "0");
 // }
 
-function verifyToken(token: string, secret: string, window = 1) {
+function verifyToken(token: string, secret: string, window = 0) {
   const key = fromBase32(secret);
   const epoch = Math.floor(Date.now() / 1000.0);
   const timeStep = 30;
@@ -284,7 +284,8 @@ function verifyToken(token: string, secret: string, window = 1) {
   for (let i = -window; i <= window; i++) {
     const counter = currentCounter + i;
     const counterBuffer = Buffer.alloc(8);
-    counterBuffer.writeUInt32BE(counter, 4);
+    counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+    counterBuffer.writeUInt32BE(counter >>> 0, 4);
 
     const hmac = crypto.createHmac("sha1", key);
     hmac.update(counterBuffer);
@@ -300,10 +301,6 @@ function verifyToken(token: string, secret: string, window = 1) {
 
     const otp = binary % 1000000;
     const generatedToken = otp.toString().padStart(6, "0");
-
-    if (typeof token !== "string" || !/^\d{4}$/.test(token)) {
-      return NextResponse.json({ message: "Invalid format" }, { status: 400 });
-    }
 
     //To prevent timing attack when comparing between digits
     const isValid = crypto.timingSafeEqual(
