@@ -33,7 +33,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
               `img-src 'self' data: ${process.env.S3_ENDPOINT_IMG}; ` +
-              `media-src 'self' ${process.env.S3_ENDPOINT};`,
+              `media-src 'self' blob: ${process.env.S3_ENDPOINT};`,
           },
         ],
       },
