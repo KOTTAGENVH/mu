@@ -50,7 +50,7 @@ export async function GET(
       .populate({
         path: "category",
         select: "-_id",
-        model: Category, 
+        model: Category,
       })
       .lean()) as unknown as IPopulatedTrack;
 
@@ -65,9 +65,15 @@ export async function GET(
       Bucket: process.env.R2_BUCKET_NAME,
       Key: track.fileUrl,
     });
-    const signedUrl = await getSignedUrl(s3Client, getCommand, {
+
+    const rawUrl = await getSignedUrl(s3Client, getCommand, {
       expiresIn: 3600,
     });
+
+    const signedUrl = rawUrl.replace(
+      `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}`,
+      process.env.S3_ENDPOINT as string,
+    );
 
     track.fileUrl = signedUrl;
 
