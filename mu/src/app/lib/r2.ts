@@ -17,7 +17,7 @@ if (
 
 export const s3Client = new S3Client({
   region: "auto",
-  endpoint: `${process.env.S3_ENDPOINT}`,
+    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: process.env.CLOUDFLARE_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.CLOUDFLARE_SECRET_ACCESS_KEY || "",
