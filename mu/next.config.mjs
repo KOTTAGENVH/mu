@@ -32,8 +32,8 @@ const nextConfig = {
               "default-src 'self'; " +
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data: https://muimg.nowenkottage.com; " +
-              "media-src 'self' https://musiccdn.nowenkottage.com;", 
+              `img-src 'self' data: ${process.env.S3_ENDPOINT_IMG}; ` +
+              `media-src 'self' ${process.env.S3_ENDPOINT};`,
           },
         ],
       },
