@@ -81,6 +81,7 @@ export async function POST(req: Request) {
 
     const plainSecret = decrypt(user.token);
     const isValid = verifyToken(token, plainSecret);
+    console.log("isvalide: " + isValid);
     if (!isValid) {
       return NextResponse.json(
         { success: false, message: "Invalid Token" },
@@ -129,6 +130,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, message: "authenticated" });
     } else if (userCount === 0 || !userVerified) {
       const secret = generateSecret();
+      console.log("GENERATING NEW SECRET:", secret.slice(0, 6)); 
       const email = process.env.EMAIL || "";
       if (!email) {
         throw new Error("EMAIL environment variable is not set.");
@@ -274,8 +276,9 @@ function generateSecret(length = 20) {
 //   return otp.toString().padStart(6, "0");
 // }
 
-function verifyToken(token: string, secret: string, window = 0) {
+function verifyToken(token: string, secret: string, window = 1) {
   const key = fromBase32(secret);
+  console.log("secret:", secret, "| key length:", key.length); 
   const epoch = Math.floor(Date.now() / 1000.0);
   const timeStep = 30;
   const currentCounter = Math.floor(epoch / timeStep);
@@ -301,6 +304,7 @@ function verifyToken(token: string, secret: string, window = 0) {
 
     const otp = binary % 1000000;
     const generatedToken = otp.toString().padStart(6, "0");
+     console.log(`window ${i}: server=${generatedToken} you=${token}`); 
 
     //To prevent timing attack when comparing between digits
     const isValid = crypto.timingSafeEqual(
