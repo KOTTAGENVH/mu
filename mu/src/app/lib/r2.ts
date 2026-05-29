@@ -27,7 +27,7 @@ export const s3Client = new S3Client({
 
 export const s3Client2 = new S3Client({
   region: "auto",
-  endpoint: `${process.env.S3_ENDPOINT_IMG}`,
+  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: process.env.CLOUDFLARE_IMG_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.CLOUDFLARE_IMG_SECRET_ACCESS_KEY || "",
