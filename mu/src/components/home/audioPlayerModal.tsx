@@ -1200,14 +1200,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       )}
                     </div>
                   </div>
-                  {!pause && (
-                    <div className="hidden lg:flex flex-shrink-0">
-                      <AudioVisualizer
-                        analyser={analyserRef.current}
-                        isPlaying={!pause}
-                      />
-                    </div>
-                  )}
+                  <div className="hidden lg:flex flex-shrink-0">
+                    <AudioVisualizer
+                      analyser={analyserRef.current}
+                    />
+                  </div>
                 </div>
               )}
             </div>

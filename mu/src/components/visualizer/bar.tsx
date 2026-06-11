@@ -2,13 +2,11 @@ import { useEffect, useRef } from "react";
 
 interface Props {
   analyser: AnalyserNode | null;
-  isPlaying: boolean;
   bars?: number;
 }
 
 export default function BarsVisualizer({
   analyser,
-  isPlaying,
   bars = 24,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,7 +14,7 @@ export default function BarsVisualizer({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !analyser || !isPlaying) return;
+    if (!canvas || !analyser) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -60,13 +58,8 @@ export default function BarsVisualizer({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [analyser, isPlaying, bars]);
+  }, [analyser, bars]);
 
-  useEffect(() => {
-    if (!isPlaying) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    }
-  }, [isPlaying]);
 
   return (
     <canvas

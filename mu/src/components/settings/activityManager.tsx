@@ -45,6 +45,7 @@ function ManageActivity() {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalState, setModalState] = useState<ModalState>({
@@ -65,7 +66,7 @@ function ManageActivity() {
   const fetchActivities = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await getAllActivity(currentPage, 30);
+      const data = await getAllActivity(currentPage, 30, debouncedQuery);
       if (data.success) {
         setActivities(data.activities);
         setPaginationData({
@@ -83,19 +84,19 @@ function ManageActivity() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, debouncedQuery]);
 
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
 
-  const filteredActivities = useMemo(() => {
-    if (!searchQuery) return activities;
-    const lowerQuery = searchQuery.toLowerCase();
-    return activities.filter((activity) =>
-      activity.taskname?.toLowerCase().includes(lowerQuery),
-    );
-  }, [activities, searchQuery]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const executeDelete = useCallback(
     async (id: string) => {
@@ -286,7 +287,7 @@ function ManageActivity() {
           <div className="flex justify-center py-12">
             <Loader />
           </div>
-        ) : filteredActivities.length > 0 ? (
+        ) : activities.length > 0 ? (
           <div className="overflow-x-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -306,7 +307,7 @@ function ManageActivity() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {filteredActivities.map((activity) => (
+                {activities.map((activity) => (
                   <tr
                     key={activity.id}
                     className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors duration-150 group"
