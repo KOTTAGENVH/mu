@@ -8,7 +8,6 @@ import MatrixVisualizer from "../visualizer/matrix";
 
 interface Props {
   analyser: AnalyserNode | null;
-  isPlaying: boolean;
 }
 
 export default function AudioVisualizer(props: Props) {

@@ -1,9 +1,13 @@
 //get activity
-export async function getAllActivity(page: number = 1, limit: number = 10) {
+export async function getAllActivity(
+  page: number = 1,
+  limit: number = 10,
+  search: string = "",
+) {
   const response = await fetch(`/api/services/acitivity`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ page, limit }),
+    body: JSON.stringify({ page, limit, search }),
   });
   if (response.ok) {
     return await response.json();
@@ -18,7 +22,7 @@ export async function deleteActivity(id: string) {
   const response = await fetch(`/api/services/acitivity`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id}),
+    body: JSON.stringify({ id }),
   });
   if (response.ok) {
     return await response.json();

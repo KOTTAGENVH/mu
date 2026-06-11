@@ -6,6 +6,10 @@ import Activity from "@/models/activity";
 import { customEmail } from "@/config/customEmail";
 import { getClientIp } from "@/app/helper/ipChecker";
 
+function escapeRegex(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 //Get all Activity
 export async function POST(req: Request) {
   await dbConnect();
@@ -30,13 +34,18 @@ export async function POST(req: Request) {
     const limit = parseInt(body.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const search = typeof body.search === "string" ? body.search.trim() : "";
+    const query = search
+      ? { taskname: { $regex: escapeRegex(search), $options: "i" } }
+      : {};
+
     const [activities, totalCount] = await Promise.all([
-      Activity.find({})
+      Activity.find(query)
         .select("-_id")
         .sort({ _id: -1 })
         .skip(skip)
         .limit(limit),
-      Activity.countDocuments({}),
+      Activity.countDocuments(query),
     ]);
 
     return NextResponse.json({
@@ -87,7 +96,10 @@ export async function DELETE(req: Request) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid JSON payload" },
+        { status: 400 },
+      );
     }
     const IST_TIMEZONE = "Asia/Kolkata";
     const now = new Date().toLocaleString("en-IN", { timeZone: IST_TIMEZONE });

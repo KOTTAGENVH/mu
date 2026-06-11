@@ -2,19 +2,17 @@ import { useEffect, useRef } from "react";
 
 interface AudioVisualizerProps {
   analyser: AnalyserNode | null;
-  isPlaying: boolean;
 }
 
 export default function SpiralVisualizer({
-  analyser,
-  isPlaying,
+  analyser
 }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !analyser || !isPlaying) return;
+    if (!canvas || !analyser) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -62,7 +60,7 @@ export default function SpiralVisualizer({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [analyser, isPlaying]);
+  }, [analyser]);
 
   return (
     <canvas

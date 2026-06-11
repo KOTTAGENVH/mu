@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 
 interface Props {
   analyser: AnalyserNode | null;
-  isPlaying: boolean;
 }
 
 const CHARS = "0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノ";
@@ -18,7 +17,7 @@ interface Stream {
   opacity: number;
 }
 
-export default function MatrixVisualizer({ analyser, isPlaying }: Props) {
+export default function MatrixVisualizer({ analyser}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const streamsRef = useRef<Stream[]>([]);
@@ -43,7 +42,7 @@ export default function MatrixVisualizer({ analyser, isPlaying }: Props) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !analyser || !isPlaying) return;
+    if (!canvas || !analyser) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -126,7 +125,7 @@ export default function MatrixVisualizer({ analyser, isPlaying }: Props) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [analyser, isPlaying]);
+  }, [analyser]);
 
   return (
     <canvas
