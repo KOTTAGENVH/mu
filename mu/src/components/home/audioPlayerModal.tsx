@@ -62,6 +62,20 @@ interface AudioPlayerModalProps {
 
 const URL_FRESH_MS = 50 * 60 * 1000;
 
+  const normalizeTrack = (track: any): AudioItem => ({
+    id: track.id,
+    name: track.name,
+    artist: track.artist,
+    category:
+      typeof track.category === "string"
+        ? track.category
+        : (track.category?.name ?? track.categotry?.name ?? ""),
+    fileUrl: track.fileUrl,
+    favourite: track.favourite,
+    fetchedAt: track.fetchedAt ?? Date.now(),
+  });
+
+
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const { maskStatus } = useMask();
   const { eqValues, pan, useCompressor } = useAudioEq();
@@ -285,10 +299,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         const response = await streamSongs(currentSong?.artist, category);
         const data = await response;
         if (data && data.success) {
-          const newUploads = data.uploads.map((track: any) => ({
-            ...track,
-            fetchedAt: Date.now(),
-          }));
+          const newUploads = data.uploads.map(normalizeTrack);
           if (forceRefresh) {
             const currentlyPlayingTrack =
               audioListRef.current[currentAudioIndexRef.current];
@@ -517,10 +528,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       if (moreTracks && moreTracks.length > 0) {
         const maxHistory = 30;
         const previousTracksToKeep = currentList.slice(-maxHistory);
-        const stampedTracks = moreTracks.map((track: any) => ({
-          ...track,
-          fetchedAt: Date.now(),
-        }));
+        const stampedTracks = moreTracks.map(normalizeTrack);
 
         const newList = [...previousTracksToKeep, ...stampedTracks];
         const newTrackIndex = previousTracksToKeep.length;
@@ -792,15 +800,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
         setIsLoadingSync(true);
         const newTrack = await fetchStreamAudioById(id);
         if (newTrack) {
-          const newTrackAsItem: AudioItem = {
-            id: newTrack.id,
-            name: newTrack.name,
-            artist: newTrack.artist,
-            category: newTrack.categotry?.name ?? "",
-            fileUrl: newTrack.fileUrl,
-            favourite: newTrack.favourite,
+          const newTrackAsItem: AudioItem = normalizeTrack({
+            ...newTrack,
             fetchedAt: newTrack.fetchedAt || Date.now(),
-          };
+          });
           let finalInsertedIndex = 0;
           setAudioList((prev) => {
             let newList = [...prev];
@@ -887,10 +890,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   };
 
   const currentTrack = audioList[currentAudioIndex];
+  const rawCat = currentTrack?.category as unknown;
+
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const trackName = maskStatus ? "xxxx" : (currentTrack?.name ?? "");
   const artistName = maskStatus ? "mubynk" : (currentTrack?.artist ?? "");
-  const categoryName = maskStatus ? "xxxx" : (currentTrack?.category ?? "");
+  const categoryName = maskStatus
+    ? "xxxx"
+    : typeof rawCat === "string"
+      ? rawCat
+      : ((rawCat as any)?.name ?? "");
   const gradientClass = getGradientClass(currentTrack?.name ?? "");
 
   return (
