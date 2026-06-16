@@ -890,6 +890,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const trackName = maskStatus ? "xxxx" : (currentTrack?.name ?? "");
   const artistName = maskStatus ? "mubynk" : (currentTrack?.artist ?? "");
+  const categoryName = maskStatus ? "xxxx" : (currentTrack?.category ?? "");
   const gradientClass = getGradientClass(currentTrack?.name ?? "");
 
   return (
@@ -952,11 +953,23 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   >
                     {trackName || "—"}
                   </h2>
-                  <p
-                    className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
-                  >
-                    {artistName || "Unknown Artist"}
-                  </p>
+                  <div className="group relative min-w-0">
+                    <p
+                      className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate cursor-default`}
+                    >
+                      {artistName || "Unknown Artist"}
+                    </p>
+                    {categoryName && (
+                      <span
+                        className={`${roboto.className} pointer-events-none absolute left-0 bottom-full mb-1 z-50 whitespace-nowrap rounded-lg px-2 py-1 text-[10px]
+        bg-zinc-800 text-white dark:bg-zinc-100 dark:text-black shadow-lg
+        opacity-0 translate-y-1 transition-all duration-150
+        group-hover:opacity-100 group-hover:translate-y-0`}
+                      >
+                        {categoryName}
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -1188,11 +1201,23 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                       </h2>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p
-                        className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate`}
-                      >
-                        {artistName || "Unknown Artist"}
-                      </p>
+                      <div className="group relative min-w-0">
+                        <p
+                          className={`${roboto.className} text-xs text-black/50 dark:text-white/50 truncate cursor-default`}
+                        >
+                          {artistName || "Unknown Artist"}
+                        </p>
+                        {categoryName && (
+                          <span
+                            className={`${roboto.className} pointer-events-none absolute left-0 bottom-full mb-1 z-50 whitespace-nowrap rounded-lg px-2 py-1 text-[10px]
+        bg-zinc-800 text-white dark:bg-zinc-100 dark:text-black shadow-lg
+        opacity-0 translate-y-1 transition-all duration-150
+        group-hover:opacity-100 group-hover:translate-y-0`}
+                          >
+                            {categoryName}
+                          </span>
+                        )}
+                      </div>
                       {audioList.length > 1 && (
                         <span className="text-[10px] text-black/40 dark:text-white/25 font-mono tabular-nums flex-shrink-0">
                           {currentAudioIndex + 1}/{audioList.length}
@@ -1201,9 +1226,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                     </div>
                   </div>
                   <div className="hidden lg:flex flex-shrink-0">
-                    <AudioVisualizer
-                      analyser={analyserRef.current}
-                    />
+                    <AudioVisualizer analyser={analyserRef.current} />
                   </div>
                 </div>
               )}
