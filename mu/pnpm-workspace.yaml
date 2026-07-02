@@ -1,5 +1,9 @@
 packages:
   - .
+overrides:
+  postcss: ^8.5.16
+  "@fortawesome/fontawesome-svg-core": ^7.3.0
+  "@fortawesome/fontawesome-common-types": ^7.3.0
 allowBuilds:
   sharp: true
   unrs-resolver: true
