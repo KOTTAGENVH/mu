@@ -516,6 +516,117 @@ function StatusDisplay() {
             )}
           </div>
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
+            {" "}
+            {isLoading ? (
+              <Loader />
+            ) : (
+              <>
+                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
+                  Least Listened Songs
+                </h3>
+                <div className="flex flex-row flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="text-sm flex-1 p-2 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
+                    placeholder="Search least listened songs..."
+                  />
+                  <button
+                    aria-label="Delete Least Listened 30%"
+                    onClick={() =>
+                      setDeleteModal({
+                        isOpen: true,
+                        songId: "",
+                        songName: "Least listened audios",
+                        leastlistened: true,
+                      })
+                    }
+                    title="Delete Least Listened 30%"
+                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
+                  >
+                    <LucideTrash className="w-4 h-4" />
+                  </button>
+                  <button
+                    aria-label="Kill Switch"
+                    onClick={() =>
+                      setDeleteModal({
+                        isOpen: true,
+                        songId: "",
+                        songName: "All audios",
+                        leastlistened: false,
+                      })
+                    }
+                    title="Kill Switch"
+                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
+                  >
+                    <Skull className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+                  {filteredLists &&
+                  filteredLists.candidates &&
+                  filteredLists.candidates.length > 0 ? (
+                    <div className="space-y-3 mt-2">
+                      {filteredLists.candidates.map((list) => (
+                        <div
+                          key={list.id}
+                          className="flex items-center justify-between p-3 rounded-2xl bg-black/20 dark:bg-white/10 border-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <div className="min-w-0 flex-1 mr-3">
+                            <p
+                              className="text-sm font-medium text-black dark:text-white truncate"
+                              title={list.name}
+                            >
+                              {maskStatus ? "xxxx" : list.name}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                setDeleteModal({
+                                  isOpen: true,
+                                  songId: list.id,
+                                  songName: list.name,
+                                  leastlistened: false,
+                                })
+                              }
+                              title="Delete"
+                              className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                ></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {searchQuery
+                          ? "No matching songs found."
+                          : "No least listened songs found."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
             <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
               Audio Enhancements
             </h3>
@@ -644,117 +755,6 @@ function StatusDisplay() {
                 </div>
               </div>
             </div>
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            {" "}
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <>
-                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
-                  Least Listened Songs
-                </h3>
-                <div className="flex flex-row flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="text-sm flex-1 p-2 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
-                    placeholder="Search least listened songs..."
-                  />
-                  <button
-                    aria-label="Delete Least Listened 30%"
-                    onClick={() =>
-                      setDeleteModal({
-                        isOpen: true,
-                        songId: "",
-                        songName: "Least listened audios",
-                        leastlistened: true,
-                      })
-                    }
-                    title="Delete Least Listened 30%"
-                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                  >
-                    <LucideTrash className="w-4 h-4" />
-                  </button>
-                  <button
-                    aria-label="Kill Switch"
-                    onClick={() =>
-                      setDeleteModal({
-                        isOpen: true,
-                        songId: "",
-                        songName: "All audios",
-                        leastlistened: false,
-                      })
-                    }
-                    title="Kill Switch"
-                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                  >
-                    <Skull className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                  {filteredLists &&
-                  filteredLists.candidates &&
-                  filteredLists.candidates.length > 0 ? (
-                    <div className="space-y-3 mt-2">
-                      {filteredLists.candidates.map((list) => (
-                        <div
-                          key={list.id}
-                          className="flex items-center justify-between p-3 rounded-2xl bg-black/20 dark:bg-white/10 border-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <div className="min-w-0 flex-1 mr-3">
-                            <p
-                              className="text-sm font-medium text-black dark:text-white truncate"
-                              title={list.name}
-                            >
-                              {maskStatus ? "xxxx" : list.name}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                setDeleteModal({
-                                  isOpen: true,
-                                  songId: list.id,
-                                  songName: list.name,
-                                  leastlistened: false,
-                                })
-                              }
-                              title="Delete"
-                              className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                ></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {searchQuery
-                          ? "No matching songs found."
-                          : "No least listened songs found."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>
