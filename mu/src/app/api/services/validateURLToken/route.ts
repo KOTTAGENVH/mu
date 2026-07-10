@@ -43,13 +43,16 @@ export async function POST(req: Request) {
 
     const { ip } = await getClientIp(req);
 
-    const isAllowedToProceed = await checkRateLimit(
-      ip,
+    const globalOk = await checkRateLimit(
+      "totp-global",
       "totp-auth",
-      5,
+      15,
       15 * 60 * 1000,
     );
-    if (!isAllowedToProceed) {
+    
+    const ipOk = await checkRateLimit(ip, `totp-ip`, 5, 15 * 60 * 1000);
+
+    if (!globalOk || !ipOk) {
       return NextResponse.json(
         {
           success: false,
