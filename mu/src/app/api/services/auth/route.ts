@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     const globalOk = await checkRateLimit(
       "totp-global",
       "totp-auth",
-      15,
+      10,
       15 * 60 * 1000,
     );
 
