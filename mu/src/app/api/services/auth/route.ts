@@ -51,14 +51,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const isAllowedToProceed = await checkRateLimit(
-      ip,
+    const globalOk = await checkRateLimit(
+      "totp-global",
       "totp-auth",
-      5,
+      10,
       15 * 60 * 1000,
     );
 
-    if (!isAllowedToProceed) {
+    const ipOk = await checkRateLimit(ip, `totp-ip`, 5, 15 * 60 * 1000);
+
+    if (!globalOk || !ipOk) {
       return NextResponse.json(
         {
           success: false,
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
       await user.save();
     }
 
-    await logAuthEvent(AuthEvent.LOGIN, ip); 
+    await logAuthEvent(AuthEvent.LOGIN, ip);
 
     await sendLoginNotifEmail(ip);
 
