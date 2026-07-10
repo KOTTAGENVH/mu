@@ -1,6 +1,6 @@
 import { customEmail } from "@/config/customEmail";
 import { NextResponse } from "next/server";
-import { sign } from "jsonwebtoken";
+import { checkRateLimit } from "@/app/helper/rateLimiter";
 import crypto from "crypto";
 import User from "@/models/user";
 import { encrypt } from "@/config/encryption";
@@ -8,8 +8,10 @@ import { decrypt } from "@/config/decryption";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
-import { checkRateLimit } from "@/app/helper/rateLimiter";
 import { getClientIp } from "@/app/helper/ipChecker";
+import { CookieGenerator } from "../cookierGenerator/generateCookie";
+import { AuthEvent } from "@/models/authLog";
+import { logAuthEvent } from "@/app/helper/authLogHelp";
 
 // 14min validity
 const max_age = 60 * 14;
@@ -22,8 +24,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const { ip } = await getClientIp(req);
-
     let body;
     try {
       body = await req.json();
@@ -34,15 +34,18 @@ export async function POST(req: Request) {
       );
     }
 
+    const { ip } = await getClientIp(req);
     const { token } = body;
-
+    const secret = process.env.JWT_SECRET || "";
+    const email = process.env.EMAIL || "";
+    const brand = process.env.BRAND || "";
     const isSixDigitData = /^\d{6}$/.test(token);
 
     if (!token || typeof token !== "string" || !isSixDigitData) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid token format. Expected a 6-digit code.",
+          message: "Invalid token format. Expected a 6 digit code.",
         },
         { status: 400 },
       );
@@ -65,11 +68,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const email = process.env.EMAIL || "";
-    if (!email) {
-      throw new Error("EMAIL environment variable is not set.");
-    }
-
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -82,6 +80,7 @@ export async function POST(req: Request) {
     const plainSecret = decrypt(user.token);
     const isValid = verifyToken(token, plainSecret);
     if (!isValid) {
+      await logAuthEvent(AuthEvent.FAILED_LOGIN, ip);
       return NextResponse.json(
         { success: false, message: "Invalid Token" },
         { status: 401 },
@@ -93,9 +92,19 @@ export async function POST(req: Request) {
       await user.save();
     }
 
-    await sendLoginUrlEmail(ip);
+    await logAuthEvent(AuthEvent.LOGIN, ip); 
 
-    return NextResponse.json({ success: true });
+    await sendLoginNotifEmail(ip);
+
+    const cookie = await CookieGenerator(email, ip);
+
+    return NextResponse.json(
+      { success: true },
+      {
+        status: 201,
+        headers: { "Set-Cookie": cookie },
+      },
+    );
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("error message: ", error.message);
@@ -314,16 +323,12 @@ function verifyToken(token: string, secret: string, window = 1) {
   return false;
 }
 
-async function sendLoginUrlEmail(ip: string) {
+async function sendLoginNotifEmail(ip: string) {
   try {
-    const secret = process.env.JWT_SECRET || "";
     const email = process.env.EMAIL || "";
     const email2 = process.env.EMAIL2 || "";
     const brand = process.env.BRAND || "";
 
-    if (!secret) {
-      throw new Error("JWT_SECRET environment variable is not set.");
-    }
     if (!email) {
       throw new Error("EMAIL environment variable is not set.");
     }
@@ -331,34 +336,30 @@ async function sendLoginUrlEmail(ip: string) {
       throw new Error("BRAND environment variable is not set.");
     }
 
-    const token = sign(
-      {
-        email,
-        brand,
-      },
-      secret,
-      { expiresIn: max_age },
-    );
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const cookieName = process.env.COOKIE_NAME || "";
-    if (!cookieName) {
-      throw new Error("COOKIE_NAME environment variable is not set.");
-    }
+    const loginTime = new Date().toLocaleString("en-IN", {
+      timeZone: timezone,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
 
-    // Prepare and send email with link for the user to login
-    const loginLink = `${process.env.NEXT_PUBLIC_URL}?token=${token}`;
-
-    // Send the token to the user via email
     await customEmail(
       [email, email2],
-      "Token for MU",
-      `Please click on the link to login: ${loginLink}`,
+      `New login to ${brand}`,
+      `A successful login happened at ${loginTime} (${timezone}) from IP: ${ip}.\n\n` +
+        `If this wasn't you, delete the account and re-register your authenticator immediately.`,
       ip,
     );
     return;
   } catch (error: unknown) {
     if (error instanceof Error) {
-      throw new Error(`Failed to send login URL email: ${error.message}`);
+      console.error("Login notification failed:", error.message);
     }
   }
 }

@@ -1,12 +1,14 @@
+import dbConnect from "@/config/dbConnect";
+import Session from "@/models/session";
 import { serialize } from "cookie";
 import { sign } from "jsonwebtoken";
+import crypto from "crypto";
 
 //Generate a jwt token
-export async function CookieGenerator(genratedToken: string) {
+export async function CookieGenerator(email: string, ip?: string) {
   try {
-    
     //Only 31 days validity
-    const MAX_AGE = 60 * 60 * 24 * 31;
+    const max_age = 60 * 60 * 24 * 31;
 
     //Token
     const secret = process.env.JWT_SECRET || "";
@@ -20,36 +22,27 @@ export async function CookieGenerator(genratedToken: string) {
       throw new Error("COOKIE_NAME environment variable is not set.");
     }
 
-    const token = sign(
-      {
-        genratedToken,
-      },
-      secret,
-      {
-        expiresIn: MAX_AGE,
-      }
-    );
+    const sessionId = crypto.randomBytes(32).toString("hex");
 
-    if (!cookieName) {
-      throw new Error("COOKIE_NAME environment variable is not set.");
-    }
+    await dbConnect();
+    await Session.create({ sessionId, email, ip });
 
-    // Set cookie
+    const token = sign({ sessionId }, secret, { expiresIn: max_age });
+
     const serialized = serialize(cookieName, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: MAX_AGE,
+      maxAge: max_age,
       path: "/",
     });
 
-    if (!serialized) {
-      throw new Error("Cookie serialization failed.");
-    }
-    
     return serialized;
   } catch (error: unknown) {
-    console.error("Error generating cookie:", error instanceof Error ? error.message : error);
+    console.error(
+      "Error generating cookie:",
+      error instanceof Error ? error.message : error,
+    );
     throw new Error("Failed to generate cookie");
   }
 }

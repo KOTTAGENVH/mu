@@ -4,12 +4,12 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import {
-  verifyAuthToken,
-} from "@/app/api/client/services/auth/api";
+import { verifyAuthToken } from "@/app/api/client/services/auth/api";
 import Loader from "../loader";
 import OTPInput from "./otpInputField";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Music, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contextApi/auth";
 
 interface TokenInputProps {
   backToLogin?: boolean;
@@ -19,6 +19,9 @@ interface TokenInputProps {
 function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
   const [isLoading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
+  const { toggleAuth } = useAuth();
 
   const handleSecretView = () => {
     setLoading(true);
@@ -38,23 +41,25 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
     onSubmit: async (values) => {
       try {
         setLoading(true);
+        setErrorMsg("");
         const response = await verifyAuthToken(values.token);
         formik.setFieldValue("token", "");
         formik.setTouched({ token: false });
         if (!response.success) {
-          alert(response.message);
+          setErrorMsg(response.message || "Invalid token. Please try again.");
           return;
         }
 
         setIsSuccess(true);
+        toggleAuth(true);
         setTimeout(() => {
-          setIsSuccess(false);
-        }, 4000);
+          router.push("/home");
+        }, 1200);
       } catch (error) {
         formik.setFieldValue("token", "");
         formik.setTouched({ token: false });
         // console.error("Error verifying token:", error);
-        alert("A network error occurred. Please check your connection.");
+        setErrorMsg("A network error occurred. Please check your connection.");
       } finally {
         setLoading(false);
       }
@@ -171,7 +176,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
             className="flex items-start gap-3 w-full bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-4 py-3.5 text-left"
           >
             <div className="mt-0.5 shrink-0 w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center">
-              <Mail
+              <Music
                 size={15}
                 className="text-emerald-600 dark:text-emerald-400"
               />
@@ -180,20 +185,12 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
               <p
                 className={`${roboto.className} text-sm font-medium text-emerald-800 dark:text-emerald-300`}
               >
-                Check your inbox
+                Logged in successfully
               </p>
               <p
                 className={`${roboto.className} text-xs text-emerald-600 dark:text-emerald-500/70 mt-0.5 leading-snug`}
               >
-                Can&apos;t find it? Check your{" "}
-                <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                  Spam
-                </span>{" "}
-                or{" "}
-                <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                  Promotions
-                </span>{" "}
-                folder.
+                Taking you to your library…
               </p>
             </div>
           </motion.div>
@@ -211,17 +208,48 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
           <p
             className={`${roboto.className} w-full text-left text-base md:text-lg text-black dark:text-gray-400 leading-relaxed mb-4`}
           >
-            Enter your 6-digit token
+            Enter your 6 digit token
           </p>
           <OTPInput
             value={formik.values.token}
-            onChange={(val) => formik.setFieldValue("token", val)}
+            onChange={(val) => {
+              formik.setFieldValue("token", val);
+              if (errorMsg) setErrorMsg("");
+            }}
             error={
               formik.touched.token && formik.errors.token
                 ? formik.errors.token
                 : undefined
             }
           />
+          {errorMsg && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-start gap-3 w-full mt-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-xl px-4 py-3.5 text-left"
+            >
+              <div className="mt-0.5 shrink-0 w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-center">
+                <AlertCircle
+                  size={15}
+                  className="text-rose-600 dark:text-rose-400"
+                />
+              </div>
+              <div>
+                <p
+                  className={`${roboto.className} text-sm font-medium text-rose-800 dark:text-rose-300`}
+                >
+                  Verification failed
+                </p>
+                <p
+                  className={`${roboto.className} text-xs text-rose-600 dark:text-rose-500/70 mt-0.5 leading-snug`}
+                >
+                  {errorMsg}
+                </p>
+              </div>
+            </motion.div>
+          )}
           <button
             type="submit"
             onClick={() => formik.handleSubmit()}

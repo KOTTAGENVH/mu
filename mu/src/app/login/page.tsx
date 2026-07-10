@@ -5,7 +5,6 @@ import LoginFooter from "@/components/login/loginFooter";
 import TokenInput from "@/components/login/tokenInput";
 import {
   checkAuthStatus,
-  validateGenCookie,
 } from "../api/client/services/auth/api";
 import Loader from "@/components/loader";
 import QrScan from "@/components/login/qrScan";
@@ -53,42 +52,6 @@ function Page() {
     };
     fetchAuthStatus();
 }, [router, toggleAuth]);
-
-  //Validate token
-  useEffect(() => {
-    const validateAndGenerateToken = async () => {
-      // Check URL for token
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
-
-      if (token) {
-        try {
-          // Validate token
-          const response = await validateGenCookie(token);
-          if (response.success) {
-            router.push(`/home`);
-          } else {
-            alert(response.message);
-          }
-        } catch (error) {
-          alert("Sorry, an error occurred while validating the token.");
-          // console.error("Error during token validation/generation:", error);
-        }
-      } else {
-        // Check if token is in cookie
-        const cookieToken = document.cookie
-          .split(";")
-          .find((c) => c.trim().startsWith("token="));
-
-        if (cookieToken) {
-          // Redirect to login page
-          router.push(`/login`);
-        }
-      }
-    };
-
-    validateAndGenerateToken();
-  }, [router]);
 
 
   return (

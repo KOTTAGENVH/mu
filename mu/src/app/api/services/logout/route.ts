@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { serialize } from "cookie";
+import { serialize, parse } from "cookie";
 import { validateCookie } from "../cookieValidator/validateCookie";
 import { isAllowed } from "@/app/helper/origin_helper";
+import Session from "@/models/session";
+import dbConnect from "@/config/dbConnect";
+import { verify, JwtPayload } from "jsonwebtoken";
+import { AuthEvent } from "@/models/authLog";
+import { logAuthEvent } from "@/app/helper/authLogHelp";
 
 export async function GET(req: Request) {
   try {
@@ -10,9 +15,10 @@ export async function GET(req: Request) {
     }
 
     const cookieName = process.env.COOKIE_NAME;
+    const secret = process.env.JWT_SECRET;
 
-    if (!cookieName) {
-      console.error("COOKIE_NAME environment variable is not set.");
+    if (!cookieName || !secret) {
+      console.error("COOKIE_NAME or JWT_SECRET not set.");
       return NextResponse.json(
         { success: false, message: "Server configuration error" },
         { status: 500 },
@@ -27,6 +33,31 @@ export async function GET(req: Request) {
         { success: false, message: "Unauthorized" },
         { status: 401 },
       );
+    }
+
+    const url = new URL(req.url);
+    const logoutAll = url.searchParams.get("all") === "true";
+
+    try {
+      await dbConnect();
+
+      if (logoutAll) {
+        const email = process.env.EMAIL || "";
+        if (email) await Session.deleteMany({ email });
+        await logAuthEvent(AuthEvent.LOGOUT_ALL);
+      } else {
+        const cookieHeader = req.headers.get("cookie") || "";
+        const token = parse(cookieHeader)[cookieName];
+        if (token) {
+          const decoded = verify(token, secret) as JwtPayload;
+          if (decoded.sessionId) {
+            await Session.deleteOne({ sessionId: decoded.sessionId });
+          }
+        }
+        await logAuthEvent(AuthEvent.LOGOUT);
+      }
+    } catch (dbError) {
+      console.error("Failed to delete session(s):", dbError);
     }
 
     // Set the cookie with an expired date to remove it
