@@ -1,5 +1,7 @@
 import { verify, JwtPayload } from "jsonwebtoken";
 import { parse } from "cookie";
+import dbConnect from "@/config/dbConnect";
+import Session from "@/models/session";
 
 interface CookieValidationResult {
   valid: boolean;
@@ -40,6 +42,17 @@ export async function validateCookie(
     }
 
     const decoded = verify(token, secret) as JwtPayload;
+
+    if (!decoded.sessionId) {
+      return { valid: false, error: "Malformed session token" };
+    }
+
+    await dbConnect();
+    const session = await Session.findOne({ sessionId: decoded.sessionId });
+    if (!session) {
+      return { valid: false, error: "Session revoked or expired" };
+    }
+
     return { valid: true, decoded };
   } catch (error) {
     console.error(error);

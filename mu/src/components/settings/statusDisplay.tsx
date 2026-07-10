@@ -32,6 +32,7 @@ import Loader from "@/components/loader";
 import { LucideTrash, Skull } from "lucide-react";
 import { useMask } from "@/contextApi/mask";
 import DeleteSongModal from "./deleteConfirmation";
+import SessionInsightsCard from "./sessionInsightsCard";
 
 export interface Candidate {
   id: string;
@@ -636,8 +637,8 @@ function StatusDisplay() {
           </div>
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
             <div className="w-full h-full flex flex-col overflow-hidden">
-              <div className="flex justify-between items-end mb-5">
-                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-lg md:text-xl text-black dark:text-white uppercase">
                   Audio Equalizer
                 </h3>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-slate-600 dark:text-slate-400">
@@ -756,6 +757,7 @@ function StatusDisplay() {
               </div>
             </div>
           </div>
+          <SessionInsightsCard />
         </div>
       </div>
       {deleteModal.isOpen && (
