@@ -35,6 +35,12 @@ interface Category {
   name: string;
 }
 
+interface Query {
+  search: string;
+  categoryId: string;
+  page: number;
+}
+
 function AudioList() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -46,15 +52,18 @@ function AudioList() {
   );
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryPanelOpen, setCategoryPanelOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [allAudio, setAllAudio] = useState<AudioList[] | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-
+  const [query, setQuery] = useState<Query>({
+    search: "",
+    categoryId: "",
+    page: 1,
+  });
+  const reqId = useRef(0);
   const listRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const isLoadMore = useRef(false);
   const { sematicSearch } = useSearch();
 
   useEffect(() => {
@@ -63,11 +72,11 @@ function AudioList() {
   }, [search]);
 
   useEffect(() => {
-    if (debouncedSearch !== undefined) {
-      setCurrentPage(1);
-      isLoadMore.current = false;
-      fetchAudio(debouncedSearch, selectedCategory?.id ?? "");
-    }
+    setQuery((q) =>
+      q.search === debouncedSearch
+        ? q
+        : { ...q, search: debouncedSearch, page: 1 },
+    );
   }, [debouncedSearch]);
 
   const fetchCategories = useCallback(async () => {
@@ -85,16 +94,19 @@ function AudioList() {
   }, [fetchCategories]);
 
   const fetchAudio = useCallback(
-    async (searchTerm: string, category: string, append = false) => {
+    async ({ search, categoryId, page }: Query) => {
+      const myReq = ++reqId.current;
+      const append = page > 1;
       try {
         setLoading(true);
         const response = await getAllSongs(
-          currentPage,
+          page,
           2,
-          searchTerm,
-          category,
+          search,
+          categoryId,
           sematicSearch,
         );
+        if (myReq !== reqId.current) return;
 
         if (response.success) {
           setAllAudio((prev) =>
@@ -102,8 +114,7 @@ function AudioList() {
               ? [
                   ...prev,
                   ...response.uploads.filter(
-                    (newItem: { id: string }) =>
-                      !prev.some((existing) => existing.id === newItem.id),
+                    (n: { id: string }) => !prev.some((e) => e.id === n.id),
                   ),
                 ]
               : response.uploads,
@@ -118,17 +129,18 @@ function AudioList() {
           setAllAudio([]);
         }
       } catch {
-        alert("An error occurred while fetching audios.");
+        if (myReq === reqId.current)
+          alert("An error occurred while fetching audios.");
       } finally {
-        setLoading(false);
+        if (myReq === reqId.current) setLoading(false);
       }
     },
-    [currentPage, sematicSearch],
+    [sematicSearch],
   );
 
   useEffect(() => {
-    fetchAudio("", "", isLoadMore.current);
-  }, [fetchAudio]);
+    fetchAudio(query);
+  }, [query, fetchAudio]);
 
   useEffect(() => {
     if (!categoryPanelOpen) return;
@@ -145,18 +157,14 @@ function AudioList() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [categoryPanelOpen]);
 
-  const handleSearchClear = () => {
-    setSearch("");
-    setDebouncedSearch("");
-    fetchAudio("", selectedCategory?.id ?? "");
+  const handleCategorySelect = (cat: Category | null) => {
+    setSelectedCategory(cat);
+    setQuery((q) => ({ ...q, categoryId: cat?.id ?? "", page: 1 }));
+    setCategoryPanelOpen(false);
   };
 
-  const handleCategorySelect = (cat: Category | null) => {
-    setCurrentPage(1);
-    isLoadMore.current = false;
-    setSelectedCategory(cat);
-    fetchAudio(search, cat?.id ?? "");
-    setCategoryPanelOpen(false);
+  const handleSearchClear = () => {
+    setSearch("");
   };
 
   const totalLoaded = allAudio?.length ?? 0;
@@ -191,8 +199,6 @@ function AudioList() {
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
             onKeyDown={(e) => {
-              if (e.key === "Enter")
-                fetchAudio(search, selectedCategory?.id ?? "");
               if (e.key === "Escape") handleSearchClear();
             }}
             className="text-base  w-full pl-10 pr-10 py-3 bg-black/10 dark:bg-white/10 backdrop-blur-sm border-none rounded-2xl
@@ -342,7 +348,7 @@ function AudioList() {
                 setSearch("");
                 setDebouncedSearch("");
                 setSelectedCategory(null);
-                fetchAudio("", "");
+                setQuery({ search: "", categoryId: "", page: 1 });
               }}
               className="mt-2 px-4 py-2 rounded-xl text-sm bg-gray-100 dark:bg-gray-800 text-black dark:text-white
                 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border-none cursor-pointer"
@@ -383,7 +389,7 @@ function AudioList() {
             ))}
         </AnimatePresence>
       </div>
-      {paginationData && currentPage < paginationData.totalPages && (
+      {paginationData && query.page < paginationData.totalPages && (
         <div className="w-full flex flex-col items-center gap-2 pb-6 mt-2">
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Showing {totalLoaded} of {totalAudio} tracks
@@ -397,10 +403,7 @@ function AudioList() {
             />
           </div>
           <button
-            onClick={() => {
-              isLoadMore.current = true;
-              setCurrentPage((p) => p + 1);
-            }}
+            onClick={() => setQuery((q) => ({ ...q, page: q.page + 1 }))}
             disabled={loading}
             className="w-36 py-3 mt-1 rounded-full bg-gray-800 dark:bg-gray-700 text-white hover:bg-gray-700 dark:hover:bg-gray-600
               flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed

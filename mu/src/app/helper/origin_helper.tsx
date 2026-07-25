@@ -38,4 +38,3 @@ export function isAllowed(req: Request) {
   const sfs = (req.headers.get("sec-fetch-site") || "").toLowerCase();
   return sfs === "same-origin" || sfs === "same-site";
 }
-
