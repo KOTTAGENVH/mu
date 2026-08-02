@@ -5,6 +5,7 @@ export interface IUser extends Document {
   token: string;
   backupCodes: string[];
   verified?: boolean | false;
+  lastUsedCounter: number;
 }
 
 const UserSchema = new Schema({
@@ -24,6 +25,10 @@ const UserSchema = new Schema({
   verified: {
     type: Boolean,
     default: false,
+  },
+  lastUsedCounter: {
+    type: Number,
+    default: 0,
   },
 });
 
