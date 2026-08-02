@@ -13,9 +13,6 @@ import { CookieGenerator } from "../cookierGenerator/generateCookie";
 import { AuthEvent } from "@/models/authLog";
 import { logAuthEvent } from "@/app/helper/authLogHelp";
 
-// 14min validity
-const max_age = 60 * 14;
-
 //Handle token verification and sending login URL email
 export async function POST(req: Request) {
   await dbConnect();
@@ -36,9 +33,7 @@ export async function POST(req: Request) {
 
     const { ip } = await getClientIp(req);
     const { token } = body;
-    const secret = process.env.JWT_SECRET || "";
     const email = process.env.EMAIL || "";
-    const brand = process.env.BRAND || "";
     const isSixDigitData = /^\d{6}$/.test(token);
 
     if (!token || typeof token !== "string" || !isSixDigitData) {
@@ -80,8 +75,9 @@ export async function POST(req: Request) {
     }
 
     const plainSecret = decrypt(user.token);
-    const isValid = verifyToken(token, plainSecret);
-    if (!isValid) {
+    const matchedCounter = verifyToken(token, plainSecret);
+
+    if (matchedCounter === null) {
       await logAuthEvent(AuthEvent.FAILED_LOGIN, ip);
       return NextResponse.json(
         { success: false, message: "Invalid Token" },
@@ -89,9 +85,26 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!user.verified) {
-      user.verified = true;
-      await user.save();
+    const claimed = await User.findOneAndUpdate(
+      {
+        email,
+        $or: [
+          { lastUsedCounter: { $exists: false } },
+          { lastUsedCounter: { $lt: matchedCounter } },
+        ],
+      },
+      {
+        $set: { lastUsedCounter: matchedCounter, verified: true },
+      },
+      { new: true },
+    );
+
+    if (!claimed) {
+      await logAuthEvent(AuthEvent.FAILED_LOGIN, ip);
+      return NextResponse.json(
+        { success: false, message: "Invalid Token" },
+        { status: 401 },
+      );
     }
 
     await logAuthEvent(AuthEvent.LOGIN, ip);
@@ -285,11 +298,13 @@ function generateSecret(length = 20) {
 //   return otp.toString().padStart(6, "0");
 // }
 
-function verifyToken(token: string, secret: string, window = 1) {
+function verifyToken(token: string, secret: string, window = 1): number | null {
   const key = fromBase32(secret);
   const epoch = Math.floor(Date.now() / 1000.0);
   const timeStep = 30;
   const currentCounter = Math.floor(epoch / timeStep);
+
+  let matched: number | null = null;
 
   //drift window to allow for some time difference between client and server
   for (let i = -window; i <= window; i++) {
@@ -313,18 +328,19 @@ function verifyToken(token: string, secret: string, window = 1) {
     const otp = binary % 1000000;
     const generatedToken = otp.toString().padStart(6, "0");
 
-    //To prevent timing attack when comparing between digits
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(token),
-      Buffer.from(generatedToken),
-    );
+    const tokenBuf = Buffer.from(token);
+    const generatedBuf = Buffer.from(generatedToken);
 
-    if (isValid) return true;
+    if (
+      tokenBuf.length === generatedBuf.length &&
+      crypto.timingSafeEqual(tokenBuf, generatedBuf)
+    ) {
+      matched = counter;
+    }
   }
 
-  return false;
+  return matched;
 }
-
 async function sendLoginNotifEmail(ip: string) {
   try {
     const email = process.env.EMAIL || "";
