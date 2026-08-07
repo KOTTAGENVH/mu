@@ -18,6 +18,7 @@ import { useMask } from "@/contextApi/mask";
 import { useAudioEq } from "@/contextApi/audioEnhance";
 import ManageActivty from "@/components/settings/activityManager";
 import { useVisualizer } from "@/contextApi/audioVizualizer";
+import ChangeAppModal from "@/components/settings/changeApp";
 
 function Page() {
   const router = useRouter();
@@ -27,6 +28,7 @@ function Page() {
   const { useCompressor, setUseCompressor, resetEq } = useAudioEq();
   const { cycleMode } = useVisualizer();
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -65,27 +67,7 @@ function Page() {
       return;
     }
     if (id === 4) {
-      setIsLoading(true);
-
-      try {
-        const response = await deleteAccount();
-        const data = await response;
-
-        if (data.success) {
-          localStorage.clear();
-          toggleAuth(false);
-          router.push("/login");
-          return;
-        } else {
-          alert("Failed to reset authenticator. Please try again.");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        alert(
-          "An error occurred while resetting authenticator. Please try again.",
-        );
-        setIsLoading(false);
-      }
+      setShowResetModal(true);
       return;
     }
     if (id === 6) {
@@ -105,6 +87,27 @@ function Page() {
       return;
     }
     setActiveSetting(id);
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsLoading(true);
+      const data = await deleteAccount();
+
+      if (data.success) {
+        localStorage.clear();
+        toggleAuth(false);
+        router.push("/login");
+        return;
+      }
+      alert("Failed to reset authenticator. Please try again.");
+    } catch (error) {
+      alert(
+        "An error occurred while resetting authenticator. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderContent = () => {
@@ -157,6 +160,12 @@ function Page() {
 
           {renderContent()}
         </div>
+      )}
+      {showResetModal && (
+        <ChangeAppModal
+          handleClose={() => setShowResetModal(false)}
+          handleConfirm={handleDeleteAccount}
+        />
       )}
       <LoginFooter />
     </div>
