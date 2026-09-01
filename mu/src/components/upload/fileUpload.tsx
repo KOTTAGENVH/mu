@@ -316,89 +316,97 @@ const FileUpload: React.FC = () => {
   return (
     <div className="flex-1 justify-center items-center w-auto  mx-4 px-3 lg:mx-16 lg:px-6 flex flex-col justify-center mt-20 md:mt-24 mb-20">
       <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-4 w-full mb-6 w-full md:w-auto">
-        {categories.length === 0 ? (
-          <div className={`${selectClass} cursor-wait opacity-80`}>
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="w-4 h-4 animate-spin"
-            />
-            <span className="text-sm">Loading...</span>
-          </div>
-        ) : (
-          <div className="relative" ref={dropdownRef}>
-            <button
-              disabled={isLoading}
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-auto min-w-[160px] px-4 py-3 flex items-center justify-between gap-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>{selectedCategoryName}</span>
-              <FontAwesomeIcon
-                icon={faChevronDown}
-                className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+        {!bulkMode && (
+          <>
+            {categories.length === 0 ? (
+              <div className={`${selectClass} cursor-wait opacity-80`}>
+                <FontAwesomeIcon
+                  icon={faSpinner}
+                  className="w-4 h-4 animate-spin"
+                />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  disabled={isLoading}
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-auto min-w-[160px] px-4 py-3 flex items-center justify-between gap-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span>{selectedCategoryName}</span>
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-            {isDropdownOpen && (
-              <div
-                className={`absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96
+                {isDropdownOpen && !bulkMode && (
+                  <div
+                    className={`absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 w-60 md:w-96
       h-auto max-h-60 overflow-y-auto
       ${panelSurface(isAppleWebkit, "shadow-lg")}
       [&::-webkit-scrollbar]:w-1.5
       [&::-webkit-scrollbar-thumb]:rounded-full
       [&::-webkit-scrollbar-thumb]:bg-gray-300
       dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
-              >
-                {" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCategory("");
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
-                    isCategory === ""
-                      ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                      : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  Select category…
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setCategory(cat.id);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
-                      isCategory === cat.id
-                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
                   >
-                    {cat.name}
-                  </button>
-                ))}
+                    {" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategory("");
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
+                        isCategory === ""
+                          ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                          : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      Select category…
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setCategory(cat.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
+                          isCategory === cat.id
+                            ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                            : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
-        <input
-          disabled={isLoading}
-          title="artist name"
-          type="text"
-          placeholder="Artist Name"
-          value={artistName}
-          onChange={(e) => setArtistName(e.target.value)}
-          className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50  disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-        <div className="hidden sm:flex items-center px-2">
-          <p className="font-mono text-sm text-slate-600 dark:text-slate-400">
-            Total: {mp3Files.length > 0 ? `${totalSizeMB} MB` : "0 MB"}
-          </p>
-        </div>
+        {!bulkMode && (
+          <>
+            <input
+              disabled={isLoading}
+              title="artist name"
+              type="text"
+              placeholder="Artist Name"
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50  disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <div className="hidden sm:flex items-center px-2">
+              <p className="font-mono text-sm text-slate-600 dark:text-slate-400">
+                Total: {mp3Files.length > 0 ? `${totalSizeMB} MB` : "0 MB"}
+              </p>
+            </div>
+          </>
+        )}
         <div className="flex flex-row flex-wrap justify-center items-center gap-2">
           <button
             type="button"
