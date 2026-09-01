@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
 import Header from "@/components/header";
-import FileUpload from "@/components/fileUpload";
+import FileUpload from "@/components/upload/fileUpload";
 import { useRouter } from "next/navigation";
 import { verifyCookie } from "../api/client/services/auth/api";
 import { useAuth } from "@/contextApi/auth";
@@ -19,6 +19,7 @@ function Page() {
           alert("Your session has expired. Please log in again.");
           toggleAuth(false);
           router.push("/login");
+          return;
         }
         toggleAuth(true);
       } catch (error) {

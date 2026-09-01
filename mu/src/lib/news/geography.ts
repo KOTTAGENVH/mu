@@ -1,0 +1,362 @@
+export type Region = "africa" | "americas" | "asia" | "europe" | "middle-east";
+
+export const region_labels: Record<Region, string> = {
+  africa: "Africa",
+  americas: "Americas",
+  asia: "Asia Pacific",
+  europe: "Europe",
+  "middle-east": "Middle East",
+};
+
+export const region_colors: Record<Region, string> = {
+  africa: "#f59e0b",
+  americas: "#10b981",
+  asia: "#8b5cf6",
+  europe: "#06b6d4",
+  "middle-east": "#f43f5e",
+};
+
+export const local_country = "Sri Lanka";
+
+const table: Record<Region, ReadonlyArray<readonly [string, string]>> = {
+  africa: [
+    ["DZA", "Algeria"],
+    ["AGO", "Angola"],
+    ["BEN", "Benin"],
+    ["BWA", "Botswana"],
+    ["BFA", "Burkina Faso"],
+    ["BDI", "Burundi"],
+    ["CMR", "Cameroon"],
+    ["CPV", "Cape Verde"],
+    ["CAF", "Central African Republic"],
+    ["TCD", "Chad"],
+    ["COM", "Comoros"],
+    ["COG", "Republic of the Congo"],
+    ["COD", "Democratic Republic of the Congo"],
+    ["DJI", "Djibouti"],
+    ["EGY", "Egypt"],
+    ["GNQ", "Equatorial Guinea"],
+    ["ERI", "Eritrea"],
+    ["SWZ", "Eswatini"],
+    ["ETH", "Ethiopia"],
+    ["GAB", "Gabon"],
+    ["GMB", "Gambia"],
+    ["GHA", "Ghana"],
+    ["GIN", "Guinea"],
+    ["GNB", "Guinea-Bissau"],
+    ["CIV", "Ivory Coast"],
+    ["KEN", "Kenya"],
+    ["LSO", "Lesotho"],
+    ["LBR", "Liberia"],
+    ["LBY", "Libya"],
+    ["MDG", "Madagascar"],
+    ["MWI", "Malawi"],
+    ["MLI", "Mali"],
+    ["MRT", "Mauritania"],
+    ["MUS", "Mauritius"],
+    ["MAR", "Morocco"],
+    ["MOZ", "Mozambique"],
+    ["NAM", "Namibia"],
+    ["NER", "Niger"],
+    ["NGA", "Nigeria"],
+    ["RWA", "Rwanda"],
+    ["STP", "Sao Tome and Principe"],
+    ["SEN", "Senegal"],
+    ["SYC", "Seychelles"],
+    ["SLE", "Sierra Leone"],
+    ["SOM", "Somalia"],
+    ["SOL", "Somaliland"],
+    ["ZAF", "South Africa"],
+    ["SSD", "South Sudan"],
+    ["SDN", "Sudan"],
+    ["TZA", "Tanzania"],
+    ["TGO", "Togo"],
+    ["TUN", "Tunisia"],
+    ["UGA", "Uganda"],
+    ["ESH", "Western Sahara"],
+    ["ZMB", "Zambia"],
+    ["ZWE", "Zimbabwe"],
+  ],
+
+  americas: [
+    ["ATG", "Antigua and Barbuda"],
+    ["ARG", "Argentina"],
+    ["ABW", "Aruba"],
+    ["BHS", "Bahamas"],
+    ["BRB", "Barbados"],
+    ["BLZ", "Belize"],
+    ["BMU", "Bermuda"],
+    ["BOL", "Bolivia"],
+    ["BRA", "Brazil"],
+    ["VGB", "British Virgin Islands"],
+    ["CAN", "Canada"],
+    ["CYM", "Cayman Islands"],
+    ["CHL", "Chile"],
+    ["COL", "Colombia"],
+    ["CRI", "Costa Rica"],
+    ["CUB", "Cuba"],
+    ["CUW", "Curacao"],
+    ["DMA", "Dominica"],
+    ["DOM", "Dominican Republic"],
+    ["ECU", "Ecuador"],
+    ["SLV", "El Salvador"],
+    ["FLK", "Falkland Islands"],
+    ["GRL", "Greenland"],
+    ["GRD", "Grenada"],
+    ["GTM", "Guatemala"],
+    ["GUY", "Guyana"],
+    ["HTI", "Haiti"],
+    ["HND", "Honduras"],
+    ["JAM", "Jamaica"],
+    ["MEX", "Mexico"],
+    ["NIC", "Nicaragua"],
+    ["PAN", "Panama"],
+    ["PRY", "Paraguay"],
+    ["PER", "Peru"],
+    ["PRI", "Puerto Rico"],
+    ["KNA", "Saint Kitts and Nevis"],
+    ["LCA", "Saint Lucia"],
+    ["VCT", "Saint Vincent and the Grenadines"],
+    ["SUR", "Suriname"],
+    ["TTO", "Trinidad and Tobago"],
+    ["TCA", "Turks and Caicos Islands"],
+    ["USA", "United States"],
+    ["URY", "Uruguay"],
+    ["VIR", "United States Virgin Islands"],
+    ["VEN", "Venezuela"],
+  ],
+
+  asia: [
+    ["AFG", "Afghanistan"],
+    ["AUS", "Australia"],
+    ["BGD", "Bangladesh"],
+    ["BTN", "Bhutan"],
+    ["BRN", "Brunei"],
+    ["KHM", "Cambodia"],
+    ["CHN", "China"],
+    ["TLS", "East Timor"],
+    ["FJI", "Fiji"],
+    ["IND", "India"],
+    ["IDN", "Indonesia"],
+    ["JPN", "Japan"],
+    ["KAZ", "Kazakhstan"],
+    ["KIR", "Kiribati"],
+    ["KGZ", "Kyrgyzstan"],
+    ["LAO", "Laos"],
+    ["MYS", "Malaysia"],
+    ["MDV", "Maldives"],
+    ["MHL", "Marshall Islands"],
+    ["FSM", "Micronesia"],
+    ["MNG", "Mongolia"],
+    ["MMR", "Myanmar"],
+    ["NRU", "Nauru"],
+    ["NPL", "Nepal"],
+    ["NCL", "New Caledonia"],
+    ["NZL", "New Zealand"],
+    ["PRK", "North Korea"],
+    ["PAK", "Pakistan"],
+    ["PLW", "Palau"],
+    ["PNG", "Papua New Guinea"],
+    ["PHL", "Philippines"],
+    ["WSM", "Samoa"],
+    ["SGP", "Singapore"],
+    ["SLB", "Solomon Islands"],
+    ["KOR", "South Korea"],
+    ["LKA", "Sri Lanka"],
+    ["TWN", "Taiwan"],
+    ["TJK", "Tajikistan"],
+    ["THA", "Thailand"],
+    ["TON", "Tonga"],
+    ["TKM", "Turkmenistan"],
+    ["TUV", "Tuvalu"],
+    ["UZB", "Uzbekistan"],
+    ["VUT", "Vanuatu"],
+    ["VNM", "Vietnam"],
+  ],
+
+  europe: [
+    ["ALB", "Albania"],
+    ["AND", "Andorra"],
+    ["ARM", "Armenia"],
+    ["AUT", "Austria"],
+    ["AZE", "Azerbaijan"],
+    ["BLR", "Belarus"],
+    ["BEL", "Belgium"],
+    ["BIH", "Bosnia and Herzegovina"],
+    ["BGR", "Bulgaria"],
+    ["HRV", "Croatia"],
+    ["CYP", "Cyprus"],
+    ["CZE", "Czech Republic"],
+    ["DNK", "Denmark"],
+    ["EST", "Estonia"],
+    ["FRO", "Faroe Islands"],
+    ["FIN", "Finland"],
+    ["FRA", "France"],
+    ["GEO", "Georgia"],
+    ["DEU", "Germany"],
+    ["GIB", "Gibraltar"],
+    ["GRC", "Greece"],
+    ["HUN", "Hungary"],
+    ["ISL", "Iceland"],
+    ["IRL", "Ireland"],
+    ["IMN", "Isle of Man"],
+    ["ITA", "Italy"],
+    ["XKX", "Kosovo"],
+    ["LVA", "Latvia"],
+    ["LIE", "Liechtenstein"],
+    ["LTU", "Lithuania"],
+    ["LUX", "Luxembourg"],
+    ["MLT", "Malta"],
+    ["MDA", "Moldova"],
+    ["MCO", "Monaco"],
+    ["MNE", "Montenegro"],
+    ["NLD", "Netherlands"],
+    ["MKD", "North Macedonia"],
+    ["CYN", "Northern Cyprus"],
+    ["NOR", "Norway"],
+    ["POL", "Poland"],
+    ["PRT", "Portugal"],
+    ["ROU", "Romania"],
+    ["RUS", "Russia"],
+    ["SMR", "San Marino"],
+    ["SRB", "Serbia"],
+    ["SVK", "Slovakia"],
+    ["SVN", "Slovenia"],
+    ["ESP", "Spain"],
+    ["SWE", "Sweden"],
+    ["CHE", "Switzerland"],
+    ["TUR", "Turkey"],
+    ["UKR", "Ukraine"],
+    ["GBR", "United Kingdom"],
+    ["VAT", "Vatican City"],
+  ],
+
+  "middle-east": [
+    ["BHR", "Bahrain"],
+    ["IRN", "Iran"],
+    ["IRQ", "Iraq"],
+    ["ISR", "Israel"],
+    ["JOR", "Jordan"],
+    ["KWT", "Kuwait"],
+    ["LBN", "Lebanon"],
+    ["OMN", "Oman"],
+    ["PSE", "Palestine"],
+    ["QAT", "Qatar"],
+    ["SAU", "Saudi Arabia"],
+    ["SYR", "Syria"],
+    ["ARE", "United Arab Emirates"],
+    ["YEM", "Yemen"],
+  ],
+};
+
+function normalise(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.'’]/g, "")
+    .replace(/[-_+]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const aliases: Record<string, string> = {
+  "united states of america": "United States",
+  us: "United States",
+  usa: "United States",
+  "dem rep congo": "Democratic Republic of the Congo",
+  "democratic republic of congo": "Democratic Republic of the Congo",
+  "dr congo": "Democratic Republic of the Congo",
+  congo: "Republic of the Congo",
+  "congo brazzaville": "Republic of the Congo",
+  "central african rep": "Central African Republic",
+  "bosnia and herz": "Bosnia and Herzegovina",
+  bosnia: "Bosnia and Herzegovina",
+  "dominican rep": "Dominican Republic",
+  "eq guinea": "Equatorial Guinea",
+  "s sudan": "South Sudan",
+  "w sahara": "Western Sahara",
+  "n cyprus": "Northern Cyprus",
+  "solomon is": "Solomon Islands",
+  "falkland is": "Falkland Islands",
+  "faeroe is": "Faroe Islands",
+  "marshall is": "Marshall Islands",
+  "cayman is": "Cayman Islands",
+  "turks and caicos is": "Turks and Caicos Islands",
+  "british virgin is": "British Virgin Islands",
+  "us virgin is": "United States Virgin Islands",
+  "united states virgin is": "United States Virgin Islands",
+  "fed states of micronesia": "Micronesia",
+  "cote divoire": "Ivory Coast",
+  "timor leste": "East Timor",
+  czechia: "Czech Republic",
+  macedonia: "North Macedonia",
+  swaziland: "Eswatini",
+  "cabo verde": "Cape Verde",
+  "sao tome and principe": "Sao Tome and Principe",
+  "antigua and barb": "Antigua and Barbuda",
+  "st kitts and nevis": "Saint Kitts and Nevis",
+  "st lucia": "Saint Lucia",
+  "st vin and gren": "Saint Vincent and the Grenadines",
+  "republic of serbia": "Serbia",
+  "united republic of tanzania": "Tanzania",
+  curacao: "Curacao",
+  vatican: "Vatican City",
+  "holy see": "Vatican City",
+  turkiye: "Turkey",
+  "united kingdom of great britain and northern ireland": "United Kingdom",
+  "great britain": "United Kingdom",
+  britain: "United Kingdom",
+  "republic of korea": "South Korea",
+  korea: "South Korea",
+  dprk: "North Korea",
+  burma: "Myanmar",
+  "laos pdr": "Laos",
+  "lao pdr": "Laos",
+  "russian federation": "Russia",
+  "iran islamic republic of": "Iran",
+  "syrian arab republic": "Syria",
+  "viet nam": "Vietnam",
+  "state of palestine": "Palestine",
+  "west bank and gaza": "Palestine",
+};
+
+const by_code = new Map<string, Region>();
+const by_name = new Map<string, Region>();
+const canonical_by_name = new Map<string, string>();
+
+for (const region of Object.keys(table) as Region[]) {
+  for (const [code, name] of table[region]) {
+    by_code.set(code.toUpperCase(), region);
+    by_name.set(normalise(name), region);
+    canonical_by_name.set(normalise(name), name);
+  }
+}
+
+for (const [alias, canonical] of Object.entries(aliases)) {
+  const key = normalise(alias);
+  canonical_by_name.set(key, canonical);
+  const region = by_name.get(normalise(canonical));
+  if (region) by_name.set(key, region);
+}
+
+export function displayName(raw: string): string {
+  if (!raw) return raw;
+  return canonical_by_name.get(normalise(raw)) ?? raw;
+}
+
+export function regionForCode(code: string | null | undefined): Region | null {
+  if (!code || code === "-99") return null;
+  return by_code.get(code.toUpperCase()) ?? null;
+}
+
+export function regionForCountry(
+  name: string | null | undefined,
+): Region | null {
+  if (!name) return null;
+  return by_name.get(normalise(name)) ?? null;
+}
+
+export const allCountries: string[] = Array.from(canonical_by_name.values())
+  .filter((v, i, arr) => arr.indexOf(v) === i)
+  .sort((a, b) => a.localeCompare(b));

@@ -1,7 +1,18 @@
 import { getAllCategories } from "@/app/api/client/services/categories/api";
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import Loader from "../loader";
 import { getSongById, updateSong } from "@/app/api/client/services/audio/api";
+import { useAppleWebkit } from "@/hooks/useAppleWebkit";
+import { panelSurface } from "@/lib/surfaceDropdown";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { createPortal } from "react-dom";
 
 interface EditCategoryModalProps {
   id: string;
@@ -27,10 +38,68 @@ export default function EditAudioModal({
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCategory, setCategory] = useState("");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [coords, setCoords] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isAppleWebkit = useAppleWebkit();
+
+  const selectedCategoryName = useMemo(() => {
+    const selected = categories.find((c) => c.id === isCategory);
+    return selected ? selected.name : "Select category…";
+  }, [isCategory, categories]);
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10);
   }, []);
+
+  useEffect(() => {
+    if (!isCategoryOpen) return;
+
+    const place = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const panelH = 260;
+      const openUp = r.bottom + panelH > window.innerHeight && r.top > panelH;
+      setCoords({
+        top: openUp ? r.top - panelH - 8 : r.bottom + 8,
+        left: r.left,
+        width: r.width,
+      });
+    };
+
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [isCategoryOpen]);
+
+  useEffect(() => {
+    if (!isCategoryOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setIsCategoryOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsCategoryOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isCategoryOpen]);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-2xl border-none cursor-pointer";
@@ -277,23 +346,65 @@ export default function EditAudioModal({
                     >
                       Category
                     </label>
-                    <select
+                    <button
+                      id="category"
+                      ref={triggerRef}
+                      type="button"
                       disabled={isLoading}
-                      title="category"
-                      value={isCategory}
-                      className="w-auto px-4 py-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 backdrop-blur-md outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
-                      onChange={(e) => setCategory(e.target.value)}
+                      onClick={() => setIsCategoryOpen((open) => !open)}
+                      aria-haspopup="listbox"
+                      aria-expanded={isCategoryOpen}
+                      className="w-full px-4 py-3 flex items-center justify-between gap-3 rounded-2xl border-none bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="" disabled>
-                        Select category…
-                      </option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
+                      <span className="truncate">{selectedCategoryName}</span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`w-3 h-3 flex-shrink-0 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
                   </div>
+
+                  {isCategoryOpen &&
+                    coords &&
+                    createPortal(
+                      <div
+                        ref={panelRef}
+                        role="listbox"
+                        style={{
+                          top: coords.top,
+                          left: coords.left,
+                          minWidth: coords.width,
+                        }}
+                        className={`fixed z-[60] p-4 rounded-2xl flex flex-col gap-2
+        w-[min(20rem,calc(100vw-3rem))] max-h-60 overflow-y-auto
+        ${panelSurface(isAppleWebkit, "shadow-lg")}
+        [&::-webkit-scrollbar]:w-1.5
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb]:bg-gray-300
+        dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
+                      >
+                        {categories.map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isCategory === cat.id}
+                            onClick={() => {
+                              setCategory(cat.id);
+                              setIsCategoryOpen(false);
+                            }}
+                            className={`px-4 py-2 rounded-xl border-none cursor-pointer text-left ${
+                              isCategory === cat.id
+                                ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                                : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            {cat.name}
+                          </button>
+                        ))}
+                      </div>,
+                      document.body,
+                    )}
                 </div>
                 <div
                   className={`relative px-6 pb-6 flex flex-col sm:flex-row-reverse gap-3`}

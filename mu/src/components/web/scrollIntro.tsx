@@ -15,6 +15,9 @@ const file_ext = "png";
 const frame_path = process.env.NEXT_PUBLIC_R2_PUBLIC_BUCKET_IMG;
 const scroll_length_vh = 450;
 const frame_offset = 2;
+const ready_ratio = 0.75; // wait for 75% of frames
+const preload_concurrency = 8; // parallel requests
+const preload_timeout_ms = 45000; // hard bail out
 
 const quotes = [
   "Open source. Fully yours.",
@@ -24,6 +27,8 @@ const quotes = [
   "Add you wishlist, download later.",
   "Your categories. Your flow.",
   "Virtual Microphone.",
+  "Latest News.",
+  "Bulk CSV Uploads.",
   "2FA built in.",
   "Stats you can see. Storage you control.",
   "Private by design.",
@@ -59,7 +64,13 @@ export default function ScrollIntro() {
   const rafRef = useRef<number | null>(null);
 
   const [progress, setProgress] = useState(0);
-  const [firstFrameLoaded, setFirstFrameLoaded] = useState(false);
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [ready, setReady] = useState(false);
+  const requestedRef = useRef<boolean[]>(Array(total_frames).fill(false));
+  const settledRef = useRef<boolean[]>(Array(total_frames).fill(false));
+
+  const readyTarget = Math.ceil(total_frames * ready_ratio);
+  const loadProgress = Math.min(loadedCount / readyTarget, 1);
 
   const revealStart = 0.75;
   const animationEnd = 0.85;
@@ -111,29 +122,34 @@ export default function ScrollIntro() {
   }, []);
 
   const ensureLoaded = useCallback(
-    (idx1: number) => {
+    (idx1: number): Promise<void> => {
       const i = idx1 - 1;
-      if (loadedRef.current[i]) return;
+      if (requestedRef.current[i]) return Promise.resolve();
+      requestedRef.current[i] = true;
 
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = frameUrl(idx1);
-      img.decoding = "async";
-      img.onload = () => {
-        loadedRef.current[i] = true;
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.decoding = "async";
+
+        const settle = (ok: boolean) => {
+          if (!settledRef.current[i]) {
+            settledRef.current[i] = true;
+            setLoadedCount((c) => c + 1);
+          }
+          if (ok) {
+            loadedRef.current[i] = true;
+            imagesRef.current[i] = img;
+            if (idx1 === frameIndexRef.current) drawFrame(idx1);
+          }
+          resolve();
+        };
+
+        img.onload = () => settle(true);
+        img.onerror = () => settle(false);
+        img.src = frameUrl(idx1);
         imagesRef.current[i] = img;
-
-        if (idx1 === 1) {
-          setFirstFrameLoaded(true);
-        }
-
-        if (idx1 === frameIndexRef.current) drawFrame(idx1);
-      };
-      img.onerror = () => {
-        loadedRef.current[i] = false;
-      };
-
-      imagesRef.current[i] = img;
+      });
     },
     [drawFrame],
   );
@@ -172,10 +188,39 @@ export default function ScrollIntro() {
   }, [ensureLoaded]);
 
   useEffect(() => {
-    if (firstFrameLoaded && progress === 0) {
-      drawFrame(1);
-    }
-  }, [firstFrameLoaded, progress, drawFrame]);
+    let cancelled = false;
+    let cursor = 1;
+
+    const worker = async () => {
+      while (!cancelled && cursor <= total_frames) {
+        const f = cursor++;
+        await ensureLoaded(f);
+      }
+    };
+
+    // frame 1 first so the canvas has something to paint
+    ensureLoaded(1).then(() => {
+      if (cancelled) return;
+      for (let w = 0; w < preload_concurrency; w++) void worker();
+    });
+
+    const bail = window.setTimeout(() => {
+      if (!cancelled) setReady(true);
+    }, preload_timeout_ms);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(bail);
+    };
+  }, [ensureLoaded]);
+
+  useEffect(() => {
+    if (loadedCount >= readyTarget) setReady(true);
+  }, [loadedCount, readyTarget]);
+
+  useEffect(() => {
+    if (ready && progress === 0) drawFrame(1);
+  }, [ready, progress, drawFrame]);
 
   useEffect(() => {
     preloadWindow(frameIndex, 12);
@@ -252,7 +297,7 @@ export default function ScrollIntro() {
             background: "#000",
           }}
         >
-          {!firstFrameLoaded && (
+          {!ready && (
             <div
               style={{
                 position: "absolute",
@@ -267,7 +312,7 @@ export default function ScrollIntro() {
                 fontFamily: "sans-serif",
               }}
             >
-              <WebLoader />
+              <WebLoader progress={loadProgress} />
             </div>
           )}
           <canvas

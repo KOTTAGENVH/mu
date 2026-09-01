@@ -18,7 +18,7 @@ import { useSpeaker } from "@/contextApi/speakerContext";
 import { useMicrophone } from "@/contextApi/microphoneContext";
 import MicrophoneModal from "@/components/mictalk/microphoneModal";
 
-const WORD_LIMIT = 1000;
+const word_limit = 1000;
 
 interface HTMLAudioElementWithSink extends HTMLAudioElement {
   setSinkId(sinkId: string): Promise<void>;
@@ -176,9 +176,9 @@ function Page() {
       if (!clipText) return;
 
       const words = clipText.trim().split(/\s+/);
-      if (words.length > WORD_LIMIT) {
-        alert(`Text is too long! Clipping to the first ${WORD_LIMIT} words.`);
-        setText(words.slice(0, WORD_LIMIT).join(" "));
+      if (words.length > word_limit) {
+        alert(`Text is too long! Clipping to the first ${word_limit} words.`);
+        setText(words.slice(0, word_limit).join(" "));
       } else {
         setText(clipText);
       }

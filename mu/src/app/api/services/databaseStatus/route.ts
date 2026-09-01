@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import mongoose from "mongoose";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 
 export async function GET(req: Request) {
   await dbConnect();

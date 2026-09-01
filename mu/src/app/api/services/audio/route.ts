@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
-import { s3Client } from "@/app/lib/r2";
+import { s3Client } from "@/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import Category from "@/models/category";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 import { PipelineStage, FilterQuery } from "mongoose";
 import Activity, { ActionType, ActivityType } from "@/models/activity";
-import { generateId } from "@/app/helper/uniqueIdGenerator";
+import { generateId } from "@/helper/uniqueIdGenerator";
 
 interface IUpdateFields {
   name?: string;
@@ -291,7 +291,7 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -299,9 +299,9 @@ export async function PATCH(req: Request) {
       taskname: `The details for ${audio.name} have been updated successfully.`,
       type: ActivityType.AUDIO,
       action: ActionType.EDIT,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -416,7 +416,7 @@ export async function DELETE(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -424,9 +424,9 @@ export async function DELETE(req: Request) {
       taskname: `The audio ${audio.name} has been deleted`,
       type: ActivityType.AUDIO,
       action: ActionType.DELETE,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",

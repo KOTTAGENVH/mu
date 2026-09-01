@@ -26,6 +26,7 @@ function Page() {
           alert("Your session has expired. Please log in again.");
           toggleAuth(false);
           router.push("/login");
+          return;
         }
         toggleAuth(true);
       } catch (error) {

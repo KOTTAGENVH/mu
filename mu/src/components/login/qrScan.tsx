@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { inter, roboto } from "../../app/fonts";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { generateQR } from "../../app/helper/qr";
+import { generateQR } from "../../helper/qr";
 import { QrCode, KeyRound, Copy, Check } from "lucide-react";
 
 interface QrScanProps {

@@ -28,6 +28,7 @@ function ManageWishList() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editWishListId, setEditWishListId] = useState<string | null>(null);
+  const [editWishListName, setEditWishListName] = useState<string | null>(null);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer";
@@ -64,7 +65,8 @@ function ManageWishList() {
     return wishLists.filter((wl) => wl.name.toLowerCase().includes(lowerQuery));
   }, [wishLists, searchQuery]);
 
-  const handleEdit = useCallback((id: string) => {
+  const handleEdit = useCallback((id: string, name:string) => {
+    setEditWishListName(name);
     setEditWishListId(id);
     setShowEditModal(true);
   }, []);
@@ -164,7 +166,7 @@ function ManageWishList() {
 
               <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
-                  onClick={() => handleEdit(wishlist.id)}
+                  onClick={() => handleEdit(wishlist.id, wishlist.name)}
                   title="Edit"
                   className={`inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700`}
                 >
@@ -204,9 +206,10 @@ function ManageWishList() {
         />
       )}
 
-      {showEditModal && editWishListId && (
+      {showEditModal && editWishListId && editWishListName && (
         <EditWishListModal
           id={editWishListId}
+          name={editWishListName}
           handleClose={() => {
             setShowEditModal(false);
             setEditWishListId(null);

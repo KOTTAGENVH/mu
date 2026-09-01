@@ -65,6 +65,7 @@ export async function uploadSong(
   name: string,
   artist: string,
   category: string,
+  signal?: AbortSignal,
 ) {
   const formData = new FormData();
 
@@ -76,13 +77,18 @@ export async function uploadSong(
   const response = await fetch("/api/services/upload", {
     method: "POST",
     body: formData,
+    signal,
   });
 
   if (response.ok) {
     return await response.json();
   } else {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Failed to upload song");
+    let message = `Upload failed (${response.status})`;
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) message = errorData.message;
+    } catch {}
+    throw new Error(message);
   }
 }
 
@@ -164,13 +170,15 @@ export async function streamSongs(lastArtist = "", category = "All") {
   }
 
   const queryString = params.toString();
-  const url = queryString ? `/api/services/listen?${queryString}` : "/api/services/listen";
+  const url = queryString
+    ? `/api/services/listen?${queryString}`
+    : "/api/services/listen";
 
   const response = await fetch(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
-  
+
   if (response.ok) {
     return await response.json();
   } else {

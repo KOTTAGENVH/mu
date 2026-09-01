@@ -19,6 +19,7 @@ import EditCategoryModal from "./editCategoryModal";
 interface Category {
   id: string;
   name: string;
+  audioCount: number;
 }
 
 function ManageCategories() {
@@ -28,6 +29,7 @@ function ManageCategories() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState<string | null>(null);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer";
@@ -66,8 +68,9 @@ function ManageCategories() {
     );
   }, [categories, searchQuery]);
 
-  const handleEdit = useCallback((id: string) => {
+  const handleEdit = useCallback((id: string, name: string) => {
     setEditCategoryId(id);
+    setEditCategoryName(name);
     setShowEditModal(true);
   }, []);
 
@@ -155,9 +158,20 @@ function ManageCategories() {
                   <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm text-black dark:text-white truncate">
-                    {category.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm text-black dark:text-white truncate">
+                      {category.name}
+                    </h3>
+                    <span
+                      className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums ${
+                        category.audioCount > 0
+                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          : "bg-gray-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}
+                    >
+                      {category.audioCount}
+                    </span>
+                  </div>
                   <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">
                     ID: {category.id}
                   </span>
@@ -166,7 +180,7 @@ function ManageCategories() {
 
               <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
-                  onClick={() => handleEdit(category.id)}
+                  onClick={() => handleEdit(category.id, category.name)}
                   title="Edit"
                   className={`inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700`}
                 >
@@ -174,8 +188,13 @@ function ManageCategories() {
                 </button>
                 <button
                   onClick={() => handleDelete(category.id)}
-                  title="Delete"
-                  className={`inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer bg-red-100 text-black hover:bg-red-200 dark:bg-red-900/30 dark:text-white dark:hover:bg-red-800`}
+                  disabled={category.audioCount > 0}
+                  title={
+                    category.audioCount > 0
+                      ? `Can't delete — ${category.audioCount} track${category.audioCount === 1 ? "" : "s"} use this category`
+                      : "Delete"
+                  }
+                  className="inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer bg-red-100 text-black hover:bg-red-200 dark:bg-red-900/30 dark:text-white dark:hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-100 dark:disabled:hover:bg-red-900/30"
                 >
                   <FontAwesomeIcon icon={faTrashCan} className="h-4 w-4" />
                 </button>
@@ -206,9 +225,10 @@ function ManageCategories() {
         />
       )}
 
-      {showEditModal && editCategoryId && (
+      {showEditModal && editCategoryId && editCategoryName && (
         <EditCategoryModal
           id={editCategoryId}
+          name={editCategoryName}
           handleClose={() => {
             setShowEditModal(false);
             setEditCategoryId(null);

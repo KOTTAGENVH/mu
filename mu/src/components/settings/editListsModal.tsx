@@ -4,12 +4,14 @@ import { updateWishlist } from "@/app/api/client/services/list/api";
 
 interface EditWishListModalProps {
   id: string;
+  name: string;
   handleClose: () => void;
   onSuccess: () => void;
 }
 
 export default function EditWishListModal({
   id,
+  name,
   handleClose,
   onSuccess,
 }: EditWishListModalProps) {
@@ -183,7 +185,7 @@ export default function EditWishListModal({
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         className="text-sm w-full px-4 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
-                        placeholder="Enter wish list name"
+                        placeholder={`Edit ${name} Wish List Name`}
                       />
                     </div>
                   </div>

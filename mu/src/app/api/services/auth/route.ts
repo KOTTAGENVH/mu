@@ -1,17 +1,17 @@
 import { customEmail } from "@/config/customEmail";
 import { NextResponse } from "next/server";
-import { checkRateLimit } from "@/app/helper/rateLimiter";
+import { checkRateLimit } from "@/helper/rateLimiter";
 import crypto from "crypto";
 import User from "@/models/user";
 import { encrypt } from "@/config/encryption";
 import { decrypt } from "@/config/decryption";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
-import { getClientIp } from "@/app/helper/ipChecker";
+import { isAllowed } from "@/helper/origin_helper";
+import { getClientIp } from "@/helper/ipChecker";
 import { CookieGenerator } from "../cookierGenerator/generateCookie";
 import { AuthEvent } from "@/models/authLog";
-import { logAuthEvent } from "@/app/helper/authLogHelp";
+import { logAuthEvent } from "@/helper/authLogHelp";
 
 //Handle token verification and sending login URL email
 export async function POST(req: Request) {

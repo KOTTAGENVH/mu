@@ -4,9 +4,9 @@ import Upload from "@/models/upload";
 import Category from "@/models/category";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3Client } from "@/app/lib/r2";
+import { s3Client } from "@/lib/r2";
 import { validateCookie } from "../../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 
 export interface IPopulatedTrack {
   id: string;

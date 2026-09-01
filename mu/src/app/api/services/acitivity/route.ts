@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 import Activity from "@/models/activity";
 import { customEmail } from "@/config/customEmail";
-import { getClientIp } from "@/app/helper/ipChecker";
+import { getClientIp } from "@/helper/ipChecker";
 
 function escapeRegex(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -101,8 +101,8 @@ export async function DELETE(req: Request) {
         { status: 400 },
       );
     }
-    const IST_TIMEZONE = "Asia/Kolkata";
-    const now = new Date().toLocaleString("en-IN", { timeZone: IST_TIMEZONE });
+    const ist_timezone = "Asia/Kolkata";
+    const now = new Date().toLocaleString("en-IN", { timeZone: ist_timezone });
     const { id } = await body;
     const email = process.env.EMAIL || "";
     if (!email) {

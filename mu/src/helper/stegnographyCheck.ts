@@ -1,4 +1,8 @@
 export function stegWavChecker(fileBuffer: Buffer) {
+  if (fileBuffer.length < 44) {
+    return { safe: false, reason: "File is too small to be a valid WAV." };
+  }
+
   //header check
   if (
     fileBuffer.toString("utf8", 0, 4) !== "RIFF" ||
@@ -24,17 +28,17 @@ export function stegWavChecker(fileBuffer: Buffer) {
   let dataOffset = -1;
   let dataSize = 0;
 
-  while (offset < fileBuffer.length) {
+  while (offset + 8 <= fileBuffer.length) {
     const chunkId = fileBuffer.toString("utf8", offset, offset + 4);
     const chunkSize = fileBuffer.readUInt32LE(offset + 4);
 
     if (chunkId === "data") {
       dataOffset = offset + 8;
-      dataSize = chunkSize;
+      dataSize = Math.min(chunkSize, fileBuffer.length - dataOffset);
       break;
     }
 
-    offset += 8 + chunkSize;
+    offset += 8 + chunkSize + (chunkSize % 2);
   }
 
   if (dataOffset === -1) {
@@ -42,27 +46,31 @@ export function stegWavChecker(fileBuffer: Buffer) {
   }
 
   // entropy analysis of LSBs in the audio data
+  // Sample a fixed number of points rather than scaling with file length,
+  // a 2-hour WAV would otherwise block the event loop for millions of reads.
+  const sampleStep = Math.max(10, Math.floor(dataSize / 100_000));
   let ones = 0;
   let totalSamples = 0;
 
-  for (let i = dataOffset; i < dataOffset + dataSize; i += 10) {
-    const byte = fileBuffer[i];
-    if ((byte & 1) === 1) ones++;
+  for (let i = dataOffset; i < dataOffset + dataSize; i += sampleStep) {
+    if ((fileBuffer[i] & 1) === 1) ones++;
     totalSamples++;
   }
 
-  const ratio = ones / totalSamples;
-  // A ratio close to 0.5 suggests random data, which is suspicious for LSBs in audio.
-  const isSuspiciousEntropy = ratio > 0.48 && ratio < 0.52;
+  const ratio = totalSamples > 0 ? ones / totalSamples : 0;
+  const isSuspiciousEntropy = totalSamples > 0 && ratio > 0.48 && ratio < 0.52;
 
   const cleanBuffer = Buffer.from(fileBuffer);
 
   for (let i = dataOffset; i < dataOffset + dataSize; i++) {
-    cleanBuffer[i] = cleanBuffer[i] & 0xfe; // zero out the LSB to sanitize the file
+    cleanBuffer[i] = cleanBuffer[i] & 0xfe; // zero the LSB
   }
 
   return {
-    safe: !isSuspiciousEntropy,
+    // Zeroing the LSBs already destroys any payload hidden there, so high
+    // entropy is logged rather than treated as fatal, clean 16-bit PCM sits
+    // near 0.5 anyway and would otherwise be rejected constantly.
+    safe: true,
     warning: isSuspiciousEntropy
       ? "High LSB entropy detected (potential steganography)."
       : null,
@@ -71,34 +79,40 @@ export function stegWavChecker(fileBuffer: Buffer) {
 }
 
 export function stegMP3Checker(fileBuffer: Buffer) {
+  if (fileBuffer.length < 10) {
+    return { safe: false, reason: "File is too small to be a valid MP3." };
+  }
+
   let startIndex = 0;
   let endIndex = fileBuffer.length;
 
-  //   strip metadata
   if (fileBuffer.toString("utf8", 0, 3) === "ID3") {
-    const b1 = fileBuffer[6];
-    const b2 = fileBuffer[7];
-    const b3 = fileBuffer[8];
-    const b4 = fileBuffer[9];
-    const id3Size = (b1 << 21) | (b2 << 14) | (b3 << 7) | b4; //sync safe integer
+    const id3Size =
+      (fileBuffer[6] << 21) |
+      (fileBuffer[7] << 14) |
+      (fileBuffer[8] << 7) |
+      fileBuffer[9];
     startIndex = id3Size + 10;
+    // A corrupt or hostile tag size can point past the end of the file.
+    if (startIndex >= fileBuffer.length) {
+      return { safe: false, reason: "Invalid MP3: metadata size exceeds file." };
+    }
   }
 
-  // Check for ID3v1 tag at the end of the file
+  // ID3v1 is a fixed 128-byte trailer; only look for it if the file is that long.
   if (
-    fileBuffer.toString(
-      "utf8",
-      fileBuffer.length - 128,
-      fileBuffer.length - 125,
-    ) === "TAG"
+    fileBuffer.length >= startIndex + 128 &&
+    fileBuffer.toString("utf8", fileBuffer.length - 128, fileBuffer.length - 125) === "TAG"
   ) {
     endIndex = fileBuffer.length - 128;
   }
 
-  // Extract the pure audio data between startIndex and endIndex
-  const pureAudioBuffer = fileBuffer.slice(startIndex, endIndex);
+  if (endIndex - startIndex < 4) {
+    return { safe: false, reason: "Invalid MP3: no audio data found." };
+  }
 
-  // check the first 11 bits (Frame Sync word) of the audio data to confirm it looks like valid MP3 frames and not corrupted
+  const pureAudioBuffer = fileBuffer.subarray(startIndex, endIndex);
+
   if (pureAudioBuffer[0] !== 0xff || (pureAudioBuffer[1] & 0xe0) !== 0xe0) {
     return {
       safe: false,

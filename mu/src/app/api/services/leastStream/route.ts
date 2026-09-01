@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import Upload from "@/models/upload";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { s3Client } from "@/app/lib/r2";
+import { s3Client } from "@/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 
 const getBottomPercentileQuery = async (percentage: number) => {
   const totalDocs = await Upload.countDocuments();

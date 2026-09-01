@@ -26,6 +26,8 @@ import { useAudioEq } from "@/contextApi/audioEnhance";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
 import ControlBtn from "./controlBtn";
 import AudioVisualizer from "./audioVizualizer";
+import { useAppleWebkit } from "@/hooks/useAppleWebkit";
+import { panelSurface } from "@/lib/surfaceDropdown";
 
 interface Category {
   id: string;
@@ -60,21 +62,20 @@ interface AudioPlayerModalProps {
   handleId: (id: string) => void;
 }
 
-const URL_FRESH_MS = 50 * 60 * 1000;
+const url_fresh_ms = 50 * 60 * 1000;
 
-  const normalizeTrack = (track: any): AudioItem => ({
-    id: track.id,
-    name: track.name,
-    artist: track.artist,
-    category:
-      typeof track.category === "string"
-        ? track.category
-        : (track.category?.name ?? track.categotry?.name ?? ""),
-    fileUrl: track.fileUrl,
-    favourite: track.favourite,
-    fetchedAt: track.fetchedAt ?? Date.now(),
-  });
-
+const normalizeTrack = (track: any): AudioItem => ({
+  id: track.id,
+  name: track.name,
+  artist: track.artist,
+  category:
+    typeof track.category === "string"
+      ? track.category
+      : (track.category?.name ?? track.categotry?.name ?? ""),
+  fileUrl: track.fileUrl,
+  favourite: track.favourite,
+  fetchedAt: track.fetchedAt ?? Date.now(),
+});
 
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const { maskStatus } = useMask();
@@ -115,6 +116,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const selectedCategoryRef = useRef(selectedCategory);
   const volumeRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const lastLoadedIdRef = useRef<string | null>(null);
+  const isAppleWebkit = useAppleWebkit();
 
   const activeCategoryName =
     categories.find((cat) => cat.id === selectedCategory)?.name || "";
@@ -135,6 +138,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
 
   useEffect(() => {
     currentAudioIndexRef.current = currentAudioIndex;
+  }, [currentAudioIndex]);
+
+  useEffect(() => {
+    setCurrentTime(0);
+    setDuration(0);
+    isDraggingRef.current = false;
   }, [currentAudioIndex]);
 
   useEffect(() => {
@@ -377,7 +386,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       const track = audioListRef.current[index];
       if (!track?.id) return null;
       const age = Date.now() - (track.fetchedAt ?? 0);
-      if (age < URL_FRESH_MS) return track.fileUrl;
+      if (age < url_fresh_ms) return track.fileUrl;
 
       const fresh = await fetchStreamAudioById(track.id);
       if (!fresh?.fileUrl) return null;
@@ -423,7 +432,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     }
 
     const start = async () => {
-      const savedTime = el.currentTime;
+      const trackId =
+        audioListRef.current[currentAudioIndexRef.current]?.id ?? null;
+      const isSameTrack = lastLoadedIdRef.current === trackId;
+      const savedTime = isSameTrack ? el.currentTime : 0;
 
       const freshUrl = await ensureFreshUrl(currentAudioIndexRef.current);
       if (cancelled || !freshUrl) return;
@@ -432,10 +444,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       if (needsReload) {
         el.src = freshUrl;
         el.load();
-        if (savedTime > 0 && recoveryTimeRef.current === null) {
+        if (isSameTrack && savedTime > 0 && recoveryTimeRef.current === null) {
           recoveryTimeRef.current = savedTime;
         }
       }
+
+      if (!isSameTrack) recoveryTimeRef.current = null;
+      lastLoadedIdRef.current = trackId;
 
       if (audioCtxRef.current?.state === "suspended")
         audioCtxRef.current.resume();
@@ -443,8 +458,11 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       const tryPlay = () => {
         if (cancelled) return;
         if (recoveryTimeRef.current !== null) {
-          el.currentTime = recoveryTimeRef.current;
+          const target = recoveryTimeRef.current;
           recoveryTimeRef.current = null;
+          if (Number.isFinite(el.duration) && target < el.duration - 0.5) {
+            el.currentTime = target;
+          }
         }
         el.play().catch((err) => {
           if (err.name !== "AbortError") {
@@ -902,6 +920,23 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       : ((rawCat as any)?.name ?? "");
   const gradientClass = getGradientClass(currentTrack?.name ?? "");
 
+  const default_title = "Home";
+
+  useEffect(() => {
+    if (!trackName) {
+      document.title = default_title;
+      return;
+    }
+    const label = artistName ? `${trackName} — ${artistName}` : trackName;
+    document.title = pause ? `● ${label}` : `♪ ${label}`;
+  }, [trackName, artistName, pause]);
+
+  useEffect(() => {
+    return () => {
+      document.title = default_title;
+    };
+  }, []);
+
   return (
     <div
       ref={playerRef}
@@ -1023,9 +1058,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 onTouchStart={beginDrag}
                 onTouchEnd={endDrag}
                 onChange={(e) => {
-                  const newTime = parseFloat(e.target.value);
+                  const el = audioRef.current;
+                  if (!el || !Number.isFinite(el.duration)) return;
+                  const newTime = Math.min(
+                    parseFloat(e.target.value),
+                    el.duration,
+                  );
                   setCurrentTime(newTime);
-                  if (audioRef.current) audioRef.current.currentTime = newTime;
+                  el.currentTime = newTime;
                 }}
               />
             </div>
@@ -1109,7 +1149,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   <div
                     ref={dropdownRef}
                     data-dropdown-content
-                    className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 max-h-56 overflow-y-auto bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
+                    className={`absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 max-h-56
+    overflow-y-auto rounded-2xl ${panelSurface(isAppleWebkit)}`}
                   >
                     <p
                       className={`${roboto.className} text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1`}
@@ -1333,10 +1374,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                   onTouchStart={beginDrag}
                   onTouchEnd={endDrag}
                   onChange={(e) => {
-                    const newTime = parseFloat(e.target.value);
+                    const el = audioRef.current;
+                    if (!el || !Number.isFinite(el.duration)) return;
+                    const newTime = Math.min(
+                      parseFloat(e.target.value),
+                      el.duration,
+                    );
                     setCurrentTime(newTime);
-                    if (audioRef.current)
-                      audioRef.current.currentTime = newTime;
+                    el.currentTime = newTime;
                   }}
                 />
                 <div
@@ -1369,7 +1414,10 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 )}
               </ControlBtn>
               {showVolume && (
-                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2  bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-2xl p-3">
+                <div
+                  className={`absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center
+    gap-2 rounded-2xl p-3 ${panelSurface(isAppleWebkit)}`}
+                >
                   <input
                     type="range"
                     min="0"
@@ -1402,12 +1450,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 <div
                   ref={dropdownRef}
                   data-dropdown-content
-                  className="absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72 max-h-56 overflow-y-auto
-                    bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
-                    [&::-webkit-scrollbar]:w-1.5
-              [&::-webkit-scrollbar-thumb]:rounded-full
-              [&::-webkit-scrollbar-thumb]:bg-gray-300
-              dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
+                  className={`absolute z-50 bottom-full right-0 mb-3 p-3 flex flex-col gap-1.5 w-52 md:w-72
+    max-h-56 overflow-y-auto rounded-2xl ${panelSurface(isAppleWebkit)}
+    [&::-webkit-scrollbar]:w-1.5
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-gray-300
+    dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
                 >
                   <p
                     className={`${roboto.className} text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1`}

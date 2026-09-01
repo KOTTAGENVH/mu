@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import Category from "@/models/category";
-import { isAllowed } from "@/app/helper/origin_helper";
-import { generateId } from "@/app/helper/uniqueIdGenerator";
+import { isAllowed } from "@/helper/origin_helper";
+import { generateId } from "@/helper/uniqueIdGenerator";
 import Upload from "@/models/upload";
 import Activity, { ActionType, ActivityType } from "@/models/activity";
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -87,9 +87,9 @@ export async function POST(req: Request) {
       taskname: `A new category named "${newCategory.name}" has been created with ID: ${newCategory.id}`,
       type: ActivityType.CATEGORY,
       action: ActionType.ADD,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -153,7 +153,26 @@ export async function GET(req: Request) {
     }
 
     // Get all Category
-    const category = await Category.find({}).select("-_id");
+    const category = await Category.aggregate([
+      {
+        $lookup: {
+          from: "uploads",
+          localField: "_id",
+          foreignField: "category",
+          pipeline: [{ $count: "n" }],
+          as: "counts",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          id: 1,
+          name: 1,
+          audioCount: { $ifNull: [{ $first: "$counts.n" }, 0] },
+        },
+      },
+      { $sort: { name: 1 } },
+    ]);
 
     // if (!category || category.length === 0) {
     //   return NextResponse.json(
@@ -251,7 +270,7 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -259,9 +278,9 @@ export async function PATCH(req: Request) {
       taskname: `The category ${category.name} has been updated`,
       type: ActivityType.CATEGORY,
       action: ActionType.EDIT,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -364,7 +383,7 @@ export async function DELETE(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -372,9 +391,9 @@ export async function DELETE(req: Request) {
       taskname: `The category "${categoryToDelete.name}" has been deleted.`,
       type: ActivityType.CATEGORY,
       action: ActionType.DELETE,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",

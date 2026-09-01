@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { serialize, parse } from "cookie";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 import Session from "@/models/session";
 import dbConnect from "@/config/dbConnect";
 import { verify, JwtPayload } from "jsonwebtoken";
 import { AuthEvent } from "@/models/authLog";
-import { logAuthEvent } from "@/app/helper/authLogHelp";
+import { logAuthEvent } from "@/helper/authLogHelp";
 
 export async function GET(req: Request) {
   try {

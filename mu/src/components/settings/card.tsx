@@ -1,14 +1,12 @@
 import { useAudioEq } from "@/contextApi/audioEnhance";
 import {
   useVisualizer,
-  VISUALIZER_LABELS,
   VisualizerMode,
 } from "@/contextApi/audioVizualizer";
 import { useMask } from "@/contextApi/mask";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React from "react";
 
 interface SettingCardProps {
   id: number;

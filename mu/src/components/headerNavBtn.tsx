@@ -1,7 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Tooltip } from "./headerToolTip";
 import { faHouse } from "@fortawesome/free-solid-svg-icons";
-import { useState } from "react";
 
 interface NavButtonProps {
   icon: typeof faHouse;
