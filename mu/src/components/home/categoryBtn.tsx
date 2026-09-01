@@ -1,5 +1,4 @@
 import { useCategoryStatus } from '@/contextApi/categoryStatus';
-import React from 'react'
 
 interface CategoryBtnProps {
     category: string;

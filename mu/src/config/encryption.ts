@@ -1,20 +1,20 @@
 import crypto from "crypto";
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "";
-const IV_LENGTH = 16; //16 bytes
+const encryprion_key = process.env.ENCRYPTION_KEY || "";
+const iv_length = 16; //16 bytes
 
 export function encrypt(text: string): string {
-  if (!ENCRYPTION_KEY) {
+  if (!encryprion_key) {
     throw new Error("ENCRYPTION_KEY is missing");
   }
 
-  if (ENCRYPTION_KEY.length !== 64) {
+  if (encryprion_key.length !== 64) {
     throw new Error("Invalid ENCRYPTION_KEY length. It must be 32 bytes.");
   }
 
-  const iv = crypto.randomBytes(IV_LENGTH); //Initialization vector(similar to salt)
+  const iv = crypto.randomBytes(iv_length); //Initialization vector(similar to salt)
 
-  const keyBuffer = Buffer.from(ENCRYPTION_KEY, "hex");
+  const keyBuffer = Buffer.from(encryprion_key, "hex");
   const cipher = crypto.createCipheriv("aes-256-cbc", keyBuffer, iv);
 
   let encrypted = cipher.update(text);

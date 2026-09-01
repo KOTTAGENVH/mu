@@ -6,6 +6,7 @@ import {
   faGear,
   faHouse,
   faMicrophone,
+  faNewspaper,
   faRightFromBracket,
   faRightToBracket,
   faUpload,
@@ -45,6 +46,7 @@ function Header() {
   const handleAdd = () => router.push("/upload");
   const handleSettings = () => router.push("/settings");
   const handleMicTalk = () => router.push("/mictalk");
+  const handleNews = () => router.push("/news");
 
   const handleLogout = async (all: boolean = false) => {
     try {
@@ -121,6 +123,14 @@ function Header() {
                 active={isActive("/mictalk")}
                 onClick={handleMicTalk}
                 ariaLabel="Mic Talk"
+              />
+
+              <NavButton
+                icon={faNewspaper}
+                label="News"
+                active={isActive("/news")}
+                onClick={handleNews}
+                ariaLabel="News"
               />
 
               <NavButton

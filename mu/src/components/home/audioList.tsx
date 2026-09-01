@@ -10,6 +10,8 @@ import { getAllCategories } from "@/app/api/client/services/categories/api";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import AudioPlayerModal from "./audioPlayerModal";
 import SkeletonCard from "./skelitonCard";
+import { useAppleWebkit } from "@/hooks/useAppleWebkit";
+import { panelSurface } from "@/lib/surfaceDropdown";
 
 interface AudioList {
   id: string;
@@ -65,6 +67,7 @@ function AudioList() {
   const listRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { sematicSearch } = useSearch();
+  const isAppleWebkit = useAppleWebkit();
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
@@ -274,12 +277,12 @@ function AudioList() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute z-50 mt-2 p-3 w-64 md:w-80 max-h-64 overflow-y-auto
-             bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl
-              [&::-webkit-scrollbar]:w-1.5
-              [&::-webkit-scrollbar-thumb]:rounded-full
-              [&::-webkit-scrollbar-thumb]:bg-gray-300
-              dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
+            className={`absolute z-50 mt-2 p-3 w-64 md:w-80 max-h-64 overflow-y-auto rounded-2xl
+    ${panelSurface(isAppleWebkit)}
+    [&::-webkit-scrollbar]:w-1.5
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-gray-300
+    dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
           >
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
               Categories

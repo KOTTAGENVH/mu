@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/config/dbConnect";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import List from "@/models/list";
-import { isAllowed } from "@/app/helper/origin_helper";
-import { generateId } from "@/app/helper/uniqueIdGenerator";
+import { isAllowed } from "@/helper/origin_helper";
+import { generateId } from "@/helper/uniqueIdGenerator";
 import Activity, { ActionType, ActivityType } from "@/models/activity";
 
 //Post new list
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -86,9 +86,9 @@ export async function POST(req: Request) {
       taskname: `A new list named "${newList.name}" has been created with ID: ${newList.id}`,
       type: ActivityType.WISHLIST,
       action: ActionType.ADD,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -250,7 +250,7 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -258,9 +258,9 @@ export async function PATCH(req: Request) {
       taskname: `The list ${list.name} has been updated`,
       type: ActivityType.WISHLIST,
       action: ActionType.EDIT,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -347,7 +347,7 @@ export async function DELETE(req: Request) {
       }
     }
 
-    const IST_TIMEZONE = "Asia/Kolkata";
+    const ist_timezone = "Asia/Kolkata";
     const now = new Date();
 
     const activity = await Activity.create({
@@ -355,9 +355,9 @@ export async function DELETE(req: Request) {
       taskname: `The list ${list.name} has been deleted`,
       type: ActivityType.WISHLIST,
       action: ActionType.DELETE,
-      date: now.toLocaleDateString("en-IN", { timeZone: IST_TIMEZONE }),
+      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
       time: now.toLocaleTimeString("en-IN", {
-        timeZone: IST_TIMEZONE,
+        timeZone: ist_timezone,
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",

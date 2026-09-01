@@ -1,5 +1,5 @@
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {

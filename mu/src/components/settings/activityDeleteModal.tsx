@@ -93,25 +93,28 @@ export default function DeleteActivityModal({
                 </button>
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                {isClearAllMode 
+                {isClearAllMode
                   ? "Are you sure you want to delete all activity logs? This action cannot be undone."
-                  : `Are you sure you want to delete the activity "${taskname}"?`
-                }
+                  : `Are you sure you want to delete the activity "${taskname}"?`}
               </p>
             </div>
             <div className="relative px-6 pb-6 overflow-y-auto flex-grow">
               <div
                 className={`relative px-6 pb-6 flex flex-col sm:flex-row-reverse gap-3`}
               >
-    <button
+                <button
                   type="button"
                   onClick={onConfirm}
                   disabled={isSubmitting}
                   className={`${baseBtnClass} ${defaultBtnClass}`}
                 >
-                  {isSubmitting 
-                    ? (isClearAllMode ? "Clearing..." : "Deleting...") 
-                    : (isClearAllMode ? "Clear All" : "Delete Activity")}
+                  {isSubmitting
+                    ? isClearAllMode
+                      ? "Clearing..."
+                      : "Deleting..."
+                    : isClearAllMode
+                      ? "Clear All"
+                      : "Delete Activity"}
                 </button>
 
                 <button

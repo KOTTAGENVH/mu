@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 import dbConnect from "@/config/dbConnect";
 import Session from "@/models/session";
 import AuthLog, { AuthEvent } from "@/models/authLog";

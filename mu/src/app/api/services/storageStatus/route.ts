@@ -3,9 +3,9 @@ import {
   ListObjectsV2Command,
   ListObjectsV2CommandOutput,
 } from "@aws-sdk/client-s3";
-import { s3Client, s3Client2 } from "@/app/lib/r2";
+import { s3Client, s3Client2 } from "@/lib/r2";
 import { validateCookie } from "../cookieValidator/validateCookie";
-import { isAllowed } from "@/app/helper/origin_helper";
+import { isAllowed } from "@/helper/origin_helper";
 
 export async function GET(req: Request) {
   try {

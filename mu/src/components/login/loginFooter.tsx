@@ -1,18 +1,11 @@
-import React from "react";
 import { Roboto } from "next/font/google";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 function LoginFooter() {
-  const router = useRouter();
   const currentYear = new Date().getFullYear();
-
-  const handleLegalClick = () => {
-    router.push("/legal");
-  };
 
   return (
     <motion.footer

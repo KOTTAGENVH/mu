@@ -71,6 +71,10 @@ const sections = [
         label: "Third-Party Assets",
         text: "Icons and UI elements may utilize libraries such as Lucide React and Font Awesome. These assets remain the property of their respective creators.",
       },
+      {
+        label: "Map Data",
+        text: "Country boundary data is sourced from Natural Earth (https://github.com/nvkelso/natural-earth-vector), a public domain map dataset. Natural Earth does not endorse this project.",
+      },
     ],
   },
   {

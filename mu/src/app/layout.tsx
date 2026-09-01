@@ -4,12 +4,21 @@ import Providers from "./providers";
 import { inter } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "MU-Audio",
+  title: {
+    template: "%s | MU Audio",
+    default: "Mu Audio",
+  },
   description: "Audio Player by Nowen Kottage",
+  other: {
+    "color-scheme": "light dark",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 

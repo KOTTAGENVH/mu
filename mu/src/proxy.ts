@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const auth_cookie = process.env.COOKIE_NAME;
-
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
+  const auth_cookie = process.env.COOKIE_NAME;
   if (!auth_cookie) throw new Error("COOKIE_NAME env var is not set");
 
   const token = req.cookies.get(auth_cookie)?.value;
