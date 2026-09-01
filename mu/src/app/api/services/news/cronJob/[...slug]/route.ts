@@ -6,7 +6,7 @@ import { sanitiseJson } from "@/lib/news/sanitizer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const upstream_timeout_ms = 110_000;
 const max_response_bytes = 1 * 1024 * 1024;
