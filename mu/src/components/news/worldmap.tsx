@@ -24,6 +24,7 @@ import {
   regionForCountry,
   region_colors,
   region_labels,
+  tiny_countries,
   type Region,
 } from "../../lib/news/geography";
 
@@ -58,6 +59,22 @@ const label_min_width = 26;
 const label_font = 11;
 const label_pad = 3;
 const max_results = 8;
+const marker_size = 4;
+
+function markerShape(name: string, lon: number, lat: number): Shape {
+  const [x, y] = project(lon, lat);
+  const r = marker_size / 2;
+  return {
+    name,
+    key: foldForSearch(name),
+    d: `M${x} ${y - r}L${x + r} ${y}L${x} ${y + r}L${x - r} ${y}Z`,
+    region: regionForCountry(name),
+    cx: x,
+    cy: y,
+    width: marker_size,
+    isMarker: true,
+  };
+}
 
 function project(lon: number, lat: number): [number, number] {
   const clamped = Math.max(lat_bottom, Math.min(lat_top, lat));
@@ -148,6 +165,7 @@ interface Shape {
   cx: number;
   cy: number;
   width: number;
+  isMarker?: boolean;
 }
 
 interface Transform {
@@ -299,7 +317,12 @@ function WorldMap({
           }
         }
 
-        setShapes(next);
+        const have = new Set(next.map((s) => s.name));
+        const markers = Object.entries(tiny_countries)
+          .filter(([name]) => !have.has(name))
+          .map(([name, [lon, lat]]) => markerShape(name, lon, lat));
+
+        setShapes([...next, ...markers]);
       })
       .catch((err: unknown) => {
         if (!alive) return;
