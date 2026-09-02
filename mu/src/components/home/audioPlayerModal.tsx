@@ -118,6 +118,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const isDraggingRef = useRef(false);
   const lastLoadedIdRef = useRef<string | null>(null);
   const isAppleWebkit = useAppleWebkit();
+  const currentTrackId = audioList[currentAudioIndex]?.id;
 
   const activeCategoryName =
     categories.find((cat) => cat.id === selectedCategory)?.name || "";
@@ -141,10 +142,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   }, [currentAudioIndex]);
 
   useEffect(() => {
-    setCurrentTime(0);
-    setDuration(0);
+    const el = audioRef.current;
     isDraggingRef.current = false;
-  }, [currentAudioIndex]);
+    if (!el) {
+      setCurrentTime(0);
+      setDuration(0);
+      return;
+    }
+    setCurrentTime(el.currentTime || 0);
+    setDuration(Number.isFinite(el.duration) ? el.duration : 0);
+  }, [currentTrackId]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -575,6 +582,12 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
+
+    if (el.readyState >= 1 && Number.isFinite(el.duration)) {
+      setDuration(el.duration);
+      if (!isDraggingRef.current) setCurrentTime(el.currentTime);
+    }
+
     const onLoaded = () => {
       setDuration(el.duration || 0);
       const id = audioListRef.current[currentAudioIndex]?.id;
