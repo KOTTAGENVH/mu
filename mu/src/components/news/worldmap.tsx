@@ -33,6 +33,18 @@ interface WorldMapProps {
   geoUrl?: string;
 }
 
+interface Box {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+interface Parsed {
+  d: string;
+  main: Box;
+}
+
 const width = 1000;
 const lat_top = 84;
 const lat_bottom = -56;
@@ -41,8 +53,8 @@ const unmapped_fill = "#9ca3af";
 const min_zoom = 1;
 const max_zoom = 8;
 const drag_threshold = 4;
-const label_min_zoom = 2.2;
-const label_min_width = 55;
+const label_min_zoom = 1;
+const label_min_width = 26;
 const label_font = 11;
 const label_pad = 3;
 const max_results = 8;
@@ -52,13 +64,6 @@ function project(lon: number, lat: number): [number, number] {
   const x = ((lon + 180) / 360) * width;
   const y = ((lat_top - clamped) / (lat_top - lat_bottom)) * height;
   return [x, y];
-}
-
-interface Box {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
 }
 
 const empty_box = (): Box => ({
@@ -81,22 +86,34 @@ function ringToPath(ring: number[][], box: Box): string {
   return `${d}Z`;
 }
 
-function geometryToPath(
-  geometry: { type: string; coordinates: unknown },
-  box: Box,
-): string {
-  if (geometry.type === "Polygon") {
-    return (geometry.coordinates as number[][][])
-      .map((ring) => ringToPath(ring, box))
-      .join("");
+function geometryToPath(geometry: {
+  type: string;
+  coordinates: unknown;
+}): Parsed {
+  const rings: number[][][] =
+    geometry.type === "Polygon"
+      ? (geometry.coordinates as number[][][])
+      : geometry.type === "MultiPolygon"
+        ? (geometry.coordinates as number[][][][]).flat()
+        : [];
+
+  let d = "";
+  let main = empty_box();
+  let bestArea = -1;
+
+  for (const ring of rings) {
+    const box = empty_box();
+    d += ringToPath(ring, box);
+    if (!Number.isFinite(box.minX)) continue;
+
+    const area = (box.maxX - box.minX) * (box.maxY - box.minY);
+    if (area > bestArea) {
+      bestArea = area;
+      main = box;
+    }
   }
-  if (geometry.type === "MultiPolygon") {
-    return (geometry.coordinates as number[][][][])
-      .flat()
-      .map((ring) => ringToPath(ring, box))
-      .join("");
-  }
-  return "";
+
+  return { d, main };
 }
 
 interface FeatureProps {
@@ -254,18 +271,17 @@ function WorldMap({
             const region =
               regionForCode(isoCode(f.properties)) ?? regionForCountry(name);
 
-            const box = empty_box();
-            const d = geometryToPath(f.geometry, box);
-            const finite = Number.isFinite(box.minX);
+            const { d, main } = geometryToPath(f.geometry);
+            const finite = Number.isFinite(main.minX);
 
             return {
               name,
               key: foldForSearch(name),
               d,
               region,
-              cx: finite ? (box.minX + box.maxX) / 2 : 0,
-              cy: finite ? (box.minY + box.maxY) / 2 : 0,
-              width: finite ? box.maxX - box.minX : 0,
+              cx: finite ? (main.minX + main.maxX) / 2 : 0,
+              cy: finite ? (main.minY + main.maxY) / 2 : 0,
+              width: finite ? main.maxX - main.minX : 0,
             };
           })
           .filter((s) => s.name && s.d);
