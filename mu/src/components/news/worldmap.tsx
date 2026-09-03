@@ -44,6 +44,9 @@ interface Box {
 interface Parsed {
   d: string;
   main: Box;
+  cx: number;
+  cy: number;
+  labelWidth: number;
 }
 
 const width = 1000;
@@ -60,18 +63,19 @@ const label_font = 11;
 const label_pad = 3;
 const max_results = 8;
 const marker_size = 4;
+const marker_radius = 3.5;
 
 function markerShape(name: string, lon: number, lat: number): Shape {
   const [x, y] = project(lon, lat);
-  const r = marker_size / 2;
   return {
     name,
     key: foldForSearch(name),
-    d: `M${x} ${y - r}L${x + r} ${y}L${x} ${y + r}L${x - r} ${y}Z`,
+    d: "",
     region: regionForCountry(name),
     cx: x,
     cy: y,
     width: marker_size,
+    labelWidth: marker_size,
     isMarker: true,
   };
 }
@@ -90,47 +94,111 @@ const empty_box = (): Box => ({
   maxY: -Infinity,
 });
 
-function ringToPath(ring: number[][], box: Box): string {
+type Pt = [number, number];
+
+const label_samples = 48;
+const centre_bias = 0.55;
+
+function projectRing(ring: number[][]): Pt[] {
+  return ring.map(([lon, lat]) => project(lon, lat));
+}
+
+function ringD(pts: Pt[]): string {
   let d = "";
-  for (let i = 0; i < ring.length; i++) {
-    const [x, y] = project(ring[i][0], ring[i][1]);
+  for (let i = 0; i < pts.length; i++) {
+    d += `${i === 0 ? "M" : "L"}${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)}`;
+  }
+  return `${d}Z`;
+}
+
+function boxOf(pts: Pt[]): Box {
+  const box = empty_box();
+  for (const [x, y] of pts) {
     if (x < box.minX) box.minX = x;
     if (x > box.maxX) box.maxX = x;
     if (y < box.minY) box.minY = y;
     if (y > box.maxY) box.maxY = y;
-    d += `${i === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
   }
-  return `${d}Z`;
+  return box;
+}
+
+function absArea(pts: Pt[]): number {
+  let a = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    a += pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+  }
+  return Math.abs(a / 2);
+}
+
+function spansAt(rings: Pt[][], y: number): Array<[number, number]> {
+  const xs: number[] = [];
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [x1, y1] = ring[j];
+      const [x2, y2] = ring[i];
+      if (y1 > y === y2 > y) continue;
+      xs.push(x1 + ((y - y1) / (y2 - y1)) * (x2 - x1));
+    }
+  }
+  xs.sort((a, b) => a - b);
+  const spans: Array<[number, number]> = [];
+  for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
+  return spans;
+}
+
+function labelPoint(rings: Pt[][], box: Box) {
+  const h = box.maxY - box.minY;
+  const midY = (box.minY + box.maxY) / 2;
+  let best = { cx: (box.minX + box.maxX) / 2, cy: midY, width: 0 };
+
+  for (let i = 1; i < label_samples; i++) {
+    const y = box.minY + (h * i) / label_samples;
+    for (const [x1, x2] of spansAt(rings, y)) {
+      const w = x2 - x1;
+      const off = h > 0 ? Math.abs(y - midY) / (h / 2) : 0;
+      const score = w * (1 - centre_bias * off);
+      if (score > best.width) best = { cx: (x1 + x2) / 2, cy: y, width: score };
+    }
+  }
+  return best;
 }
 
 function geometryToPath(geometry: {
   type: string;
   coordinates: unknown;
 }): Parsed {
-  const rings: number[][][] =
+  const polygons: number[][][][] =
     geometry.type === "Polygon"
-      ? (geometry.coordinates as number[][][])
+      ? [geometry.coordinates as number[][][]]
       : geometry.type === "MultiPolygon"
-        ? (geometry.coordinates as number[][][][]).flat()
+        ? (geometry.coordinates as number[][][][])
         : [];
 
   let d = "";
   let main = empty_box();
+  let cx = 0;
+  let cy = 0;
+  let labelWidth = 0;
   let bestArea = -1;
 
-  for (const ring of rings) {
-    const box = empty_box();
-    d += ringToPath(ring, box);
-    if (!Number.isFinite(box.minX)) continue;
+  for (const polygon of polygons) {
+    const rings = polygon.map(projectRing).filter((r) => r.length > 2);
+    if (!rings.length) continue;
 
-    const area = (box.maxX - box.minX) * (box.maxY - box.minY);
-    if (area > bestArea) {
-      bestArea = area;
-      main = box;
-    }
+    for (const ring of rings) d += ringD(ring);
+
+    const area = absArea(rings[0]);
+    if (area <= bestArea) continue;
+
+    bestArea = area;
+    main = boxOf(rings[0]);
+    const p = labelPoint(rings, main);
+    cx = p.cx;
+    cy = p.cy;
+    labelWidth = p.width;
   }
 
-  return { d, main };
+  return { d, main, cx, cy, labelWidth };
 }
 
 interface FeatureProps {
@@ -165,6 +233,7 @@ interface Shape {
   cx: number;
   cy: number;
   width: number;
+  labelWidth: number;
   isMarker?: boolean;
 }
 
@@ -289,7 +358,7 @@ function WorldMap({
             const region =
               regionForCode(isoCode(f.properties)) ?? regionForCountry(name);
 
-            const { d, main } = geometryToPath(f.geometry);
+            const { d, main, cx, cy, labelWidth } = geometryToPath(f.geometry);
             const finite = Number.isFinite(main.minX);
 
             return {
@@ -297,9 +366,10 @@ function WorldMap({
               key: foldForSearch(name),
               d,
               region,
-              cx: finite ? (main.minX + main.maxX) / 2 : 0,
-              cy: finite ? (main.minY + main.maxY) / 2 : 0,
+              cx,
+              cy,
               width: finite ? main.maxX - main.minX : 0,
+              labelWidth,
             };
           })
           .filter((s) => s.name && s.d);
@@ -393,7 +463,7 @@ function WorldMap({
       }
       if (pointers.current.size > 2) return;
 
-      const hit = (event.target as Element).closest?.("path[data-name]");
+      const hit = (event.target as Element).closest?.("[data-name]");
       drag.current = {
         active: true,
         startX: event.clientX,
@@ -607,13 +677,13 @@ function WorldMap({
     const { k, x: tx, y: ty } = transform;
 
     const candidates = shapes
-      .filter((s) => s.width > 0 && s.width * k >= label_min_width)
+      .filter((s) => s.labelWidth > 0 && s.labelWidth * k >= label_min_width)
       .map((s) => ({ shape: s, sx: tx + s.cx * k, sy: ty + s.cy * k }))
       .filter(
         ({ sx, sy }) =>
           sx > -40 && sx < width + 40 && sy > -20 && sy < height + 20,
       )
-      .sort((a, b) => b.shape.width - a.shape.width);
+      .sort((a, b) => b.shape.labelWidth - a.shape.labelWidth);
 
     const placed: Array<{ shape: Shape; sx: number; sy: number }> = [];
     const boxes: Box[] = [];
@@ -895,40 +965,64 @@ function WorldMap({
                   (shape.region && region_colors[shape.region]) ||
                   unmapped_fill;
 
+                const common = {
+                  "data-name": shape.name,
+                  fill: base,
+                  stroke: isSelected
+                    ? "#2563eb"
+                    : isHome
+                      ? "#111827"
+                      : shape.isMarker
+                        ? "rgba(255,255,255,0.85)"
+                        : "rgba(255,255,255,0.5)",
+                  strokeWidth: isSelected
+                    ? 1.6
+                    : isHome
+                      ? 1.1
+                      : shape.isMarker
+                        ? 1
+                        : 0.5,
+                  vectorEffect: "non-scaling-stroke" as const,
+                  tabIndex: 0,
+                  role: "button",
+                  "aria-pressed": isSelected,
+                  "aria-label": shape.name,
+                  onMouseEnter: () => setHovered(shape.name),
+                  onFocus: () => setHovered(shape.name),
+                  onBlur: () => setHovered(null),
+                  onKeyDown: (event: React.KeyboardEvent) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelect(
+                        shape.name === selectedCountry ? null : shape.name,
+                      );
+                    }
+                  },
+                  className:
+                    "cursor-pointer outline-none transition-[fill-opacity] duration-150 focus-visible:stroke-blue-500",
+                };
+
+                if (shape.isMarker) {
+                  return (
+                    <circle
+                      key={shape.name}
+                      {...common}
+                      cx={shape.cx}
+                      cy={shape.cy}
+                      r={marker_radius}
+                      fillOpacity={isSelected ? 1 : isHovered ? 0.95 : 0.85}
+                    />
+                  );
+                }
+
                 return (
                   <path
                     key={shape.name}
-                    data-name={shape.name}
+                    {...common}
                     d={shape.d}
-                    fill={base}
+                    fillRule="evenodd"
                     fillOpacity={isSelected ? 1 : isHovered ? 0.8 : 0.42}
-                    stroke={
-                      isSelected
-                        ? "#2563eb"
-                        : isHome
-                          ? "#111827"
-                          : "rgba(255,255,255,0.5)"
-                    }
-                    strokeWidth={isSelected ? 1.6 : isHome ? 1.1 : 0.5}
                     strokeDasharray={isHome && !isSelected ? "3 2" : undefined}
-                    vectorEffect="non-scaling-stroke"
-                    tabIndex={0}
-                    role="button"
-                    aria-pressed={isSelected}
-                    aria-label={shape.name}
-                    onMouseEnter={() => setHovered(shape.name)}
-                    onFocus={() => setHovered(shape.name)}
-                    onBlur={() => setHovered(null)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onSelect(
-                          shape.name === selectedCountry ? null : shape.name,
-                        );
-                      }
-                    }}
-                    className="cursor-pointer outline-none transition-[fill-opacity] duration-150
-                      focus-visible:stroke-blue-500"
                   />
                 );
               })}

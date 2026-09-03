@@ -933,6 +933,8 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       : ((rawCat as any)?.name ?? "");
   const gradientClass = getGradientClass(currentTrack?.name ?? "");
 
+
+  //-*-** dynamic meta data so each song and the icon would be updated based on play
   const default_title = "Home";
 
   useEffect(() => {
@@ -940,7 +942,7 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       document.title = default_title;
       return;
     }
-    const label = artistName ? `${trackName} — ${artistName}` : trackName;
+    const label = artistName ? `${trackName} - ${artistName}` : trackName;
     document.title = pause ? `● ${label}` : `♪ ${label}`;
   }, [trackName, artistName, pause]);
 
