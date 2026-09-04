@@ -1,9 +1,8 @@
-// src/app/api/latest-news/[...slug]/route.ts
 import { NextResponse } from "next/server";
 import { validateCookie } from "@/app/api/services/cookieValidator/validateCookie";
 import { isAllowed } from "@/helper/origin_helper";
 import { getBaseUrl } from "@/lib/news/baseUrl";
-import { isKnownDestination } from "@/lib/news/destination";
+import { isKnownDestination, resolveDestination } from "@/lib/news/destination";
 import { sanitiseJson } from "@/lib/news/sanitizer";
 
 export const runtime = "nodejs";
@@ -107,6 +106,7 @@ const routes: RouteSpec[] = [
   {
     path: "wiki/guide/v1/:destination",
     params: { destination: isDestination },
+    rewrite: { destination: (v) => resolveDestination(v) ?? v },
   },
 
   /* --- UN News --- */
