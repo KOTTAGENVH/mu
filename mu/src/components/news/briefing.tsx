@@ -1,7 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {ExternalLink, Globe2 } from "lucide-react";
+import { ExternalLink, Globe2 } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import { getWikiEvents } from "@/app/api/client/services/news/latest_news/api";
 import { EmptyState } from "./emptyStateCard";
@@ -77,15 +77,15 @@ function Briefing() {
 
   return (
     <section className="mt-6">
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex-1">
           <h2
             className={`${inter.className} text-lg font-semibold text-black dark:text-white`}
           >
             Daily briefing
           </h2>
           <p
-            className={`${roboto.className} mt-0.5 text-xs text-black/50 dark:text-white/50`}
+            className={`${roboto.className} mt-1 text-[13px] sm:text-xs text-black/60 dark:text-white/60`}
           >
             {loading
               ? "Reading the wire"
@@ -114,7 +114,7 @@ function Briefing() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-3"
+              className="p-4 sm:p-5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-3"
             >
               <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
               <div className="h-3 w-full rounded bg-black/5 dark:bg-white/5 animate-pulse" />
@@ -125,7 +125,7 @@ function Briefing() {
       )}
 
       {!loading && sections.length > 0 && (
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
           {sections.map((section, sectionIndex) => (
             <motion.article
               key={section.category}
@@ -138,7 +138,7 @@ function Briefing() {
               className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-sm"
             >
               <h3
-                className={`${inter.className} text-sm font-semibold text-black dark:text-white`}
+                className={`${inter.className} text-[15px] sm:text-sm font-semibold text-black dark:text-white`}
               >
                 {section.category}
               </h3>
@@ -146,7 +146,7 @@ function Briefing() {
                 {section.events.map((event, i) => (
                   <li
                     key={i}
-                    className={`${roboto.className} flex gap-2 text-xs text-black/60 dark:text-white/60 leading-relaxed`}
+                    className={`${roboto.className} flex gap-2.5 text-sm sm:text-xs text-black/75 dark:text-white/75 leading-relaxed break-words`}
                   >
                     <span
                       className="mt-1.5 w-1 h-1 rounded-full bg-blue-500 flex-shrink-0"
@@ -159,7 +159,7 @@ function Briefing() {
                           href={event.references[0]}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center ml-1.5 text-blue-500 hover:text-blue-600 no-underline align-middle"
+                          className="inline-flex items-center justify-center ml-1 w-6 h-6 -my-2 align-middle text-blue-500 hover:text-blue-600 no-underline"
                           aria-label="Open source"
                         >
                           <ExternalLink className="w-3 h-3" />

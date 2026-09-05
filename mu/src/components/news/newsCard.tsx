@@ -109,7 +109,7 @@ export function NewsCard({
         </button>
 
         <ExternalLink
-          className="hidden sm:block w-3.5 h-3.5 text-black/20 dark:text-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="hidden sm:block w-3.5 h-3.5 text-black/20 dark:text-white/20 opacity-0 group-hover:opacity-100 transition-opacity hover:cursor-pointer"
           aria-hidden="true"
         />
       </div>
