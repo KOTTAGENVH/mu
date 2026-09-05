@@ -751,7 +751,7 @@ function WorldMap({
                 onKeyDown={onSearchKeyDown}
                 placeholder="Search for a country"
                 aria-label="Search for a country"
-                className="w-full pl-10 pr-10 py-2 text-sm rounded-full border-none
+                className="w-full pl-10 pr-10 py-2 text-base sm:text-sm rounded-full border-none
                   bg-white/85 dark:bg-slate-900/80 backdrop-blur-md shadow-sm
                   text-black dark:text-white placeholder-black/40 dark:placeholder-white/40
                   focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
