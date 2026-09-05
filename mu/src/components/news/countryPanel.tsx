@@ -410,7 +410,7 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
                   Wikivoyage
                 </div>
                 <p
-                  className={`${roboto.className} mt-1 text-xs text-black/60 dark:text-white/60 line-clamp-3`}
+                  className={`${roboto.className} mt-1 text-xs text-black/60 dark:text-white/60`}
                 >
                   {guide.description}
                 </p>
