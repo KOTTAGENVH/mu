@@ -336,13 +336,13 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
                   }}
                 />
                 <h2
-                  className={`${inter.className} text-lg font-semibold text-black dark:text-white truncate`}
+                  className={`${inter.className} text-lg font-semibold text-black dark:text-white break-words`}
                 >
                   {country}
                 </h2>
               </div>
               <p
-                className={`${roboto.className} mt-0.5 text-xs text-black/50 dark:text-white/50`}
+                className={`${roboto.className} mt-1 text-[13px] sm:text-xs text-black/60 dark:text-white/60`}
               >
                 {region
                   ? `${region_labels[region]} desk · UN News`
@@ -353,7 +353,7 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
             <button
               onClick={onClose}
               aria-label="Close country panel"
-              className="flex-none w-8 h-8 inline-flex items-center justify-center rounded-full border-none cursor-pointer
+              className="flex-none w-9 h-9 sm:w-8 sm:h-8 inline-flex items-center justify-center rounded-full border-none cursor-pointer
                 bg-black/5 dark:bg-white/10 text-black/60 dark:text-white/60
                 hover:bg-black/10 dark:hover:bg-white/20 transition-colors
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
@@ -365,7 +365,7 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
           <div
             role="tablist"
             aria-label="News scope"
-            className="inline-flex gap-1 p-1 mt-4 rounded-full bg-black/5 dark:bg-white/10"
+           className="flex w-full sm:inline-flex sm:w-auto gap-1 p-1 mt-4 rounded-full bg-black/5 dark:bg-white/10"
           >
             {modes.map((option) => {
               const isActive = mode === option.key;
@@ -375,7 +375,7 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setManualMode(option.key)}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs border-none cursor-pointer
+                  className={`inline-flex min-w-0 flex-1 sm:flex-none justify-center items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-full text-[13px] sm:text-xs border-none cursor-pointer
                     transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
                     ${
                       isActive
@@ -402,15 +402,15 @@ function CountryPanel({ country, onClose }: CountryPanelProps) {
           </div>
 
           {guide && (
-            <div className="flex gap-4 mt-4 p-4 rounded-2xl bg-black/5 dark:bg-white/5">
+            <div className="flex gap-3 sm:gap-4 mt-4 p-3.5 sm:p-4 rounded-2xl bg-black/5 dark:bg-white/5">
               <Compass className="w-5 h-5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40">
+                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-black/55 dark:text-white/55">
                   <MapPin className="w-3 h-3" />
                   Wikivoyage
                 </div>
                 <p
-                  className={`${roboto.className} mt-1 text-xs text-black/60 dark:text-white/60`}
+                  className={`${roboto.className} mt-1.5 text-sm sm:text-xs leading-relaxed text-black/70 dark:text-white/70`}
                 >
                   {guide.description}
                 </p>
