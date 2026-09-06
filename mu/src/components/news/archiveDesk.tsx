@@ -1,6 +1,5 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { Archive, Loader2, Search, X } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import {
@@ -15,14 +14,10 @@ import {
   type HistoryItem,
 } from "@/app/api/client/services/news/history/api";
 import { toCards } from "@/lib/news/normalize";
-import {
-  NewsCard,
-  type NewsCardData,
-} from "./newsCard";
+import { NewsCard, type NewsCardData } from "./newsCard";
 import { EmptyState } from "./emptyStateCard";
 import { NewsCardSkeleton } from "./newsCardSkeleton";
 import CalendarPicker, { todayKey } from "../calenarPicker";
-
 
 type Mode = "all" | "source" | "ird" | "cyber" | "date" | "search";
 
@@ -38,7 +33,7 @@ const modes: Array<{ key: Mode; label: string }> = [
 function ArchiveDesk() {
   const [mode, setMode] = useState<Mode>("all");
   const [source, setSource] = useState<NewsSource>(NewsSource.Lankadeepa);
- const [date, setDate] = useState(todayKey());
+  const [date, setDate] = useState(todayKey());
   const [term, setTerm] = useState("");
   const [debounced, setDebounced] = useState("");
   const [page, setPage] = useState(1);
@@ -165,16 +160,16 @@ function ArchiveDesk() {
         </div>
       )}
 
-    {mode === "date" && (
-  <div className="mt-3">
-    <CalendarPicker
-      value={date}
-      onChange={setDate}
-      max={todayKey()}
-      label="Archive date"
-    />
-  </div>
-)}
+      {mode === "date" && (
+        <div className="mt-3">
+          <CalendarPicker
+            value={date}
+            onChange={setDate}
+            max={todayKey()}
+            label="Archive date"
+          />
+        </div>
+      )}
 
       {mode === "search" && (
         <div className="relative mt-3">
@@ -212,11 +207,15 @@ function ArchiveDesk() {
       )}
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <AnimatePresence mode="popLayout">
-          {items.map((item, i) => (
-            <NewsCard key={`${item.source}-${i}`} item={item} index={i} />
-          ))}
-        </AnimatePresence>
+        {items.map((item, i) => (
+          <div
+            key={`${item.source}-${i}`}
+            className="rise"
+            style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+          >
+            <NewsCard item={item} index={i} />
+          </div>
+        ))}
 
         {loading &&
           Array.from({ length: items.length > 0 ? 2 : 6 }).map((_, i) => (

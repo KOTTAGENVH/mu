@@ -14,7 +14,6 @@ import {
 import { useAuth } from "@/contextApi/auth";
 import { logout } from "@/app/api/client/services/auth/api";
 import NavButton from "./headerNavBtn";
-import { motion, AnimatePresence } from "framer-motion";
 
 function Header() {
   const router = useRouter();
@@ -22,6 +21,7 @@ function Header() {
   const { authStatus } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMounted, setMenuMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +40,10 @@ function Header() {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
+
+  useEffect(() => {
+    if (menuOpen) setMenuMounted(true);
+  }, [menuOpen]);
 
   const handleHome = () => router.push("/home");
   const handleLogin = () => router.push("/login");
@@ -150,39 +154,37 @@ function Header() {
                   onClick={() => setMenuOpen((o) => !o)}
                   ariaLabel="Logout"
                 />
-                <AnimatePresence>
-                  {menuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute right-0 z-50 mt-2 p-2 w-56
-                        bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl
-                        border border-white/20 dark:border-white/10 shadow-2xl"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-2 pt-1">
-                        Session
-                      </p>
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleLogout(false)}
-                          className="px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
-                            text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          Log out this device
-                        </button>
-                        <button
-                          onClick={() => handleLogout(true)}
-                          className="px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
-                            text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 font-medium"
-                        >
-                          Log out all devices
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {menuMounted && (
+                  <div
+                    onAnimationEnd={() => {
+                      if (!menuOpen) setMenuMounted(false);
+                    }}
+                    className={`absolute right-0 z-50 mt-2 p-2 w-56
+                      ${menuOpen ? "pop-in" : "pop-out pointer-events-none"}
+                      bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl
+                      border border-white/20 dark:border-white/10 shadow-2xl`}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-2 pt-1">
+                      Session
+                    </p>
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => handleLogout(false)}
+                        className="px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
+                          text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        Log out this device
+                      </button>
+                      <button
+                        onClick={() => handleLogout(true)}
+                        className="px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
+                          text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 font-medium"
+                      >
+                        Log out all devices
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -1,10 +1,9 @@
 "use client";
-import { motion } from "framer-motion";
 import Header from "@/components/header";
-import React, { useState } from "react";
 import LoginFooter from "@/components/login/loginFooter";
 import { inter, roboto } from "../fonts";
-import { ChevronDown } from "lucide-react";
+import { AccordionSection } from "@/components/legal/accordance";
+import { sections } from "@/helper/legal/sections";
 
 export type Audio = {
   _id: string;
@@ -13,232 +12,6 @@ export type Audio = {
   fileUrl: string;
   favourite: boolean;
 };
-
-const sections = [
-  {
-    number: "01",
-    title: "Introduction",
-    items: [
-      {
-        label: "Ownership & Scope",
-        text: 'Mu is a self-hosted audio platform created, owned, and operated by Nowen Kottage ("I," "me," or "my"). By using the Mu application ("the App" or "the Service"), you ("the User") agree to be bound by these Terms & Conditions.',
-      },
-      {
-        label: "Acceptance of Terms",
-        text: "If you do not agree with any part of these Terms & Conditions, please do not use the Mu application.",
-      },
-      {
-        label: "Self-Hosted Environment",
-        text: "Mu is designed as a personal, self-hosted project for a pleasant audio listening experience. It is not a commercial product and is not intended for public redistribution of audio content.",
-      },
-    ],
-  },
-  {
-    number: "02",
-    title: "Disclaimer of Warranties (No Warranty)",
-    items: [
-      {
-        label: 'Provided "As-Is"',
-        text: "This self-hosted platform is provided strictly on an 'AS IS' and 'AS AVAILABLE' basis, without warranties of any kind, either express or implied.",
-      },
-      {
-        label: "No Guarantee of Service",
-        text: "I do not warrant or guarantee that the service will be uninterrupted, secure, or error-free. I make no warranty regarding the permanent storage of audio files, user preferences, or server uptime.",
-      },
-      {
-        label: "Limitation of Liability",
-        text: "Under no circumstances shall I, Nowen Kottage, be held liable for any direct, indirect, incidental, or consequential damages, including but not limited to data loss, device issues, or server downtime arising from your use of this platform.",
-      },
-    ],
-  },
-  {
-    number: "03",
-    title: "Intellectual Property",
-    items: [
-      {
-        label: "Design & Code Rights",
-        text: "All source code, interface design, and architecture for Mu are held by me, Nowen Kottage. Copying, distributing, or recreating the source code of Mu is strictly prohibited without explicit permission.",
-      },
-      {
-        label: "Audio Content",
-        text: "The audio tracks provided within the application are for demonstration purposes. I do not claim ownership of third-party musical compositions unless explicitly stated. If you are a copyright holder and believe your content is used improperly, please contact me for immediate removal.",
-      },
-      {
-        label: "Visual Assets & Animations",
-        text: "Certain visual elements, such as the interactive smoke animation, are created using frames extracted from copyright-free video materials sourced from Pexels (original footage by Dan Cristian Pădureț). These are used in compliance with their free-use license.",
-      },
-      {
-        label: "Third-Party Assets",
-        text: "Icons and UI elements may utilize libraries such as Lucide React and Font Awesome. These assets remain the property of their respective creators.",
-      },
-      {
-        label: "Map Data",
-        text: "Country boundary data is sourced from Natural Earth (https://github.com/nvkelso/natural-earth-vector), a public domain map dataset. Natural Earth does not endorse this project.",
-      },
-    ],
-  },
-  {
-    number: "04",
-    title: "User Responsibilities",
-    items: [
-      {
-        label: "Personal Use Only",
-        text: "Mu is intended for personal, non-commercial use. Users must not use the application for public broadcasting or commercial audio distribution.",
-      },
-      {
-        label: "Prohibited Actions",
-        text: "You may not attempt to manipulate audio streams, bypass authentication, or flood the self-hosted server with excessive requests (DDoS).",
-      },
-      {
-        label: "Fair Usage",
-        text: "Because this platform runs on limited self-hosted infrastructure, excessive bandwidth usage via automated scripts or bots is strictly prohibited to ensure the server remains stable.",
-      },
-    ],
-  },
-  {
-    number: "05",
-    title: "Privacy & Data Usage",
-    items: [
-      {
-        label: "Data Storage",
-        text: "User preferences and authentication tokens are stored on this self-hosted server and your local device. While basic security measures are in place, no guarantees of absolute data security are provided.",
-      },
-      {
-        label: "Cookies",
-        text: "Essential cookies or local storage tokens are used strictly for authentication and maintaining your session state.",
-      },
-      {
-        label: "Data Charges",
-        text: "Streaming high-quality audio consumes data. Users are responsible for any data charges incurred from their network provider while using Mu.",
-      },
-    ],
-  },
-  {
-    number: "06",
-    title: "Compatibility & Testing",
-    meta: "Last reviewed: Feb 2026",
-    items: [
-      {
-        label: "Browser Support",
-        text: "This application has been tested on the latest stable versions of Chrome, Safari, and Edge.",
-      },
-      {
-        label: "Audio Playback",
-        text: "Background audio playback behaviors may vary on mobile devices (iOS/Android) due to operating system restrictions on web browsers.",
-      },
-      {
-        label: "Report Issues",
-        text: "If you encounter playback errors or UI inconsistencies, please report them via the",
-        link: {
-          href: "https://www.nowenkottage.com/contactus",
-          label: "contact page",
-        },
-        textAfter: "with details regarding your device and browser version.",
-      },
-    ],
-  },
-];
-
-function AccordionSection({
-  section,
-  index,
-}: {
-  section: (typeof sections)[0];
-  index: number;
-}) {
-  const [open, setOpen] = useState(true);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.5,
-        delay: index * 0.08,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="border border-slate-400/50 dark:border-[#1e2130] rounded-2xl overflow-hidden"
-    >
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-4 px-6 py-5 bg-slate-100 dark:bg-[#0d0f18] hover:bg-slate-200 dark:hover:bg-[#111420] transition-colors duration-200 text-left group"
-      >
-        <span
-          className="shrink-0 text-xs font-bold tracking-widest text-blue-600/70 dark:text-[#6c8fff]/60 font-mono"
-          style={{ minWidth: "2rem" }}
-        >
-          {section.number}
-        </span>
-
-        <h2
-          className={`${inter.className} flex-1 text-base md:text-lg font-semibold text-slate-900 dark:text-white`}
-        >
-          {section.title}
-        </h2>
-
-        {section.meta && (
-          <span className="hidden md:block text-xs text-slate-500 dark:text-[#4b5563] italic mr-2">
-            {section.meta}
-          </span>
-        )}
-
-        <ChevronDown
-          size={16}
-          className={`text-slate-500 dark:text-[#4b5563] transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      <motion.div
-        initial={false}
-        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="overflow-hidden"
-      >
-        <div className="px-6 pb-6 pt-2 bg-slate-100 dark:bg-[#0d0f18] space-y-4">
-          {section.meta && (
-            <p className="md:hidden text-xs text-slate-500 dark:text-[#4b5563] italic">
-              {section.meta}
-            </p>
-          )}
-
-          {section.items.map((item, i) => (
-            <div key={i} className="flex gap-4 group/item">
-              <div className="flex flex-col items-center pt-1.5">
-                <div className="w-px flex-1 bg-gradient-to-b from-blue-600/30 dark:from-[#6c8fff]/30 to-transparent" />
-              </div>
-
-              <div className="pb-2">
-                <p
-                  className={`${roboto.className} text-sm font-semibold text-blue-600 dark:text-[#6c8fff] mb-1`}
-                >
-                  {item.label}
-                </p>
-                <p
-                  className={`${roboto.className} text-sm text-slate-700 dark:text-[#9ca3af] leading-relaxed`}
-                >
-                  {"text" in item ? item.text : ""}
-                  {"link" in item && item.link ? (
-                    <>
-                      {" "}
-                      <a
-                        href={item.link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-[#6c8fff] hover:text-purple-600 dark:hover:text-[#a78bfa] underline underline-offset-2 transition-colors duration-200"
-                      >
-                        {item.link.label}
-                      </a>{" "}
-                      {item.textAfter ?? ""}
-                    </>
-                  ) : null}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 function Page() {
   return (
@@ -255,14 +28,9 @@ function Page() {
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-blue-500/10 dark:bg-[#6c8fff]/4 blur-[140px]" />
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 32 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative flex-1 flex flex-col items-center py-16 mt-24 px-4 md:px-8"
-      >
+      <div className="relative flex-1 flex flex-col items-center py-16 mt-24 px-4 md:px-8">
         <div className="w-full max-w-3xl">
-          <div className="mb-12 flex flex-col gap-3">
+          <div className="rise mb-12 flex flex-col gap-3">
             <h1
               className={`${inter.className} text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight`}
             >
@@ -289,11 +57,9 @@ function Page() {
               />
             ))}
           </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className={`${roboto.className} mt-10 text-xs text-slate-500 dark:text-slate-400 text-center`}
+          <p
+            className={`${roboto.className} rise mt-10 text-xs text-slate-500 dark:text-slate-400 text-center`}
+            style={{ animationDelay: "600ms" }}
           >
             Questions? Reach out via the{" "}
             <a
@@ -305,9 +71,9 @@ function Page() {
               contact page
             </a>
             .
-          </motion.p>
+          </p>
         </div>
-      </motion.div>
+      </div>
       <LoginFooter />
     </div>
   );

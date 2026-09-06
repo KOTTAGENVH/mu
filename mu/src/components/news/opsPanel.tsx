@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Check, Loader2, Play } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import {
@@ -154,54 +153,40 @@ function OpsPanel() {
               Checks storage usage. Above 70% it permanently deletes the oldest
               unpinned stories.
             </p>
-
-            <AnimatePresence mode="wait">
-              {confirming ? (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex gap-2 mt-3"
-                >
-                  <button
-                    onClick={() => {
-                      setConfirming(false);
-                      run(destructive);
-                    }}
-                    className="px-4 py-2 rounded-xl text-xs font-medium bg-red-500 text-white border-none cursor-pointer
+            {confirming ? (
+              <div className="fade-in flex gap-2 mt-3">
+                <button
+                  onClick={() => {
+                    setConfirming(false);
+                    run(destructive);
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-medium bg-red-500 text-white border-none cursor-pointer
                       hover:bg-red-600 transition-colors"
-                  >
-                    Yes, run cleanup
-                  </button>
-                  <button
-                    onClick={() => setConfirming(false)}
-                    className="px-4 py-2 rounded-xl text-xs bg-black/5 dark:bg-white/10 text-black dark:text-white
-                      border-none cursor-pointer hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="trigger"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setConfirming(true)}
-                  disabled={states[destructive]?.status === "running"}
-                  className="mt-3 px-4 py-2 rounded-xl text-xs font-medium border-none cursor-pointer
-                    bg-black/5 dark:bg-white/10 text-black dark:text-white
-                    hover:bg-black/10 dark:hover:bg-white/20 transition-colors
-                    disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {states[destructive]?.status === "running"
-                    ? "Running cleanup"
-                    : "Run cleanup"}
-                </motion.button>
-              )}
-            </AnimatePresence>
-
+                  Yes, run cleanup
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="px-4 py-2 rounded-xl text-xs bg-black/5 dark:bg-white/10 text-black dark:text-white
+                      border-none cursor-pointer hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirming(true)}
+                disabled={states[destructive]?.status === "running"}
+                className="fade-in mt-3 px-4 py-2 rounded-xl text-xs font-medium border-none cursor-pointer
+                  bg-black/5 dark:bg-white/10 text-black dark:text-white
+                  hover:bg-black/10 dark:hover:bg-white/20 transition-colors
+                  disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {states[destructive]?.status === "running"
+                  ? "Running cleanup"
+                  : "Run cleanup"}
+              </button>
+            )}
             {states[destructive]?.status === "done" && (
               <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
                 {(states[destructive] as { message: string }).message}

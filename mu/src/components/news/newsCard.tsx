@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { Check, Copy, ExternalLink, Newspaper } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import { asPlainText, timeAgo } from "@/helper/news/helperNews";
@@ -45,13 +44,7 @@ export function NewsCard({
   };
 
   return (
-    <motion.div
-      rel="noopener noreferrer"
-      layout
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}
+    <div
       className="group flex min-w-0 gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-sm
         hover:bg-black/10 dark:hover:bg-white/10 transition-colors duration-200
         focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 no-underline"
@@ -68,7 +61,7 @@ export function NewsCard({
         </h3>
         {item.description && (
           <p
-           className={`${roboto.className} mt-1 text-[13px] sm:text-xs leading-relaxed text-black/65 dark:text-white/65 line-clamp-2`}
+            className={`${roboto.className} mt-1 text-[13px] sm:text-xs leading-relaxed text-black/65 dark:text-white/65 line-clamp-2`}
           >
             {item.description}
           </p>
@@ -113,6 +106,6 @@ export function NewsCard({
           aria-hidden="true"
         />
       </div>
-    </motion.div>
+    </div>
   );
 }

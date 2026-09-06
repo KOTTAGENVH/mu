@@ -1,6 +1,5 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { FileText, Loader2 } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import {
@@ -13,10 +12,7 @@ import {
   getNewswire,
 } from "@/app/api/client/services/news/latest_news/api";
 import { flattenGroups, toCards } from "@/lib/news/normalize";
-import {
-  NewsCard,
-  type NewsCardData,
-} from "./newsCard";
+import { NewsCard, type NewsCardData } from "./newsCard";
 import { NewsCardSkeleton } from "./newsCardSkeleton";
 import { EmptyState } from "./emptyStateCard";
 
@@ -189,12 +185,15 @@ function LocalDesk() {
       )}
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <AnimatePresence mode="popLayout">
-          {items.map((item, i) => (
-            <NewsCard key={`${item.source}-${i}`} item={item} index={i} />
-          ))}
-        </AnimatePresence>
-
+        {items.map((item, i) => (
+          <div
+            key={`${active.key}-${item.source}-${i}`}
+            className="rise"
+            style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+          >
+            <NewsCard item={item} index={i} />
+          </div>
+        ))}
         {loading &&
           Array.from({ length: items.length > 0 ? 2 : 6 }).map((_, i) => (
             <NewsCardSkeleton key={`skeleton-${i}`} />

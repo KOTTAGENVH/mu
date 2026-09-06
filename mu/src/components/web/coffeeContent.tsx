@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from "framer-motion";
 import { CoffeeIcon } from "./coffeeIcon";
 
 export function CoffeeContent({ hovered }: { hovered?: boolean }) {
@@ -12,37 +11,33 @@ export function CoffeeContent({ hovered }: { hovered?: boolean }) {
           flexShrink: 0,
         }}
       >
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <div
+          style={{
+            position: "absolute",
+            top: "-14px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: "4px",
+            opacity: hovered ? 1 : 0,
+            transition: "opacity 0.3s ease",
+            pointerEvents: "none",
+          }}
+        >
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="steam-particle"
               style={{
-                position: "absolute",
-                top: "-14px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                gap: "4px",
+                width: "2px",
+                height: "8px",
+                borderRadius: "2px",
+                background: "rgba(255,255,255,0.4)",
+                animationDelay: `${i * 0.6}s`,
               }}
-            >
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="steam-particle"
-                  style={{
-                    width: "2px",
-                    height: "8px",
-                    borderRadius: "2px",
-                    background: "rgba(255,255,255,0.4)",
-                    animationDelay: `${i * 0.6}s`,
-                  }}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            />
+          ))}
+        </div>
         <CoffeeIcon
           size={28}
           style={{

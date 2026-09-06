@@ -6,7 +6,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
   Minus,
@@ -309,6 +308,7 @@ function WorldMap({
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
   const [transform, setTransform] = useState<Transform>(initial_transform);
   const [zoomHint, setZoomHint] = useState(false);
+  const [hintMounted, setHintMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(0);
@@ -408,6 +408,10 @@ function WorldMap({
       alive = false;
     };
   }, [geoUrl]);
+
+  useEffect(() => {
+    if (zoomHint) setHintMounted(true);
+  }, [zoomHint]);
 
   useEffect(() => {
     const el = svgRef.current;
@@ -862,42 +866,35 @@ function WorldMap({
             </button>
           ))}
         </div>
-        <AnimatePresence>
-          {zoomHint && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+        {hintMounted && (
+          <div
+            onAnimationEnd={() => {
+              if (!zoomHint) setHintMounted(false);
+            }}
+            className={`pointer-events-none absolute inset-0 z-30 flex items-center justify-center
+              ${zoomHint ? "fade-in" : "fade-out"}`}
+          >
+            <span
+              className={`${inter.className} px-3.5 py-2 rounded-full text-xs font-medium
+                bg-black/70 text-white backdrop-blur-sm shadow-lg`}
             >
-              <span
-                className={`${inter.className} px-3.5 py-2 rounded-full text-xs font-medium
-                  bg-black/70 text-white backdrop-blur-sm shadow-lg`}
-              >
-                Ctrl + scroll to zoom, or drag to pan
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {activeLabel && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.15 }}
-              className="absolute bottom-3 right-3 z-20 px-3 py-1.5 rounded-full
-                bg-white/80 dark:bg-black/60 backdrop-blur-sm"
+              Ctrl + scroll to zoom, or drag to pan
+            </span>
+          </div>
+        )}
+        {activeLabel && (
+          <div
+            key={activeLabel}
+            className="fade-in absolute bottom-3 right-3 z-20 px-3 py-1.5 rounded-full
+              bg-white/80 dark:bg-black/60 backdrop-blur-sm"
+          >
+            <span
+              className={`${inter.className} text-xs font-medium text-black dark:text-white`}
             >
-              <span
-                className={`${inter.className} text-xs font-medium text-black dark:text-white`}
-              >
-                {activeLabel}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {activeLabel}
+            </span>
+          </div>
+        )}
         {hovered && pointer && (
           <div
             className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-full

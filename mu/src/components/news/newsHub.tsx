@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive,
   Globe2,
@@ -108,30 +107,19 @@ function NewsHub() {
           );
         })}
       </div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={view}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
-        >
-          {view === "world" && (
-            <div className="mt-6">
-              <WorldMap selectedCountry={country} onSelect={setCountry} />
-              <CountryPanel
-                country={country}
-                onClose={() => setCountry(null)}
-              />
-            </div>
-          )}
-          {view === "local" && <LocalDesk />}
-          {view === "cyber" && <CyberDesk />}
-          {view === "briefing" && <Briefing />}
-          {view === "archive" && <ArchiveDesk />}
-          {view === "ops" && <OpsPanel />}
-        </motion.div>
-      </AnimatePresence>
+      <div key={view} className="rise">
+        {view === "world" && (
+          <div className="mt-6">
+            <WorldMap selectedCountry={country} onSelect={setCountry} />
+            <CountryPanel country={country} onClose={() => setCountry(null)} />
+          </div>
+        )}
+        {view === "local" && <LocalDesk />}
+        {view === "cyber" && <CyberDesk />}
+        {view === "briefing" && <Briefing />}
+        {view === "archive" && <ArchiveDesk />}
+        {view === "ops" && <OpsPanel />}
+      </div>
 
       <div className="h-32 w-full shrink-0" aria-hidden="true" />
     </div>
