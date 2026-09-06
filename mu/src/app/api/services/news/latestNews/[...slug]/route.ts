@@ -4,6 +4,7 @@ import { isAllowed } from "@/helper/origin_helper";
 import { getBaseUrl } from "@/lib/news/baseUrl";
 import { isKnownDestination, resolveDestination } from "@/lib/news/destination";
 import { sanitiseJson } from "@/lib/news/sanitizer";
+import { isValidVendorQuery, normaliseVendorQuery } from "@/lib/news/vendorQuery";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,8 @@ type RouteSpec = {
   query?: Record<string, Validator>;
 };
 
+const isVendorQuery: Validator = isValidVendorQuery;
+
 const routes: RouteSpec[] = [
   { path: "lankadepa/v1/:page", params: { page: isPage } },
   {
@@ -92,7 +95,7 @@ const routes: RouteSpec[] = [
     query: {
       size: isSize,
       text: isText,
-      vendor: isText,
+      vendor: isVendorQuery, 
       product: isText,
       fromScore: isScore,
       fromDate: isIsoDate,
@@ -113,6 +116,7 @@ const routes: RouteSpec[] = [
   { path: "un/v1" },
   { path: "un/v1/:region", params: { region: isRegion } },
 ];
+
 
 type Matched = { segments: string[]; spec: RouteSpec };
 
@@ -153,13 +157,13 @@ function buildUpstreamUrl(matched: Matched, incoming: URL): string {
   const url = new URL(`${getBaseUrl()}/latest-news/${path}`);
 
   const allowed = matched.spec.query ?? {};
-  for (const [key, check] of Object.entries(allowed)) {
-    const raw = incoming.searchParams.get(key);
-    if (raw === null) continue;
-    const value = raw.trim();
-    if (value === "" || !check(value)) continue;
-    url.searchParams.set(key, value);
-  }
+ for (const [key, check] of Object.entries(allowed)) {
+  const raw = incoming.searchParams.get(key);
+  if (raw === null) continue;
+  const value = normaliseVendorQuery(raw);   
+  if (value === "" || !check(value)) continue;
+  url.searchParams.set(key, value);
+}
 
   return url.toString();
 }

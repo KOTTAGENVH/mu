@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { inter, roboto } from "../../app/fonts";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { generateQR } from "../../helper/qr";
 import { QrCode, KeyRound, Copy, Check } from "lucide-react";
 
@@ -46,12 +45,7 @@ function QrScan({ url, secret, handleSetToken }: QrScanProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-      className="flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8"
-    >
+    <div className="rise flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8">
       <Image
         src="/mu.png"
         alt="MU"
@@ -208,7 +202,7 @@ function QrScan({ url, secret, handleSetToken }: QrScanProps) {
       >
         Enter Token
       </button>
-    </motion.div>
+    </div>
   );
 }
 

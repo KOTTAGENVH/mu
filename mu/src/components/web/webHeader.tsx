@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 
 function WebHeader() {
@@ -40,7 +39,7 @@ function WebHeader() {
   bg-white/10 backdrop-blur-[12px] 
   border-none rounded-full px-2 py-2"
           >
-            <motion.div className="relative">
+            <div className="relative">
               <button
                 className={navButtonClass}
                 aria-label="login-button"
@@ -49,7 +48,7 @@ function WebHeader() {
               >
                 <LogIn className="w-4 h-4" />
               </button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </nav>

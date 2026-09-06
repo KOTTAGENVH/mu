@@ -1,9 +1,4 @@
-import React, { useState } from "react";
-import {
-  motion,
-  useMotionValue,
-  useTransform
-} from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
 
 interface CardProps {
   href: string;
@@ -13,36 +8,61 @@ interface CardProps {
 
 export function Card({ href, delay = 0, children }: CardProps) {
   const [hovered, setHovered] = useState(false);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const shimmerX = useTransform(mouseX, [-150, 150], [-30, 30]);
-  const shimmerY = useTransform(mouseY, [-60, 60], [-15, 15]);
+  const [inView, setInView] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const ref = useRef<HTMLAnchorElement | null>(null);
+  const shimmerRef = useRef<HTMLDivElement | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+
+   const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - rect.left - rect.width / 2);
-    mouseY.set(e.clientY - rect.top - rect.height / 2);
+    const dx = e.clientX - rect.left - rect.width / 2;
+    const dy = e.clientY - rect.top - rect.height / 2;
+
+    const clamp = (v: number, from: number, to: number) =>
+      Math.max(-to, Math.min(to, (v / from) * to));
+
+    if (shimmerRef.current) {
+      shimmerRef.current.style.transform = `translate(${clamp(dx, 150, 30)}px, ${clamp(dy, 60, 15)}px)`;
+    }
   };
 
   const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
+    if (shimmerRef.current) shimmerRef.current.style.transform = "translate(0, 0)";
     setHovered(false);
+    setPressed(false);
   };
 
   return (
-    <motion.a
+    <a
+       ref={ref}
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
-      whileTap={{ scale: 0.97 }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      className={inView ? "rise-slow" : ""}
       style={{
         position: "relative",
         display: "flex",
@@ -63,7 +83,11 @@ export function Card({ href, delay = 0, children }: CardProps) {
         overflow: "hidden",
         flex: 1,
         minWidth: 0,
-        transition: "background 0.35s ease, border-color 0.35s ease",
+        opacity: inView ? undefined : 0,
+        animationDelay: `${delay * 1000}ms`,
+        scale: pressed ? 0.97 : 1,
+        transition:
+          "background 0.35s ease, border-color 0.35s ease, scale 0.15s ease",
       }}
     >
       <div
@@ -76,17 +100,16 @@ export function Card({ href, delay = 0, children }: CardProps) {
           pointerEvents: "none",
         }}
       />
-      <motion.div
+     <div
+        ref={shimmerRef}
         style={{
           position: "absolute",
           inset: 0,
           background:
             "radial-gradient(ellipse 160px 80px at 50% 50%, rgba(255,255,255,0.07), transparent)",
-          x: shimmerX,
-          y: shimmerY,
           pointerEvents: "none",
           opacity: hovered ? 1 : 0,
-          transition: "opacity 0.3s ease",
+          transition: "opacity 0.3s ease, transform 0.15s ease-out",
         }}
       />
       <div
@@ -111,19 +134,20 @@ export function Card({ href, delay = 0, children }: CardProps) {
             )
           : child,
       )}
-      <motion.div
-        animate={{ x: hovered ? 4 : 0, opacity: hovered ? 1 : 0.25 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
+    <div
         style={{
           marginLeft: "auto",
           color: "rgba(255,255,255,0.7)",
           fontSize: "18px",
           lineHeight: 1,
           flexShrink: 0,
+          transform: hovered ? "translateX(4px)" : "translateX(0)",
+          opacity: hovered ? 1 : 0.25,
+          transition: "transform 0.25s ease-out, opacity 0.25s ease-out",
         }}
       >
         →
-      </motion.div>
-    </motion.a>
+      </div>
+    </a>
   );
 }

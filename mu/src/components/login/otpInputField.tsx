@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { motion } from "framer-motion";
 
 interface OTPInputProps {
   value: string;
@@ -76,7 +75,7 @@ export default function OTPInput({ value, onChange, error }: OTPInputProps) {
     <div className="flex flex-col items-center gap-3 w-full">
       <div className="flex gap-1.5 sm:gap-2 md:gap-3 justify-center w-full">
         {digits.map((digit, index) => (
-          <motion.input
+          <input
             key={index}
             ref={(el) => {
               inputRefs.current[index] = el;
@@ -89,10 +88,9 @@ export default function OTPInput({ value, onChange, error }: OTPInputProps) {
             onKeyDown={(e) => handleKeyDown(e, index)}
             onPaste={handlePaste}
             onFocus={(e) => e.target.select()}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.06, duration: 0.3 }}
+            style={{ animationDelay: `${index * 60}ms` }}
             className={`
+              rise
               w-11 h-12 md:w-13 md:h-14 text-center text-xl font-semibold
               rounded-xl border-2 bg-white dark:bg-gray-700
               text-gray-900 dark:text-white
@@ -107,13 +105,9 @@ export default function OTPInput({ value, onChange, error }: OTPInputProps) {
         ))}
       </div>
       {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-red-500 dark:text-red-400"
-        >
+        <p className="fade-in text-sm text-red-500 dark:text-red-400">
           {error}
-        </motion.p>
+        </p>
       )}
     </div>
   );

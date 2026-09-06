@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMusic } from "@fortawesome/free-solid-svg-icons";
-import { motion, AnimatePresence } from "framer-motion";
 import { getAllSongs } from "@/app/api/client/services/audio/api";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
@@ -54,6 +53,7 @@ function AudioList() {
   );
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryPanelOpen, setCategoryPanelOpen] = useState(false);
+  const [categoryPanelMounted, setCategoryPanelMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [allAudio, setAllAudio] = useState<AudioList[] | null>(null);
   const [id, setId] = useState<string | null>(null);
@@ -160,6 +160,10 @@ function AudioList() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [categoryPanelOpen]);
 
+  useEffect(() => {
+    if (categoryPanelOpen) setCategoryPanelMounted(true);
+  }, [categoryPanelOpen]);
+
   const handleCategorySelect = (cat: Category | null) => {
     setSelectedCategory(cat);
     setQuery((q) => ({ ...q, categoryId: cat?.id ?? "", page: 1 }));
@@ -245,78 +249,68 @@ function AudioList() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {selectedCategory && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -6, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center gap-2 mt-3 overflow-hidden"
+      {selectedCategory && (
+        <div className="rise flex items-center gap-2 mt-3 overflow-hidden">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Filtering by:
+          </span>
+          <button
+            onClick={() => handleCategorySelect(null)}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+              bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300
+              hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors"
           >
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              Filtering by:
-            </span>
-            <button
-              onClick={() => handleCategorySelect(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300
-                hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors"
-            >
-              {selectedCategory.name}
-              <X className="w-3 h-3" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {categoryPanelOpen && (
-          <motion.div
-            ref={dropdownRef}
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className={`absolute z-50 mt-2 p-3 w-64 md:w-80 max-h-64 overflow-y-auto rounded-2xl
+            {selectedCategory.name}
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+      {categoryPanelMounted && (
+        <div
+          ref={dropdownRef}
+          onAnimationEnd={() => {
+            if (!categoryPanelOpen) setCategoryPanelMounted(false);
+          }}
+          className={`absolute z-50 mt-2 p-3 w-64 md:w-80 max-h-64 overflow-y-auto rounded-2xl
+    ${categoryPanelOpen ? "pop-in" : "pop-out pointer-events-none"}
     ${panelSurface(isAppleWebkit)}
     [&::-webkit-scrollbar]:w-1.5
     [&::-webkit-scrollbar-thumb]:rounded-full
     [&::-webkit-scrollbar-thumb]:bg-gray-300
     dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
-          >
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
-              Categories
-            </p>
-            <div className="flex flex-col gap-1">
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
+            Categories
+          </p>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => handleCategorySelect(null)}
+              className={`px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
+                ${
+                  !selectedCategory
+                    ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
+                    : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+            >
+              All music
+            </button>
+            {categories.map((cat) => (
               <button
-                onClick={() => handleCategorySelect(null)}
+                key={cat.id}
+                onClick={() => handleCategorySelect(cat)}
                 className={`px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
                   ${
-                    !selectedCategory
+                    selectedCategory?.id === cat.id
                       ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
                       : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
               >
-                All music
+                {cat.name}
               </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategorySelect(cat)}
-                  className={`px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
-                    ${
-                      selectedCategory?.id === cat.id
-                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading && (!allAudio || allAudio.length === 0) && (
         <div className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl">
@@ -327,12 +321,7 @@ function AudioList() {
       )}
 
       {!loading && allAudio?.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: "backOut" }}
-          className="min-h-[40vh] flex flex-col items-center justify-center text-center py-10 gap-3"
-        >
+        <div className="rise min-h-[40vh] flex flex-col items-center justify-center text-center py-10 gap-3">
           <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
             <FontAwesomeIcon
               icon={faMusic}
@@ -359,38 +348,29 @@ function AudioList() {
               Clear all filters
             </button>
           )}
-        </motion.div>
+        </div>
       )}
       <div
         ref={listRef}
         className="flex-1 min-h-0 overflow-y-auto w-full grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6 content-start justify-items-center overflow-x-hidden bg-transparent mt-6 p-4 rounded-2xl"
       >
-        <AnimatePresence mode="popLayout">
-          {allAudio &&
-            allAudio.length > 0 &&
-            allAudio.map((audio, index) => (
-              <motion.div
-                key={audio.id}
-                layout
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{
-                  duration: 0.25,
-                  delay: Math.min(index * 0.04, 0.3),
-                }}
-                className="w-full"
-              >
-                <AudioCard
-                  idPass={audio.id}
-                  currentPlayingId={id || ""}
-                  name={audio.name}
-                  artist={audio.artist}
-                  handleId={(id) => setId(id)}
-                />
-              </motion.div>
-            ))}
-        </AnimatePresence>
+        {allAudio &&
+          allAudio.length > 0 &&
+          allAudio.map((audio, index) => (
+            <div
+              key={audio.id}
+              className="rise w-full"
+              style={{ animationDelay: `${Math.min(index * 40, 300)}ms` }}
+            >
+              <AudioCard
+                idPass={audio.id}
+                currentPlayingId={id || ""}
+                name={audio.name}
+                artist={audio.artist}
+                handleId={(id) => setId(id)}
+              />
+            </div>
+          ))}
       </div>
       {paginationData && query.page < paginationData.totalPages && (
         <div className="w-full flex flex-col items-center gap-2 pb-6 mt-2">

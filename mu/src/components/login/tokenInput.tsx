@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { inter, roboto } from "../../app/fonts";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { verifyAuthToken } from "@/app/api/client/services/auth/api";
@@ -67,12 +66,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
   });
 
   return (
-    <motion.form
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-      className="flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8"
-    >
+    <form className="rise flex flex-col items-center text-center mb-8 w-full max-w-2xl bg-gray-100/60 dark:bg-gray-800/60 rounded-2xl p-8">
       <div
         className={`${backToLogin ? "hidden" : "block"} w-full h-full rounded-2xl overflow-hidden`}
       >
@@ -93,14 +87,9 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
         </button>
       </div>
       {isLoading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-black/40 backdrop-blur-md"
-        >
+        <div className="fade-in fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-black/40 backdrop-blur-md">
           <Loader />
-        </motion.div>
+        </div>
       )}
       <Image
         src="/mu.png"
@@ -112,26 +101,10 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
         draggable={false}
       />
       {isSuccess ? (
-        <motion.div
-          key="success"
-          initial={{ opacity: 0, scale: 0.94, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center text-center w-full gap-5"
-        >
+        <div className="rise flex flex-col items-center text-center w-full gap-5">
           <div className="relative flex items-center justify-center w-20 h-20">
-            <motion.span
-              className="absolute inset-0 rounded-full bg-emerald-500/20 dark:bg-emerald-500/10"
-              initial={{ scale: 0.6, opacity: 0.8 }}
-              animate={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.9, delay: 0.45 }}
-            />
-            <motion.span
-              className="absolute inset-0 rounded-full bg-emerald-500/30 dark:bg-emerald-500/15"
-              initial={{ scale: 0.6, opacity: 0.8 }}
-              animate={{ scale: 1.2, opacity: 0 }}
-              transition={{ duration: 0.7, delay: 0.55 }}
-            />
+            <span className="ripple absolute inset-0 rounded-full bg-emerald-500/20 dark:bg-emerald-500/10" />
+            <span className="ripple-sm absolute inset-0 rounded-full bg-emerald-500/30 dark:bg-emerald-500/15" />
             <svg
               viewBox="0 0 52 52"
               className="w-16 h-16"
@@ -140,40 +113,30 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <motion.circle
+              <circle
                 cx="26"
                 cy="26"
                 r="22"
-                className="stroke-emerald-500 dark:stroke-emerald-400"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 0.55, ease: "easeOut" }}
+                className="draw-circle stroke-emerald-500 dark:stroke-emerald-400"
               />
-              <motion.path
+              <path
                 d="M14 26l8 8 16-16"
-                className="stroke-emerald-600 dark:stroke-emerald-300"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.35, ease: "easeOut", delay: 0.5 }}
+                className="draw-check stroke-emerald-600 dark:stroke-emerald-300"
               />
             </svg>
           </div>
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.4 }}
-            className={`${inter.className} text-3xl md:text-4xl lg:text-5xl font-bold text-black dark:text-white leading-tight`}
+          <h1
+            className={`${inter.className} rise text-3xl md:text-4xl lg:text-5xl font-bold text-black dark:text-white leading-tight`}
+            style={{ animationDelay: "450ms" }}
           >
             Token{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
               Verified!
             </span>
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.4 }}
-            className="flex items-start gap-3 w-full bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-4 py-3.5 text-left"
+          </h1>
+          <div
+            className="rise flex items-start gap-3 w-full bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-4 py-3.5 text-left"
+            style={{ animationDelay: "600ms" }}
           >
             <div className="mt-0.5 shrink-0 w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center">
               <Music
@@ -193,8 +156,8 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
                 Taking you to your library…
               </p>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       ) : (
         <>
           <h1
@@ -223,13 +186,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
             }
           />
           {errorMsg && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-start gap-3 w-full mt-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-xl px-4 py-3.5 text-left"
-            >
+            <div className="rise flex items-start gap-3 w-full mt-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-xl px-4 py-3.5 text-left">
               <div className="mt-0.5 shrink-0 w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-center">
                 <AlertCircle
                   size={15}
@@ -248,7 +205,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
                   {errorMsg}
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
           <button
             type="submit"
@@ -266,7 +223,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
           </button>
         </>
       )}
-    </motion.form>
+    </form>
   );
 }
 
