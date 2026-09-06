@@ -1,6 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ExternalLink, Globe2 } from "lucide-react";
 import { inter, roboto } from "@/app/fonts";
 import { getWikiEvents } from "@/app/api/client/services/news/latest_news/api";
@@ -25,17 +24,30 @@ interface WikiPayload {
   sections: WikiSection[];
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
-
 const recentDates = getRecentDates(30);
+const wide_query = "(min-width: 1024px)";
+
+function useColumnCount() {
+  const [count, setCount] = useState(1);
+  useEffect(() => {
+    const mq = window.matchMedia(wide_query);
+    const sync = () => setCount(mq.matches ? 2 : 1);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return count;
+}
+
+function estimateHeight(section: WikiSection): number {
+  return 40 + section.events.reduce((n, e) => n + 32 + e.text.length * 0.4, 0);
+}
 
 function Briefing() {
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(todayKey());
   const [payload, setPayload] = useState<WikiPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async (target: string) => {
     setLoading(true);
@@ -57,23 +69,25 @@ function Briefing() {
     load(date);
   }, [date, load]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (!isDropdownOpen) return;
-      const target = event.target as Node;
-      if (dropdownRef.current && dropdownRef.current.contains(target)) {
-        return;
-      }
-      setIsDropdownOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isDropdownOpen]);
+  const columnCount = useColumnCount();
 
-  const sections = payload?.sections ?? [];
+  const sections = useMemo(() => payload?.sections ?? [], [payload]);
   const eventCount = sections.reduce((sum, s) => sum + s.events.length, 0);
+
+  const columns = useMemo(() => {
+    const cols = Array.from({ length: columnCount }, () => ({
+      items: [] as Array<{ section: WikiSection; index: number }>,
+      h: 0,
+    }));
+
+    sections.forEach((section, index) => {
+      const shortest = cols.reduce((a, b) => (b.h < a.h ? b : a));
+      shortest.items.push({ section, index });
+      shortest.h += estimateHeight(section);
+    });
+
+    return cols;
+  }, [sections, columnCount]);
 
   return (
     <section className="mt-6">
@@ -125,51 +139,50 @@ function Briefing() {
       )}
 
       {!loading && sections.length > 0 && (
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-          {sections.map((section, sectionIndex) => (
-            <motion.article
-              key={section.category}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.25,
-                delay: Math.min(sectionIndex * 0.05, 0.3),
-              }}
-              className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-sm"
-            >
-              <h3
-                className={`${inter.className} text-[15px] sm:text-sm font-semibold text-black dark:text-white`}
-              >
-                {section.category}
-              </h3>
-              <ul className="mt-3 space-y-2.5 list-none p-0 m-0">
-                {section.events.map((event, i) => (
-                  <li
-                    key={i}
-                    className={`${roboto.className} flex gap-2.5 text-sm sm:text-xs text-black/75 dark:text-white/75 leading-relaxed break-words`}
+        <div className="mt-5 flex gap-3">
+          {columns.map((column, c) => (
+            <div key={c} className="flex-1 min-w-0 flex flex-col gap-3">
+              {column.items.map(({ section, index }) => (
+                <article
+                  key={section.category}
+                  className="rise p-4 sm:p-5 rounded-2xl bg-black/5 dark:bg-white/5"
+                  style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+                >
+                  <h3
+                    className={`${inter.className} text-[15px] sm:text-sm font-semibold text-black dark:text-white`}
                   >
-                    <span
-                      className="mt-1.5 w-1 h-1 rounded-full bg-blue-500 flex-shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span className="min-w-0">
-                      {event.text}
-                      {event.references[0] && (
-                        <a
-                          href={event.references[0]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center ml-1 w-6 h-6 -my-2 align-middle text-blue-500 hover:text-blue-600 no-underline"
-                          aria-label="Open source"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </motion.article>
+                    {section.category}
+                  </h3>
+                  <ul className="mt-3 space-y-2.5 list-none p-0 m-0">
+                    {section.events.map((event, i) => (
+                      <li
+                        key={i}
+                        className={`${roboto.className} flex gap-2.5 text-sm sm:text-xs text-black/75 dark:text-white/75 leading-relaxed break-words`}
+                      >
+                        <span
+                          className="mt-1.5 w-1 h-1 rounded-full bg-blue-500 flex-shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0">
+                          {event.text}
+                          {event.references[0] && (
+                            <a
+                              href={event.references[0]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center ml-1 w-6 h-6 -my-2 align-middle text-blue-500 hover:text-blue-600 no-underline"
+                              aria-label="Open source"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
           ))}
         </div>
       )}
