@@ -5,14 +5,6 @@ import { inter, roboto } from "../fonts";
 import { AccordionSection } from "@/components/legal/accordance";
 import { sections } from "@/helper/legal/sections";
 
-export type Audio = {
-  _id: string;
-  name: string;
-  category: string;
-  fileUrl: string;
-  favourite: boolean;
-};
-
 function Page() {
   return (
     <div
