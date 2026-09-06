@@ -78,10 +78,7 @@ export function VulnRow({ item, index }: { item: VulnItem; index: number }) {
   };
 
   return (
-    <a
-      href={item.link ?? undefined}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className="group flex gap-4 p-4 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-sm
         hover:bg-black/10 dark:hover:bg-white/10 transition-colors duration-200
         focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 no-underline"
@@ -157,11 +154,22 @@ export function VulnRow({ item, index }: { item: VulnItem; index: number }) {
             <Copy className="w-3.5 h-3.5" />
           )}
         </button>
-        <ExternalLink
-          className="w-3.5 h-3.5 text-black/20 dark:text-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-hidden="true"
-        />
+        {item.link && (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open ${item.cveId ?? item.id} advisory`}
+            className="w-7 h-7 inline-flex items-center justify-center rounded-lg no-underline
+              text-black/20 dark:text-white/20 opacity-0 group-hover:opacity-100
+              hover:text-black/60 dark:hover:text-white/60 hover:bg-black/5 dark:hover:bg-white/10
+              focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+              transition-all duration-150"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
       </div>
-    </a>
+    </div>
   );
 }
