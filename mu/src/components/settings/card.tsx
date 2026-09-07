@@ -1,8 +1,5 @@
 import { useAudioEq } from "@/contextApi/audioEnhance";
-import {
-  useVisualizer,
-  VisualizerMode,
-} from "@/contextApi/audioVizualizer";
+import { useVisualizer, VisualizerMode } from "@/contextApi/audioVizualizer";
 import { useMask } from "@/contextApi/mask";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -12,10 +9,17 @@ interface SettingCardProps {
   id: number;
   title: string;
   icon: IconDefinition;
+  busy?: boolean;
   onClick: (id: number) => void;
 }
 
-function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
+function SettingCard({
+  id,
+  title,
+  icon,
+  busy = false,
+  onClick,
+}: SettingCardProps) {
   const { sematicSearch } = useSearch();
   const { maskStatus } = useMask();
   const { useCompressor } = useAudioEq();
@@ -30,10 +34,14 @@ function SettingCard({ id, title, icon, onClick }: SettingCardProps) {
     <button
       title={`Select setting: ${title}`}
       aria-label={`Select setting: ${title}`}
+      disabled={busy}
       onClick={() => onClick(id)}
       className={`${baseBtnClass} ${defaultBtnClass}`}
     >
-      <FontAwesomeIcon icon={icon} className="w-5 h-5" />
+      <FontAwesomeIcon
+        icon={icon}
+        className={`w-5 h-5 ${busy ? "animate-pulse" : ""}`}
+      />
       <span className="text-sm font-medium text-gray-800 dark:text-white text-center leading-tight">
         {title}
       </span>

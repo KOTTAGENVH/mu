@@ -10,6 +10,7 @@ import {
   faArrowsLeftRight,
   faHistory,
   faWaveSquare,
+  faFile,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface RenderProps {
@@ -67,6 +68,11 @@ function SettingCardRender({ onSettingSelect }: RenderProps) {
       id: 10,
       title: "Activity Manager",
       icon: faHistory,
+    },
+    {
+      id: 11,
+      title: "Download Data",
+      icon: faFile,
     },
   ];
 

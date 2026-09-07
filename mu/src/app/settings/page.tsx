@@ -19,6 +19,7 @@ import { useAudioEq } from "@/contextApi/audioEnhance";
 import ManageActivty from "@/components/settings/activityManager";
 import { useVisualizer } from "@/contextApi/audioVizualizer";
 import ChangeAppModal from "@/components/settings/changeApp";
+import { downloadUploadsPdf } from "../api/client/services/report/api";
 
 function Page() {
   const router = useRouter();
@@ -30,6 +31,7 @@ function Page() {
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
@@ -87,6 +89,10 @@ function Page() {
       cycleMode();
       return;
     }
+    if (id === 11) {
+      await handleDownloadData();
+      return;
+    }
     setActiveSetting(id);
   };
 
@@ -128,6 +134,22 @@ function Page() {
             <SettingCardRender onSettingSelect={handleSettingClick} />
           </>
         );
+    }
+  };
+
+  const handleDownloadData = async () => {
+    if (isExporting) return;
+    try {
+      setIsExporting(true);
+      await downloadUploadsPdf();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Sorry, an error occurred while building the report. Please try again later.",
+      );
+    } finally {
+      setIsExporting(false);
     }
   };
 
