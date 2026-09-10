@@ -9,15 +9,13 @@ import LoginFooter from "@/components/login/loginFooter";
 
 function Page() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toggleAuth } = useAuth();
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
-      const qs = searchParams.toString();
-      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
-
+      const from = encodeURIComponent(
+        window.location.pathname + window.location.search
+      );
       try {
         const response = await verifyCookie();
         if (!response.success) {
@@ -28,15 +26,13 @@ function Page() {
         }
         toggleAuth(true);
       } catch (error) {
-        alert(
-          "An error occurred while verifying your session. Please log in again.",
-        );
+        alert("An error occurred while verifying your session. Please log in again.");
         toggleAuth(false);
         router.replace(`/login?from=${from}`);
       }
     };
     fetchCookieStatus();
-  }, [router, toggleAuth, pathname, searchParams]);
+  }, [router, toggleAuth]);
 
   return (
     <div

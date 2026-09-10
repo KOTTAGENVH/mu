@@ -8,8 +8,11 @@ export function proxy(req: NextRequest) {
   const token = req.cookies.get(auth_cookie)?.value;
 
   if (!token) {
+    const from = req.nextUrl.pathname + req.nextUrl.search;
     const url = req.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("from", from);
     return NextResponse.redirect(url);
   }
   return NextResponse.next();
