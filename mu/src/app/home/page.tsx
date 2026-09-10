@@ -3,7 +3,7 @@ import AudioList from "@/components/home/audioList";
 import Header from "@/components/header";
 import React, { useEffect } from "react";
 import { verifyCookie } from "../api/client/services/auth/api";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contextApi/auth";
 
 export type Audio = {
@@ -16,16 +16,21 @@ export type Audio = {
 
 function Page() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { toggleAuth } = useAuth();
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
+      const qs = searchParams.toString();
+      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
+
       try {
         const response = await verifyCookie();
         if (!response.success) {
           alert("Your session has expired. Please log in again.");
           toggleAuth(false);
-          router.push("/login");
+          router.replace(`/login?from=${from}`);
           return;
         }
         toggleAuth(true);
@@ -34,12 +39,12 @@ function Page() {
           "An error occurred while verifying your session. Please log in again.",
         );
         toggleAuth(false);
-        router.push("/login");
+        router.replace(`/login?from=${from}`);
       }
     };
     fetchCookieStatus();
-  }, [router, toggleAuth]);
-
+  }, [router, toggleAuth, pathname, searchParams]);
+  
   return (
     <div
       className="

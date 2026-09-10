@@ -1,14 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import LoginFooter from "@/components/login/loginFooter";
 import TokenInput from "@/components/login/tokenInput";
-import {
-  checkAuthStatus,
-} from "../api/client/services/auth/api";
+import { checkAuthStatus } from "../api/client/services/auth/api";
 import Loader from "@/components/loader";
 import QrScan from "@/components/login/qrScan";
 import { useAuth } from "@/contextApi/auth";
+import { safeRedirect } from "@/lib/redirect";
 
 function Page() {
   const [isLoading, setLoading] = useState(false);
@@ -18,6 +17,8 @@ function Page() {
   const [secret, setSecret] = useState("");
   const { toggleAuth } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = safeRedirect(searchParams.get("from"));
 
   useEffect(() => {
     const fetchAuthStatus = async () => {
@@ -29,7 +30,7 @@ function Page() {
           setTokenInput(false);
           setQrScan(false);
           toggleAuth(true);
-          router.push("/home");
+          router.replace(redirectTo);
         } else if (response.success == true) {
           setLoading(false);
           setTokenInput(true);
@@ -51,8 +52,7 @@ function Page() {
       }
     };
     fetchAuthStatus();
-}, [router, toggleAuth]);
-
+  }, [router, toggleAuth, redirectTo]);
 
   return (
     <div
@@ -69,7 +69,10 @@ function Page() {
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 ">
           {isLoading && <Loader />}
           {!isLoading && isTokenInput && (
-            <TokenInput backToLogin={isTokenInput} handleSetToken={setTokenInput} />
+            <TokenInput
+              backToLogin={isTokenInput}
+              handleSetToken={setTokenInput}
+            />
           )}
           {!isLoading && !isTokenInput && isQrScan && (
             <QrScan

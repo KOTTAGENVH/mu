@@ -17,6 +17,10 @@ import { useMictalkModal } from "@/contextApi/mictalkModal";
 import { useSpeaker } from "@/contextApi/speakerContext";
 import { useMicrophone } from "@/contextApi/microphoneContext";
 import MicrophoneModal from "@/components/mictalk/microphoneModal";
+import { useRouter } from "next/router";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contextApi/auth";
+import { verifyCookie } from "../api/client/services/auth/api";
 
 const word_limit = 1000;
 
@@ -55,6 +59,10 @@ function Page() {
   } = useMictalkModal();
   const { selectedSpeaker } = useSpeaker();
   const { selectedMic } = useMicrophone();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toggleAuth } = useAuth();
 
   const animateAudioVisualizer = () => {
     const canvas = canvasRef.current;
@@ -368,6 +376,31 @@ function Page() {
       dataArrayRef.current = null;
     };
   }, [isClicked, selectedMic, selectedSpeaker]);
+
+  useEffect(() => {
+    const fetchCookieStatus = async () => {
+      const qs = searchParams.toString();
+      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
+
+      try {
+        const response = await verifyCookie();
+        if (!response.success) {
+          alert("Your session has expired. Please log in again.");
+          toggleAuth(false);
+          router.replace(`/login?from=${from}`);
+          return;
+        }
+        toggleAuth(true);
+      } catch (error) {
+        alert(
+          "An error occurred while verifying your session. Please log in again.",
+        );
+        toggleAuth(false);
+        router.replace(`/login?from=${from}`);
+      }
+    };
+    fetchCookieStatus();
+  }, [router, toggleAuth, pathname, searchParams]);
 
   return (
     <div
