@@ -17,8 +17,7 @@ import { useMictalkModal } from "@/contextApi/mictalkModal";
 import { useSpeaker } from "@/contextApi/speakerContext";
 import { useMicrophone } from "@/contextApi/microphoneContext";
 import MicrophoneModal from "@/components/mictalk/microphoneModal";
-import { useRouter } from "next/router";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contextApi/auth";
 import { verifyCookie } from "../api/client/services/auth/api";
 
