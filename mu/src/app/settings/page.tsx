@@ -23,8 +23,6 @@ import { downloadUploadsPdf } from "../api/client/services/report/api";
 
 function Page() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toggleAuth } = useAuth();
   const { toggleSearch, sematicSearch } = useSearch();
   const { maskStatus, toggleMask } = useMask();
@@ -37,9 +35,9 @@ function Page() {
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
-      const qs = searchParams.toString();
-      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
-
+      const from = encodeURIComponent(
+        window.location.pathname + window.location.search
+      );
       try {
         const response = await verifyCookie();
         if (!response.success) {
@@ -50,15 +48,13 @@ function Page() {
         }
         toggleAuth(true);
       } catch (error) {
-        alert(
-          "An error occurred while verifying your session. Please log in again.",
-        );
+        alert("An error occurred while verifying your session. Please log in again.");
         toggleAuth(false);
         router.replace(`/login?from=${from}`);
       }
     };
     fetchCookieStatus();
-  }, [router, toggleAuth, pathname, searchParams]);
+  }, [router, toggleAuth]);
 
   const baseBtnClass =
     "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";

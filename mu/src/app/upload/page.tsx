@@ -2,22 +2,20 @@
 import React, { useEffect } from "react";
 import Header from "@/components/header";
 import FileUpload from "@/components/upload/fileUpload";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { verifyCookie } from "../api/client/services/auth/api";
 import { useAuth } from "@/contextApi/auth";
 import LoginFooter from "@/components/login/loginFooter";
 
 function Page() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toggleAuth } = useAuth();
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
-      const qs = searchParams.toString();
-      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
-
+      const from = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
       try {
         const response = await verifyCookie();
         if (!response.success) {
@@ -36,7 +34,7 @@ function Page() {
       }
     };
     fetchCookieStatus();
-  }, [router, toggleAuth, pathname, searchParams]);
+  }, [router, toggleAuth]);
 
   return (
     <div

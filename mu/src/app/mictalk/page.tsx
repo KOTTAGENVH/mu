@@ -60,8 +60,6 @@ function Page() {
   const { selectedSpeaker } = useSpeaker();
   const { selectedMic } = useMicrophone();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toggleAuth } = useAuth();
 
   const animateAudioVisualizer = () => {
@@ -379,9 +377,9 @@ function Page() {
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
-      const qs = searchParams.toString();
-      const from = encodeURIComponent(pathname + (qs ? `?${qs}` : ""));
-
+      const from = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
       try {
         const response = await verifyCookie();
         if (!response.success) {
@@ -400,7 +398,8 @@ function Page() {
       }
     };
     fetchCookieStatus();
-  }, [router, toggleAuth, pathname, searchParams]);
+  }, [router, toggleAuth]);
+
 
   return (
     <div
