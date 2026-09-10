@@ -72,6 +72,7 @@ export default function LoginContent() {
             <TokenInput
               backToLogin={isTokenInput}
               handleSetToken={setTokenInput}
+              redirectTo={redirectTo}
             />
           )}
           {!isLoading && !isTokenInput && isQrScan && (
@@ -87,4 +88,3 @@ export default function LoginContent() {
     </div>
   );
 }
-
