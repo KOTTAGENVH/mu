@@ -30,13 +30,13 @@ function Page() {
   const { cycleMode } = useVisualizer();
   const [activeSetting, setActiveSetting] = useState<number | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const fetchCookieStatus = async () => {
       const from = encodeURIComponent(
-        window.location.pathname + window.location.search
+        window.location.pathname + window.location.search,
       );
       try {
         const response = await verifyCookie();
@@ -48,7 +48,9 @@ function Page() {
         }
         toggleAuth(true);
       } catch (error) {
-        alert("An error occurred while verifying your session. Please log in again.");
+        alert(
+          "An error occurred while verifying your session. Please log in again.",
+        );
         toggleAuth(false);
         router.replace(`/login?from=${from}`);
       }
