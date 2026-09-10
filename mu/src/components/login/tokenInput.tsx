@@ -13,9 +13,14 @@ import { useAuth } from "@/contextApi/auth";
 interface TokenInputProps {
   backToLogin?: boolean;
   handleSetToken: (value: boolean) => void;
+  redirectTo: string;
 }
 
-function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
+function TokenInput({
+  backToLogin,
+  handleSetToken,
+  redirectTo,
+}: TokenInputProps) {
   const [isLoading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -52,7 +57,7 @@ function TokenInput({ backToLogin, handleSetToken }: TokenInputProps) {
         setIsSuccess(true);
         toggleAuth(true);
         setTimeout(() => {
-          router.push("/home");
+          router.replace(redirectTo);
         }, 1200);
       } catch (error) {
         formik.setFieldValue("token", "");
