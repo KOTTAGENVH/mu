@@ -80,15 +80,19 @@ function VulnFeed() {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="mt-5 lg:columns-2 gap-3">
         {loading &&
-          Array.from({ length: 6 }).map((_, i) => <NewsCardSkeleton key={i} />)}
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="break-inside-avoid mb-3">
+              <NewsCardSkeleton />
+            </div>
+          ))}
 
         {!loading &&
           items.map((item, i) => (
             <div
               key={`${feed}-${item.id}-${i}`}
-              className="rise"
+              className="rise break-inside-avoid mb-3"
               style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
             >
               <VulnRow item={item} index={i} />

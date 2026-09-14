@@ -184,11 +184,11 @@ function LocalDesk() {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="mt-5 lg:columns-2 gap-3">
         {items.map((item, i) => (
           <div
             key={`${active.key}-${item.source}-${i}`}
-            className="rise"
+            className="rise break-inside-avoid mb-3"
             style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
           >
             <NewsCard item={item} index={i} />
@@ -196,7 +196,9 @@ function LocalDesk() {
         ))}
         {loading &&
           Array.from({ length: items.length > 0 ? 2 : 6 }).map((_, i) => (
-            <NewsCardSkeleton key={`skeleton-${i}`} />
+            <div key={`skeleton-${i}`} className="break-inside-avoid mb-3">
+              <NewsCardSkeleton />
+            </div>
           ))}
       </div>
 
