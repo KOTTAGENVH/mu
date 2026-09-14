@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import NewsHub from "@/components/news/newsHub";
 import React, { useEffect } from "react";
 import { verifyCookie } from "@/app/api/client/services/auth/api";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contextApi/auth";
 import LoginFooter from "@/components/login/loginFooter";
 
