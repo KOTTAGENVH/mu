@@ -14,15 +14,18 @@ import {
 import { useAuth } from "@/contextApi/auth";
 import { logout } from "@/app/api/client/services/auth/api";
 import NavButton from "./headerNavBtn";
+import { panelSurface } from "@/lib/surfaceDropdown";
+import { useAppleWebkit } from "@/hooks/useAppleWebkit";
 
 function Header() {
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const { authStatus } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const isAppleWebkit = useAppleWebkit();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -69,17 +72,19 @@ function Header() {
 
   const isActive = (path: string) => !!pathname?.includes(path);
 
-  const glassClass = isScrolled
-    ? "bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]"
-    : "bg-transparent";
-
   return (
-    <div
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-out ${glassClass}`}
-    >
-      <nav
-        className={`flex items-center justify-center py-3 my-3 mx-4 px-3 lg:mx-16 lg:px-6 md:justify-between transition-all duration-500 ease-out`}
-      >
+    <div className="fixed top-0 left-0 w-full z-50">
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out
+        bg-white/60 dark:bg-slate-950/55
+        backdrop-blur-xl backdrop-saturate-150
+        [-webkit-backdrop-filter:blur(24px)_saturate(150%)]
+        border-b border-black/5 dark:border-white/5
+        ${isScrolled ? "opacity-100" : "opacity-0"}`}
+      />
+
+      <nav className="relative flex items-center justify-center py-3 my-3 mx-4 px-3 lg:mx-16 lg:px-6 md:justify-between">
         <div className="hidden md:flex items-center gap-3">
           <div className="relative group cursor-pointer" onClick={handleHome}>
             <div className="absolute inset-0 rounded-full bg-slate-200/60 dark:bg-slate-700/40 scale-0 group-hover:scale-110 transition-transform duration-200 ease-out" />
@@ -161,8 +166,8 @@ function Header() {
                     }}
                     className={`absolute right-0 z-50 mt-2 p-2 w-56
                       ${menuOpen ? "pop-in" : "pop-out pointer-events-none"}
-                      bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl
-                      border border-white/20 dark:border-white/10 shadow-2xl`}
+                     ${panelSurface(isAppleWebkit)} rounded-2xl
+                     `}
                   >
                     <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-2 pt-1">
                       Session
