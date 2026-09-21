@@ -157,6 +157,7 @@ function VendorWatch() {
                   return (
                     <button
                       key={vendor.query}
+                      disabled={loading}
                       onClick={() => {
                         setDraft("");
                         setDraftError(null);
@@ -164,12 +165,13 @@ function VendorWatch() {
                       }}
                       aria-pressed={isActive}
                       className={`px-3 py-1.5 rounded-full text-xs border-none cursor-pointer transition-colors duration-150
-                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
-                        ${
-                          isActive
-                            ? "bg-blue-500 text-white font-medium"
-                            : "bg-black/5 dark:bg-white/10 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/20"
-                        }`}
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+        disabled:cursor-not-allowed disabled:opacity-50
+        ${
+          isActive
+            ? "bg-blue-500 text-white font-medium"
+            : "bg-black/5 dark:bg-white/10 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/20 disabled:hover:bg-black/5 dark:disabled:hover:bg-white/10"
+        }`}
                     >
                       {vendor.label}
                     </button>
