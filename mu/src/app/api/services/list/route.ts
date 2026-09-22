@@ -5,224 +5,234 @@ import List from "@/models/list";
 import { isAllowed } from "@/helper/origin_helper";
 import { generateId } from "@/helper/uniqueIdGenerator";
 import Activity, { ActionType, ActivityType } from "@/models/activity";
+import {
+  encryptName,
+  decryptName,
+  nameIndex,
+  normalizeName,
+} from "@/helper/wishList/listEnc";
 
-//Post new list
+const max_name_length = 100;
+const no_store = { "Cache-Control": "no-store" };
+
+// ---------- helpers ----------
+
+async function guard(req: Request): Promise<NextResponse | null> {
+  if (!isAllowed(req)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+  const validationResult = await validateCookie(req);
+  if (!validationResult.valid) {
+    console.log("Validation failed: ", validationResult.error);
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+  return null;
+}
+
+async function readJson(req: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const body = await req.json();
+    return body && typeof body === "object" ? body : null;
+  } catch {
+    return null;
+  }
+}
+
+//To prevent duplicates may look visually same but differ in unicode NFC is used in helper
+function parseName(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const name = normalizeName(raw);
+  if (!name || name.length > max_name_length) return null;
+  return name;
+}
+
+async function generateUniqueId(
+  exists: (id: string) => Promise<unknown>,
+): Promise<string> {
+  let length = 6;
+  for (;;) { //infinite loop till non dup id is genrated
+    const id = generateId(length);
+    if (!(await exists(id))) return id;
+    length++;
+  }
+}
+
+function isDuplicateKeyError(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { code?: number }).code === 11000
+  );
+}
+
+async function logActivity(taskname: string, action: ActionType) {
+  const id = await generateUniqueId((x) => Activity.exists({ id: x }));
+  const tz = "Asia/Kolkata";
+  const now = new Date();
+  await Activity.create({
+    id,
+    taskname,
+    type: ActivityType.WISHLIST,
+    action,
+    date: now.toLocaleDateString("en-IN", { timeZone: tz }),
+    time: now.toLocaleTimeString("en-IN", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }),
+    timezone: "IST",
+  });
+}
+
+function serverError(context: string, error: unknown) {
+  console.error(`Error in ${context}:`, error);
+  return NextResponse.json(
+    { success: false, message: "An unexpected error occurred" },
+    { status: 500 },
+  );
+}
+
+// Create a list
 export async function POST(req: Request) {
   await dbConnect();
   try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
-    // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-    let uniqueId = "";
-    let idLength = 6;
-    let isUnique = false;
+    const denied = await guard(req);
+    if (denied) return denied;
 
-    while (!isUnique) {
-      uniqueId = generateId(idLength);
-
-      const existingAudio = await List.findOne({ id: uniqueId });
-
-      if (!existingAudio) {
-        isUnique = true;
-      } else {
-        idLength++;
-      }
-    }
-
-    const { name } = await req.json();
-
+    const body = await readJson(req);
+    const name = parseName(body?.name);
     if (!name) {
       return NextResponse.json(
-        { success: false, message: "Please provide a list name" },
+        {
+          success: false,
+          message: `Please provide a list name (max ${max_name_length} characters)`,
+        },
         { status: 400 },
       );
     }
 
-    const existingName = await List.findOne({ name });
-    if (existingName) {
+    const index = nameIndex(name);
+    if (await List.exists({ nameIndex: index })) {
       return NextResponse.json(
         { success: false, message: "List name already exists" },
         { status: 400 },
       );
     }
-    const newList = await List.create({
-      id: uniqueId,
-      name: name,
-    });
 
-    // Add Activty
-    let uniqueActivtyId = "";
-    let activityIdLength = 6;
-    let isActivtyUnique = false;
+    const id = await generateUniqueId((x) => List.exists({ id: x }));
 
-    while (!isActivtyUnique) {
-      uniqueActivtyId = generateId(activityIdLength);
-
-      const existingActivityID = await Activity.findOne({
-        id: uniqueActivtyId,
+    try {
+      await List.create({
+        id,
+        name: encryptName(name, id),
+        nameIndex: index,
       });
-
-      if (!existingActivityID) {
-        isActivtyUnique = true;
-      } else {
-        activityIdLength++;
+    } catch (err) {
+      if (isDuplicateKeyError(err)) {
+        return NextResponse.json(
+          { success: false, message: "List name already exists" },
+          { status: 400 },
+        );
       }
+      throw err;
     }
 
-    const ist_timezone = "Asia/Kolkata";
-    const now = new Date();
-
-    const activity = await Activity.create({
-      id: uniqueActivtyId,
-      taskname: `A new list named "${newList.name}" has been created with ID: ${newList.id}`,
-      type: ActivityType.WISHLIST,
-      action: ActionType.ADD,
-      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
-      time: now.toLocaleTimeString("en-IN", {
-        timeZone: ist_timezone,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }),
-      timezone: "IST",
-    });
-
-    if (!activity) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Sorry, an error occurred while recording the whistlist activity.",
-        },
-        { status: 500 },
-      );
-    }
+    await logActivity(
+      `A new list has been created with ID: ${id}`,
+      ActionType.ADD,
+    );
 
     return NextResponse.json(
       {
         success: true,
         message: "List created successfully",
-        list: newList,
+        list: { id, name },
       },
-      { status: 201 },
+      { status: 201, headers: no_store },
     );
-  } catch (error: unknown) {
-    console.error("Error in POST list:", error);
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 },
-      );
-    }
+  } catch (error) {
+    return serverError("POST list", error);
   }
 }
 
-//Get all lists
+// Get all lists
 export async function GET(req: Request) {
   await dbConnect();
-
   try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const denied = await guard(req);
+    if (denied) return denied;
 
-    // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
+    const docs = await List.find({})
+      .select("id name -_id")
+      .lean<{ id: string; name: string }[]>();
 
-    // Get all lists
-    const lists = await List.find({}).select("-_id");
+    const lists = docs.map((doc) => {
+      try {
+        return { id: doc.id, name: decryptName(doc.name, doc.id) };
+      } catch {
+        return { id: doc.id, name: "[unreadable]" };
+      }
+    });
 
-    // if (!lists || lists.length === 0) {
-    //   return NextResponse.json(
-    //     { success: false, message: "No lists found" },
-    //     { status: 404 },
-    //   );
-    // }
-
-    return NextResponse.json({ success: true, lists });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 },
-      );
-    }
+    return NextResponse.json({ success: true, lists }, { headers: no_store });
+  } catch (error) {
+    return serverError("GET list", error);
   }
 }
 
-// Update list name
+// Rename a list
 export async function PATCH(req: Request) {
   await dbConnect();
   try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const denied = await guard(req);
+    if (denied) return denied;
 
-    // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
+    const body = await readJson(req);
+    const id = body?.id;
+    const name = parseName(body?.name);
+
+    if (typeof id !== "string" || !id) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
+        { success: false, message: "Please provide a list id" },
+        { status: 400 },
       );
     }
-
-    const { id, name } = await req.json();
-
     if (!name) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Please provide a name to update",
-        },
+        { success: false, message: "Please provide a name to update" },
         { status: 400 },
       );
     }
 
-    const updateData: Partial<{ name: string }> = {};
-
-    const nameExists = await List.findOne({ name }).where("id").ne(id);
-
-    if (nameExists) {
+    const index = nameIndex(name);
+    if (await List.exists({ nameIndex: index, id: { $ne: id } })) {
       return NextResponse.json(
         { success: false, message: "Name already exists" },
         { status: 400 },
       );
     }
 
-    updateData.name = name;
-
-    const list = await List.findOneAndUpdate({ id: id }, updateData, {
-      new: true,
-    });
+    let list;
+    try {
+      list = await List.findOneAndUpdate(
+        { id },
+        { name: encryptName(name, id), nameIndex: index },
+        { new: true },
+      );
+    } catch (err) {
+      if (isDuplicateKeyError(err)) {
+        return NextResponse.json(
+          { success: false, message: "Name already exists" },
+          { status: 400 },
+        );
+      }
+      throw err;
+    }
 
     if (!list) {
       return NextResponse.json(
@@ -231,96 +241,37 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // Add Activty
-    let uniqueActivtyId = "";
-    let activityIdLength = 6;
-    let isActivtyUnique = false;
+    await logActivity(
+      `The list with ID ${id} has been renamed`,
+      ActionType.EDIT,
+    );
 
-    while (!isActivtyUnique) {
-      uniqueActivtyId = generateId(activityIdLength);
-
-      const existingActivityID = await Activity.findOne({
-        id: uniqueActivtyId,
-      });
-
-      if (!existingActivityID) {
-        isActivtyUnique = true;
-      } else {
-        activityIdLength++;
-      }
-    }
-
-    const ist_timezone = "Asia/Kolkata";
-    const now = new Date();
-
-    const activity = await Activity.create({
-      id: uniqueActivtyId,
-      taskname: `The list ${list.name} has been updated`,
-      type: ActivityType.WISHLIST,
-      action: ActionType.EDIT,
-      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
-      time: now.toLocaleTimeString("en-IN", {
-        timeZone: ist_timezone,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }),
-      timezone: "IST",
-    });
-
-    if (!activity) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Sorry, an error occurred while recording the update wishlist activity.",
-        },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `${list.name} is being updated`,
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 },
-      );
-    }
+    return NextResponse.json(
+      { success: true, message: `${name} has been updated` },
+      { headers: no_store },
+    );
+  } catch (error) {
+    return serverError("PATCH list", error);
   }
 }
 
-//Delete list
+// Delete a list
 export async function DELETE(req: Request) {
   await dbConnect();
   try {
-    if (!isAllowed(req)) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const denied = await guard(req);
+    if (denied) return denied;
 
-    // Validate the cookie
-    const validationResult = await validateCookie(req);
-    if (!validationResult.valid) {
-      console.log("Validation failed: ", validationResult.error);
+    const body = await readJson(req);
+    const id = body?.id;
+    if (typeof id !== "string" || !id) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
+        { success: false, message: "Please provide a list id" },
+        { status: 400 },
       );
     }
 
-    const { id } = await req.json();
-
-    // Delete the database record
-    const list = await List.findOneAndDelete({ id: id });
+    const list = await List.findOneAndDelete({ id });
     if (!list) {
       return NextResponse.json(
         { success: false, message: "List not found in the database" },
@@ -328,70 +279,13 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Add Activty
-    let uniqueActivtyId = "";
-    let activityIdLength = 6;
-    let isActivtyUnique = false;
-
-    while (!isActivtyUnique) {
-      uniqueActivtyId = generateId(activityIdLength);
-
-      const existingActivityID = await Activity.findOne({
-        id: uniqueActivtyId,
-      });
-
-      if (!existingActivityID) {
-        isActivtyUnique = true;
-      } else {
-        activityIdLength++;
-      }
-    }
-
-    const ist_timezone = "Asia/Kolkata";
-    const now = new Date();
-
-    const activity = await Activity.create({
-      id: uniqueActivtyId,
-      taskname: `The list ${list.name} has been deleted`,
-      type: ActivityType.WISHLIST,
-      action: ActionType.DELETE,
-      date: now.toLocaleDateString("en-IN", { timeZone: ist_timezone }),
-      time: now.toLocaleTimeString("en-IN", {
-        timeZone: ist_timezone,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }),
-      timezone: "IST",
-    });
-
-    if (!activity) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Sorry, an error occurred while recording the delete wishlist activity.",
-        },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `${list.name} is being deleted`,
-    });
-  } catch (error: unknown) {
-    console.error("Error handling DELETE request:", error);
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json(
-      { success: false, message: "An unknown error occurred" },
-      { status: 500 },
+    await logActivity(
+      `The list with ID ${id} has been deleted`,
+      ActionType.DELETE,
     );
+
+    return NextResponse.json({ success: true, message: "List deleted" });
+  } catch (error) {
+    return serverError("DELETE list", error);
   }
 }
