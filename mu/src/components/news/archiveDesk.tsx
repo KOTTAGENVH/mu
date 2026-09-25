@@ -147,12 +147,15 @@ function ArchiveDesk() {
                   key={value}
                   onClick={() => setSource(value)}
                   aria-pressed={isActive}
-                  className={`px-3 py-1.5 rounded-xl text-xs border-none cursor-pointer transition-colors duration-150
-                    ${
-                      isActive
-                        ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                        : "bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10"
-                    }`}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-full text-xs border-none cursor-pointer transition-colors duration-150
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+        disabled:cursor-not-allowed disabled:opacity-50
+        ${
+          isActive
+            ? "bg-blue-500 text-white font-medium"
+            : "bg-black/5 dark:bg-white/10 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/20 disabled:hover:bg-black/5 dark:disabled:hover:bg-white/10"
+        }`}
                 >
                   {newsSourceLabels[value]}
                 </button>
