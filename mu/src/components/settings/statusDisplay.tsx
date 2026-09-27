@@ -9,17 +9,12 @@ import React, {
 import { useAudioEq, EqBand } from "@/contextApi/audioEnhance";
 import {
   Chart,
-  DoughnutController,
-  ArcElement,
-  ChartConfiguration,
-  Chart as ChartJS,
   RadarController,
   RadialLinearScale,
   PointElement,
   LineElement,
   Filler,
   Tooltip,
-  Legend,
 } from "chart.js";
 import {
   databaseStatus,
@@ -28,11 +23,25 @@ import {
   leastStreamedSongs,
   storageStatus,
 } from "@/app/api/client/services/audio/api";
-import Loader from "@/components/loader";
-import { LucideTrash, Skull } from "lucide-react";
+import {
+  Cloud,
+  Database,
+  RotateCw,
+  Search,
+  Skull,
+  SlidersHorizontal,
+  Trash2,
+  TrendingDown,
+} from "lucide-react";
 import { useMask } from "@/contextApi/mask";
 import DeleteSongModal from "./deleteConfirmation";
 import SessionInsightsCard from "./sessionInsightsCard";
+import {
+  Card,
+  CardError,
+  ListSkeleton,
+  StorageCard,
+} from "./statusDisplay/helper";
 
 export interface Candidate {
   id: string;
@@ -49,36 +58,96 @@ export interface LeastListenedResponse {
   candidates: Candidate[];
 }
 
+export interface UsageState {
+  loading: boolean;
+  error: boolean;
+  usedBytes: number;
+  totalBytes: number;
+  count: number;
+}
+
 Chart.register(
-  DoughnutController,
-  ArcElement,
-  Tooltip,
-  Legend,
   RadarController,
   RadialLinearScale,
   PointElement,
   LineElement,
   Filler,
   Tooltip,
-  Legend,
 );
 
+const percentile = 30;
+const mb = 1024 ** 2;
+
+const bands: { key: EqBand; label: string }[] = [
+  { key: "100", label: "Bass" },
+  { key: "300", label: "Low mid" },
+  { key: "1000", label: "Mid" },
+  { key: "4000", label: "High mid" },
+  { key: "12000", label: "Treble" },
+];
+
+export const pill =
+  "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold";
+const grey =
+  "bg-slate-100 text-slate-700 dark:bg-white/[0.08] dark:text-slate-300";
+
+const sliderClass = `w-full min-w-0 flex-1 h-1.5 cursor-pointer appearance-none rounded-full bg-slate-200 outline-none dark:bg-slate-700
+  focus-visible:ring-2 focus-visible:ring-blue-500/40
+  [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none
+  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-500
+  [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:transition-transform
+  hover:[&::-webkit-slider-thumb]:scale-110
+  [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full
+  [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-500 [&::-moz-range-thumb]:bg-white`;
+
+const scrollbar = `[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600`;
+
+const initialUsage: UsageState = {
+  loading: true,
+  error: false,
+  usedBytes: 0,
+  totalBytes: 0,
+  count: 0,
+};
+
+export function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const v = bytes / 1024 ** i;
+  return `${v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+export function usageTone(pct: number) {
+  if (pct >= 90)
+    return {
+      label: "Almost full",
+      cls: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    };
+  if (pct >= 70)
+    return {
+      label: "Filling up",
+      cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    };
+  return {
+    label: "Healthy",
+    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  };
+}
+
 function StatusDisplay() {
-  const dbCanvasRef = useRef<HTMLCanvasElement>(null);
-  const r2CanvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstanceRef = useRef<ChartJS | null>(null);
-  const dbChartInstance = useRef<Chart | null>(null);
-  const r2ChartInstance = useRef<Chart | null>(null);
-  const [dbStats, setDbStats] = useState({
-    used: 0,
-    total: 1,
-    documentCount: 0,
-  });
-  const [r2Stats, setR2Stats] = useState({ used: 0, total: 1, fileCount: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const chartInstanceRef = useRef<Chart | null>(null);
+  const [db, setDb] = useState<UsageState>(initialUsage);
+  const [r2, setR2] = useState<UsageState>(initialUsage);
   const [leastListened, setLeastListened] =
     useState<LeastListenedResponse | null>(null);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -86,675 +155,476 @@ function StatusDisplay() {
     songName: string;
     leastlistened: boolean;
   }>({ isOpen: false, songId: "", songName: "", leastlistened: false });
+
   const { maskStatus } = useMask();
   const { eqValues, setEqValue, pan, setPan } = useAudioEq();
-  const bands = useMemo(
-    (): { key: EqBand; label: string }[] => [
-      { key: "100", label: "Bass" },
-      { key: "300", label: "Low Mid" },
-      { key: "1000", label: "Mid" },
-      { key: "4000", label: "High Mid" },
-      { key: "12000", label: "Treble" },
-    ],
-    [],
-  );
-  const toGB = (bytes: number) => (bytes / 1024 ** 3).toFixed(2);
-  const dbFree = dbStats.total - dbStats.used;
-  const dbPercent = ((dbStats.used / dbStats.total) * 100).toFixed(1);
-  const r2Free = r2Stats.total - r2Stats.used;
-  const r2Percent = ((r2Stats.used / r2Stats.total) * 100).toFixed(1);
-  const labelColor = useMemo(() => {
-    const isDarkMode =
-      typeof document !== "undefined" &&
-      document.documentElement.classList.contains("dark");
-    return isDarkMode ? "#94a3b8" : "#475569";
+  const loadDb = useCallback(async (silent = false) => {
+    if (!silent) setDb((s) => ({ ...s, loading: true, error: false }));
+    try {
+      const res = await databaseStatus();
+      if (!res?.success) throw new Error("Database status failed");
+      setDb({
+        loading: false,
+        error: false,
+        usedBytes: parseFloat(res.storage.usedMB) * mb,
+        totalBytes: parseFloat(res.storage.totalMB) * mb,
+        count: Number(res.storage.documentCount) || 0,
+      });
+    } catch {
+      setDb((s) => ({ ...s, loading: false, error: true }));
+    }
   }, []);
 
-  useEffect(() => {
-    if (!dbCanvasRef.current) return;
-    if (dbChartInstance.current) {
-      dbChartInstance.current.destroy();
+  const loadR2 = useCallback(async (silent = false) => {
+    if (!silent) setR2((s) => ({ ...s, loading: true, error: false }));
+    try {
+      const res = await storageStatus();
+      if (!res?.success) throw new Error("Storage status failed");
+      setR2({
+        loading: false,
+        error: false,
+        usedBytes: Number(res.storage.usedBytes) || 0,
+        totalBytes: Number(res.storage.totalBytes) || 0,
+        count: Number(res.storage.fileCount) || 0,
+      });
+    } catch {
+      setR2((s) => ({ ...s, loading: false, error: true }));
     }
+  }, []);
 
-    const config: ChartConfiguration<"doughnut"> = {
-      type: "doughnut",
-      data: {
-        labels: ["Used", "Free"],
-        datasets: [
-          {
-            data: [dbStats.used, dbFree],
-            backgroundColor: ["#3b82f6", "#e2e8f0"],
-            borderColor: ["#3b82f6", "#e2e8f0"],
-            borderWidth: 1,
-            hoverOffset: 4,
-          },
-        ],
-      },
-      options: {
-        cutout: "75%",
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${Number(ctx.raw)} MB`,
-            },
-          },
-        },
-      },
-    };
+  const loadList = useCallback(async (silent = false) => {
+    if (!silent) setListLoading(true);
+    setListError(false);
+    try {
+      const data: LeastListenedResponse = await leastStreamedSongs(percentile);
+      if (!data?.success) throw new Error("Least listened failed");
+      setLeastListened(data);
+    } catch {
+      setListError(true);
+    } finally {
+      if (!silent) setListLoading(false);
+    }
+  }, []);
 
-    dbChartInstance.current = new Chart(dbCanvasRef.current, config);
-
-    return () => {
-      if (dbChartInstance.current) {
-        dbChartInstance.current.destroy();
-      }
-    };
-  }, [dbStats, dbFree]);
+  const refreshAll = useCallback(
+    (silent = false) => {
+      loadDb(silent);
+      loadR2(silent);
+      loadList(silent);
+    },
+    [loadDb, loadR2, loadList],
+  );
 
   useEffect(() => {
-    if (!r2CanvasRef.current) return;
+    refreshAll();
+  }, [refreshAll]);
 
-    if (r2ChartInstance.current) {
-      r2ChartInstance.current.destroy();
-    }
+  const anyLoading = db.loading || r2.loading || listLoading;
 
-    const config: ChartConfiguration<"doughnut"> = {
-      type: "doughnut",
-      data: {
-        labels: ["Used", "Free"],
-        datasets: [
-          {
-            data: [r2Stats.used, r2Free],
-            backgroundColor: ["#f59e0b", "#e2e8f0"],
-            borderColor: ["#f59e0b", "#e2e8f0"],
-            borderWidth: 1,
-            hoverOffset: 4,
-          },
-        ],
-      },
-      options: {
-        cutout: "75%",
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${toGB(Number(ctx.raw))} GB`,
-            },
-          },
-        },
-      },
-    };
-
-    r2ChartInstance.current = new Chart(r2CanvasRef.current, config);
-
-    return () => {
-      if (r2ChartInstance.current) {
-        r2ChartInstance.current.destroy();
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        const data = await deleteSong(id);
+        if (!data?.success)
+          throw new Error(data?.message || "Failed to delete");
+      } catch (error) {
+        alert(
+          error instanceof Error
+            ? error.message
+            : "An error occurred while deleting.",
+        );
+        throw error;
       }
-    };
-  }, [r2Stats, r2Free]);
+      setLeastListened((prev) =>
+        prev
+          ? {
+              ...prev,
+              count: Math.max(0, prev.count - 1),
+              candidates: prev.candidates.filter((c) => c.id !== id),
+            }
+          : prev,
+      );
+      refreshAll(true);
+    },
+    [refreshAll],
+  );
+
+  const runBulkDelete = useCallback(
+    async (percentile: number) => {
+      try {
+        const data = await deleteLeastStreamedSongs(percentile);
+        if (!data?.success)
+          throw new Error(data?.message || "Failed to delete songs");
+      } catch (error) {
+        alert(
+          error instanceof Error
+            ? error.message
+            : "An error occurred while deleting.",
+        );
+        throw error;
+      }
+      refreshAll(true);
+    },
+    [refreshAll],
+  );
+
+  const handleDeleteLeastListened = useCallback(
+    () => runBulkDelete(percentile),
+    [runBulkDelete],
+  );
+  const handleDeleteAll = useCallback(
+    () => runBulkDelete(100),
+    [runBulkDelete],
+  );
+
+  const closeModal = () =>
+    setDeleteModal({
+      isOpen: false,
+      songId: "",
+      songName: "",
+      leastlistened: false,
+    });
+
+  const candidates = useMemo(() => {
+    const list = leastListened?.candidates ?? [];
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) || c.artist?.toLowerCase().includes(q),
+    );
+  }, [leastListened, searchQuery]);
 
   useEffect(() => {
     if (!chartRef.current) return;
+    const data = bands.map((b) => eqValues[b.key] || 0);
 
-    const currentData = [
-      eqValues["100"] || 0,
-      eqValues["300"] || 0,
-      eqValues["1000"] || 0,
-      eqValues["4000"] || 0,
-      eqValues["12000"] || 0,
-    ];
     if (chartInstanceRef.current) {
-      chartInstanceRef.current.data.datasets[0].data = currentData;
+      chartInstanceRef.current.data.datasets[0].data = data;
       chartInstanceRef.current.update();
-    } else {
-      const ctx = chartRef.current.getContext("2d");
-      if (ctx) {
-        chartInstanceRef.current = new ChartJS(ctx, {
-          type: "radar",
-          data: {
-            labels: bands.map((b) => b.label),
-            datasets: [
-              {
-                label: "EQ Level (dB)",
-                data: currentData,
-                backgroundColor: "rgba(59, 130, 246, 0.2)",
-                borderColor: "rgba(59, 130, 246, 1)",
-                borderWidth: 2,
-                pointBackgroundColor: "rgba(59, 130, 246, 1)",
-                pointBorderColor: "#fff",
-                pointHoverBackgroundColor: "#fff",
-                pointHoverBorderColor: "rgba(59, 130, 246, 1)",
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              r: {
-                min: -15,
-                max: 15,
-                ticks: {
-                  stepSize: 5,
-                  backdropColor: "transparent",
-                  color: "gray",
-                },
-                grid: {
-                  color: "rgba(128, 128, 128, 0.2)",
-                },
-                angleLines: {
-                  color: "rgba(128, 128, 128, 0.2)",
-                },
-                pointLabels: {
-                  color: labelColor,
-                  font: {
-                    size: 14,
-                  },
-                },
-              },
-            },
-            plugins: {
-              legend: {
-                display: false,
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context) => `${context.raw} dB`,
-                },
-              },
-            },
-          },
-        });
-      }
+      return;
     }
-  }, [eqValues, bands, labelColor]);
+
+    chartInstanceRef.current = new Chart(chartRef.current, {
+      type: "radar",
+      data: {
+        labels: bands.map((b) => b.label),
+        datasets: [
+          {
+            label: "EQ level (dB)",
+            data,
+            backgroundColor: "rgba(59, 130, 246, 0.2)",
+            borderColor: "rgba(59, 130, 246, 1)",
+            borderWidth: 2,
+            pointBackgroundColor: "rgba(59, 130, 246, 1)",
+            pointBorderColor: "#fff",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: -15,
+            max: 15,
+            ticks: { stepSize: 5, display: false },
+            grid: { color: "rgba(128, 128, 128, 0.2)" },
+            angleLines: { color: "rgba(128, 128, 128, 0.2)" },
+            pointLabels: { color: "#64748b", font: { size: 13 } },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw} dB` } },
+        },
+      },
+    });
+  }, [eqValues]);
 
   useEffect(() => {
     return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
-        chartInstanceRef.current = null;
-      }
+      chartInstanceRef.current?.destroy();
+      chartInstanceRef.current = null;
     };
   }, []);
 
-  //get data for r2 storage status
-  const handleStorageStatus = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await storageStatus();
+  const panLabel =
+    pan === 0
+      ? "Center"
+      : pan < 0
+        ? `L ${Math.round(Math.abs(pan) * 100)}%`
+        : `R ${Math.round(pan * 100)}%`;
 
-      const data = await response;
-      if (data?.success) {
-        setIsLoading(false);
-        setR2Stats({
-          used: response.storage.usedBytes,
-          total: response.storage.totalBytes,
-          fileCount: response.storage.fileCount,
-        });
-      } else {
-        setIsLoading(false);
-        alert("Storage status check failed");
-      }
-    } catch (error) {
-      setIsLoading(false);
-      //   console.error("Error during storage status check:", error);
-      alert(
-        "An error occurred while checking storage status. Please try again.",
-      );
-    }
-  }, []);
-
-  //get data for mongo storage status
-  const handleDatabaseStatus = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await databaseStatus();
-
-      const data = await response;
-      if (data?.success) {
-        setIsLoading(false);
-        setDbStats({
-          used: parseFloat(response.storage.usedMB),
-          total: parseFloat(response.storage.totalMB),
-          documentCount: response.storage.documentCount,
-        });
-      } else {
-        setIsLoading(false);
-        alert("Database status check failed");
-      }
-    } catch (error) {
-      setIsLoading(false);
-      //   console.error("Error during database status check:", error);
-      alert(
-        "An error occurred while checking database status. Please try again.",
-      );
-    }
-  }, []);
-
-  //get least listened audios
-  const handleLeastListened = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await leastStreamedSongs(30);
-
-      const data: LeastListenedResponse = await response;
-      if (data?.success) {
-        setLeastListened(data);
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-        alert("Database status check failed");
-      }
-    } catch (error) {
-      setIsLoading(false);
-      //   console.error("Error during database status check:", error);
-      alert(
-        "An error occurred while checking database status. Please try again.",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    handleDatabaseStatus();
-    handleStorageStatus();
-    handleLeastListened();
-  }, [handleDatabaseStatus, handleStorageStatus, handleLeastListened]);
-
-  //delete all audios
-  const handleDeleteAll = async () => {
-    try {
-      setIsLoading(true);
-      const response = await deleteLeastStreamedSongs(100);
-
-      const data = await response;
-      if (data?.success) {
-        setIsLoading(false);
-        handleLeastListened();
-      } else {
-        setIsLoading(false);
-        alert("Failed to delete all songs");
-      }
-    } catch (error) {
-      setIsLoading(false);
-      //   console.error("Error during database status check:", error);
-      alert("An error occurred while deleting all songs. Please try again.");
-    }
-  };
-
-  //delete one audio by id
-  const handleDelete = useCallback(
-    async (id: string) => {
-      if (!confirm("Are you sure you want to delete this audio?")) return;
-
-      try {
-        setIsLoading(true);
-        setLeastListened((prev) =>
-          prev
-            ? {
-                ...prev,
-                candidates: prev.candidates.filter((c) => c.id !== id),
-              }
-            : prev,
-        );
-
-        const response = await deleteSong(id);
-
-        const data = await response;
-        if (!data.success) {
-          alert("Failed to delete: " + data.message);
-          handleLeastListened();
-        }
-      } catch (error) {
-        console.error("Delete failed", error);
-        alert("An error occurred while deleting.");
-        handleLeastListened();
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [handleLeastListened],
-  );
-
-  //delete least listened audios
-  const handleDeleteLeastListened = async () => {
-    try {
-      setIsLoading(true);
-      const response = await deleteLeastStreamedSongs(30);
-
-      const data = await response;
-      if (data?.success) {
-        setIsLoading(false);
-        handleLeastListened();
-      } else {
-        setIsLoading(false);
-        alert("Failed to delete least listened songs");
-      }
-    } catch (error) {
-      setIsLoading(false);
-      //   console.error("Error during database status check:", error);
-      alert(
-        "An error occurred while deleting least listened songs. Please try again.",
-      );
-    }
-  };
-
-  const filteredLists = useMemo(() => {
-    if (!searchQuery || !leastListened) return leastListened;
-    return {
-      ...leastListened,
-      candidates: leastListened.candidates.filter((c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    };
-  }, [leastListened, searchQuery]);
-
-  const actionBtnClass =
-    "p-2 rounded-full border-none cursor-pointer transition-colors duration-200";
+  const valueBadge = (active: boolean) =>
+    active
+      ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+      : "bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-400";
 
   return (
     <>
-      <div className="flex flex-col justify-center items-center w-auto h-auto mt-8 mb-8 mx-4 px-3 lg:mx-16 lg:px-6 ">
-        <div className="flex flex-wrap justify-center gap-8 max-w-[1600px] w-full">
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            {" "}
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <>
-                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
-                  Database Storage
-                </h3>
-                <div className="relative h-48 w-48">
-                  <canvas ref={dbCanvasRef} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-3xl font-bold text-slate-800 dark:text-white">
-                      {dbPercent}%
-                    </span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      Used
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-                  {dbStats?.used} MB of {dbStats?.total} MB Used | Document
-                  Count: {dbStats?.documentCount}
-                </div>
-              </>
-            )}
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            {" "}
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <>
-                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
-                  Cloud Storage (R2)
-                </h3>
-                <div className="relative h-48 w-48">
-                  <canvas ref={r2CanvasRef} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-3xl font-bold text-slate-800 dark:text-white">
-                      {r2Percent}%
-                    </span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      Used
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-                  {toGB(r2Stats?.used)} GB of {toGB(r2Stats?.total)} GB Used |
-                  File Count: {r2Stats?.fileCount}
-                </div>
-              </>
-            )}
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            {" "}
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <>
-                <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
-                  Least Listened Songs
-                </h3>
-                <div className="flex flex-row flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="text-sm flex-1 p-2 py-3 bg-black/20 dark:bg-white/20 backdrop-blur-sm border-none rounded-2xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
-                    placeholder="Search least listened songs..."
-                  />
-                  <button
-                    aria-label="Delete Least Listened 30%"
-                    onClick={() =>
-                      setDeleteModal({
-                        isOpen: true,
-                        songId: "",
-                        songName: "Least listened audios",
-                        leastlistened: true,
-                      })
-                    }
-                    title="Delete Least Listened 30%"
-                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                  >
-                    <LucideTrash className="w-4 h-4" />
-                  </button>
-                  <button
-                    aria-label="Kill Switch"
-                    onClick={() =>
-                      setDeleteModal({
-                        isOpen: true,
-                        songId: "",
-                        songName: "All audios",
-                        leastlistened: false,
-                      })
-                    }
-                    title="Kill Switch"
-                    className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                  >
-                    <Skull className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                  {filteredLists &&
-                  filteredLists.candidates &&
-                  filteredLists.candidates.length > 0 ? (
-                    <div className="space-y-3 mt-2">
-                      {filteredLists.candidates.map((list) => (
-                        <div
-                          key={list.id}
-                          className="flex items-center justify-between p-3 rounded-2xl bg-black/20 dark:bg-white/10 border-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <div className="min-w-0 flex-1 mr-3">
-                            <p
-                              className="text-sm font-medium text-black dark:text-white truncate"
-                              title={list.name}
-                            >
-                              {maskStatus ? "xxxx" : list.name}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                setDeleteModal({
-                                  isOpen: true,
-                                  songId: list.id,
-                                  songName: list.name,
-                                  leastlistened: false,
-                                })
-                              }
-                              title="Delete"
-                              className={`${actionBtnClass} bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800`}
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                ></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {searchQuery
-                          ? "No matching songs found."
-                          : "No least listened songs found."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            <h3 className="text-lg md:text-xl  text-black dark:text-white uppercase mb-4">
-              Audio Enhancements
-            </h3>
-            <div className="w-full h-full relative">
-              <canvas ref={chartRef} />
-            </div>
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-sm border-none flex flex-col items-center h-96 w-full max-w-sm">
-            <div className="w-full h-full flex flex-col overflow-hidden">
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg md:text-xl text-black dark:text-white uppercase">
-                  Audio Equalizer
-                </h3>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-600 dark:text-slate-400">
-                  Range: ±15dB
-                </span>
+      <div className="mx-auto mb-8 mt-6 w-full max-w-[1600px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Overview
+          </h2>
+          <button
+            type="button"
+            onClick={() => refreshAll()}
+            disabled={anyLoading}
+            className="inline-flex items-center gap-2 rounded-full border-none bg-transparent px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors cursor-pointer
+              hover:bg-white/60 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60
+              dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
+          >
+            <RotateCw
+              className={`h-4 w-4 ${anyLoading ? "animate-spin motion-reduce:animate-none" : ""}`}
+            />
+            Refresh
+          </button>
+        </div>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 xl:grid-cols-3">
+            <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6 xl:col-span-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
+                <StorageCard
+                  title="Database"
+                  icon={Database}
+                  state={db}
+                  ringClass="stroke-blue-500"
+                  countLabel="Documents"
+                  avgLabel="Avg per document"
+                  onRetry={() => loadDb()}
+                />
+                <StorageCard
+                  title="Cloud storage"
+                  icon={Cloud}
+                  state={r2}
+                  ringClass="stroke-amber-500"
+                  countLabel="Files"
+                  avgLabel="Avg per file"
+                  onRetry={() => loadR2()}
+                />
               </div>
-              <div className="w-full flex-1 overflow-y-auto pr-1 space-y-2 mt-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                <div className="w-full space-y-4">
-                  {bands.map((band) => (
-                    <div key={band.key} className="flex items-center group">
-                      <span className="w-16 text-right text-sm text-slate-600 dark:text-slate-400 font-medium group-hover:text-blue-500 transition-colors duration-200">
-                        {band.label}
-                      </span>
-                      <div className="flex-1 mx-2 md:mx-4 flex items-center">
-                        <input
-                          type="range"
-                          min="-15"
-                          max="15"
-                          step="1"
-                          value={eqValues[band.key]}
-                          onChange={(e) =>
-                            setEqValue(band.key, parseFloat(e.target.value))
-                          }
-                          className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xl appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow
-                      [&::-webkit-slider-thumb]:appearance-none 
-                      [&::-webkit-slider-thumb]:w-4 
-                      [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-gray-800 
-                      dark:[&::-webkit-slider-thumb]:bg-gray-400
-                      [&::-webkit-slider-thumb]:border-2 
-                      [&::-webkit-slider-thumb]:border-blue-500 
-                      [&::-webkit-slider-thumb]:rounded-full 
-                      hover:[&::-webkit-slider-thumb]:bg-blue-500
-                      dark:hover:[&::-webkit-slider-thumb]:bg-blue-500
-                      hover:[&::-webkit-slider-thumb]:scale-125 
-                      [&::-webkit-slider-thumb]:transition-all
-                      [&::-webkit-slider-thumb]:shadow-sm"
-                        />
-                      </div>
-                      <div className="w-14 flex justify-end">
-                        <span
-                          className={`text-sm font-mono font-semibold px-2 py-1 rounded-md transition-colors ${
-                            eqValues[band.key] === 0
-                              ? "bg-gray-100 text-slate-600 dark:text-slate-400 dark:bg-gray-800 "
-                              : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
-                          }`}
+              <Card
+                title="Sound"
+                icon={SlidersHorizontal}
+                meta={<span className={`${pill} ${grey}`}>±15 dB</span>}
+              >
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-center">
+                  <div className="relative mx-auto h-56 w-full min-w-0 max-w-sm sm:h-64">
+                    <canvas
+                      ref={chartRef}
+                      role="img"
+                      aria-label="Current equalizer shape"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    {bands.map((band) => {
+                      const v = eqValues[band.key] ?? 0;
+                      return (
+                        <div
+                          key={band.key}
+                          className="flex items-center gap-2 sm:gap-3"
                         >
-                          {eqValues[band.key] > 0
-                            ? `+${eqValues[band.key]}`
-                            : eqValues[band.key]}{" "}
-                          dB
+                          <label
+                            htmlFor={`eq-${band.key}`}
+                            className="w-16 shrink-0 text-sm font-medium text-slate-600 dark:text-slate-400"
+                          >
+                            {band.label}
+                          </label>
+                          <input
+                            id={`eq-${band.key}`}
+                            type="range"
+                            min="-15"
+                            max="15"
+                            step="1"
+                            value={v}
+                            onChange={(e) =>
+                              setEqValue(band.key, parseFloat(e.target.value))
+                            }
+                            className={sliderClass}
+                          />
+                          <span
+                            className={`w-14 shrink-0 rounded-md px-1 py-1 text-center font-mono text-xs font-semibold tabular-nums sm:w-16 sm:px-2 ${valueBadge(v !== 0)}`}
+                          >
+                            {v > 0 ? `+${v}` : v} dB
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <div className="border-t border-slate-100 pt-4 dark:border-white/[0.07]">
+                      <div className="mb-3 flex items-center justify-between">
+                        <label
+                          htmlFor="eq-pan"
+                          className="text-sm font-semibold text-slate-600 dark:text-slate-400"
+                        >
+                          Left / right balance
+                        </label>
+                        <span
+                          className={`rounded-md px-2 py-1 font-mono text-xs font-semibold ${valueBadge(pan !== 0)}`}
+                        >
+                          {panLabel}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className="w-4 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
+                          L
+                        </span>
+                        <input
+                          id="eq-pan"
+                          type="range"
+                          min="-1"
+                          max="1"
+                          step="0.1"
+                          value={pan}
+                          onChange={(e) => setPan(parseFloat(e.target.value))}
+                          className={sliderClass}
+                        />
+                        <span className="w-4 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
+                          R
                         </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="w-full pt-6 mt-6 border-t border-gray-100 dark:border-gray-800">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4
-                      className={` text-sm font-semibold text-slate-600 dark:text-slate-400`}
-                    >
-                      L/R Balance
-                    </h4>
-                    <span
-                      className={`text-sm font-mono font-semibold px-2 py-1 rounded-md transition-colors ${
-                        pan === 0
-                          ? "bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400"
-                          : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
-                      }`}
-                    >
-                      {pan === 0
-                        ? "Center"
-                        : pan < 0
-                          ? `L ${Math.abs(Math.round(pan * 100))}%`
-                          : `R ${Math.round(pan * 100)}%`}
-                    </span>
                   </div>
-
-                  <div className="flex items-center w-full group">
-                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-blue-500 transition-colors w-4 text-center">
-                      L
+                </div>
+              </Card>
+            </div>
+            <div className="min-w-0">
+              <Card
+                title="Least listened"
+                icon={TrendingDown}
+                meta={
+                  leastListened && !listLoading && !listError ? (
+                    <span className={`${pill} ${grey} tabular-nums`}>
+                      {leastListened.count.toLocaleString()}{" "}
+                      {leastListened.count === 1 ? "track" : "tracks"}
                     </span>
+                  ) : null
+                }
+              >
+                <p className="-mt-2 mb-3 text-xs text-slate-500 dark:text-slate-400">
+                  Bottom {percentile}% of your library by plays. Review before
+                  deleting.
+                </p>
 
-                    <div className="flex-1 mx-3 flex items-center relative">
-                      <div className="absolute left-1/2 -translate-x-1/2 w-[2px] h-3 bg-gray-300 dark:bg-gray-600 rounded-full pointer-events-none -z-10"></div>
+                {listLoading ? (
+                  <ListSkeleton />
+                ) : listError ? (
+                  <CardError
+                    message="Couldn't load least listened tracks."
+                    onRetry={() => loadList()}
+                  />
+                ) : (
+                  <>
+                    <div className="relative mb-3">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
-                        type="range"
-                        min="-1"
-                        max="1"
-                        step="0.1"
-                        value={pan}
-                        onChange={(e) => setPan(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow z-10
-                [&::-webkit-slider-thumb]:appearance-none 
-                      [&::-webkit-slider-thumb]:w-4 
-                      [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-gray-800 
-                      dark:[&::-webkit-slider-thumb]:bg-gray-400
-                      [&::-webkit-slider-thumb]:border-2 
-                      [&::-webkit-slider-thumb]:border-blue-500 
-                      [&::-webkit-slider-thumb]:rounded-full 
-                      hover:[&::-webkit-slider-thumb]:bg-blue-500
-                      dark:hover:[&::-webkit-slider-thumb]:bg-blue-500
-                      hover:[&::-webkit-slider-thumb]:scale-125 
-                      [&::-webkit-slider-thumb]:transition-all
-                      [&::-webkit-slider-thumb]:shadow-sm"
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search these tracks"
+                        aria-label="Search least listened tracks"
+                        className="w-full rounded-xl border-none bg-slate-100 py-2.5 pl-9 pr-3 text-base text-slate-900 placeholder-slate-500
+                          focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:bg-white/[0.06] dark:text-white dark:placeholder-slate-400 sm:text-sm"
                       />
                     </div>
-
-                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-blue-500 transition-colors w-4 text-center">
-                      R
-                    </span>
-                  </div>
-                </div>
-              </div>
+                    {candidates.length > 0 ? (
+                      <ul
+                        className={`max-h-72 xl:max-h-[26rem] space-y-2 overflow-y-auto overscroll-contain pr-1 ${scrollbar}`}
+                      >
+                        {candidates.map((c) => {
+                          const shownName = maskStatus ? "xxxx" : c.name;
+                          return (
+                            <li
+                              key={c.id}
+                              className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-white/[0.04]"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  title={maskStatus ? undefined : c.name}
+                                  className="truncate text-sm font-medium text-slate-900 dark:text-white"
+                                >
+                                  {shownName}
+                                </p>
+                                <p className="mt-0.5 font-mono text-xs">
+                                  <span className="text-blue-600 dark:text-blue-400">
+                                    {c.playCount}{" "}
+                                    {c.playCount === 1 ? "play" : "plays"}
+                                  </span>
+                                  <span className="text-slate-400"> · </span>
+                                  <span className="text-red-500 dark:text-red-400">
+                                    {c.skipCount}{" "}
+                                    {c.skipCount === 1 ? "skip" : "skips"}
+                                  </span>
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDeleteModal({
+                                    isOpen: true,
+                                    songId: c.id,
+                                    songName: shownName,
+                                    leastlistened: false,
+                                  })
+                                }
+                                title="Delete"
+                                aria-label={`Delete ${shownName}`}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-none bg-red-100 text-red-600 transition-colors cursor-pointer
+                                  hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-800/50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                        {searchQuery
+                          ? "No matching tracks."
+                          : "Nothing here. Every track is getting played."}
+                      </p>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4 dark:border-white/[0.07]">
+                      <button
+                        type="button"
+                        disabled={!leastListened?.count}
+                        onClick={() =>
+                          setDeleteModal({
+                            isOpen: true,
+                            songId: "",
+                            songName: `the bottom ${percentile}% of your library`,
+                            leastlistened: true,
+                          })
+                        }
+                        className="inline-flex min-w-[10rem] flex-1 items-center justify-center gap-2 rounded-full border-none bg-red-100 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors cursor-pointer
+                          hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50
+                          dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-800/50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete bottom {percentile}%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDeleteModal({
+                            isOpen: true,
+                            songId: "",
+                            songName: "ALL audio in your library",
+                            leastlistened: false,
+                          })
+                        }
+                        className="inline-flex min-w-[10rem] flex-1 items-center justify-center gap-2 rounded-full border border-red-300 bg-transparent px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors cursor-pointer
+                          hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40"
+                      >
+                        <Skull className="h-4 w-4" />
+                        Delete all audio
+                      </button>
+                    </div>
+                  </>
+                )}
+              </Card>
             </div>
           </div>
           <SessionInsightsCard />
@@ -762,17 +632,10 @@ function StatusDisplay() {
       </div>
       {deleteModal.isOpen && (
         <DeleteSongModal
-          id={deleteModal?.songId}
-          songName={deleteModal?.songName}
-          leastlistened={deleteModal?.leastlistened}
-          handleClose={() =>
-            setDeleteModal({
-              isOpen: false,
-              songId: "",
-              songName: "",
-              leastlistened: false,
-            })
-          }
+          id={deleteModal.songId}
+          songName={deleteModal.songName}
+          leastlistened={deleteModal.leastlistened}
+          handleClose={closeModal}
           handleDelete={handleDelete}
           handleDeleteLeastListened={handleDeleteLeastListened}
           handleDeleteAll={handleDeleteAll}

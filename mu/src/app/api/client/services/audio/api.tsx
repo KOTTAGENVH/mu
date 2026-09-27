@@ -1,8 +1,30 @@
+import { cleanParams } from "@/helper/auido/helper";
+
+export type SongSortField =
+  | "newest"
+  | "playCount"
+  | "skipCount"
+  | "lastPlayedAt";
+export type SortOrder = "asc" | "desc";
+
 interface UpdateSongData {
   name?: string;
   artist?: string;
   categoryid?: string;
   favourite?: boolean;
+}
+
+export interface SongFilters {
+  favourite?: boolean;
+  playedFrom?: string;
+  playedTo?: string;
+  neverPlayed?: boolean;
+  minPlayCount?: number;
+  maxPlayCount?: number;
+  minSkipCount?: number;
+  maxSkipCount?: number;
+  sortBy?: SongSortField;
+  sortOrder?: SortOrder;
 }
 
 //get r2 storage status
@@ -99,17 +121,34 @@ export async function getAllSongs(
   search: string,
   category: string,
   useVector: boolean,
+  filters: SongFilters = {},
+  signal?: AbortSignal,
 ) {
+  const body = cleanParams({
+    page,
+    limit,
+    search: search?.trim(),
+    category: category && category !== "All" ? category : undefined,
+    useVector,
+    ...filters,
+  });
+
   const response = await fetch("/api/services/audio", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ page, limit, search, category, useVector }),
+    body: JSON.stringify(body),
+    signal,
   });
+
   if (response.ok) {
     return await response.json();
   } else {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Failed to fetch songs");
+    let message = "Failed to fetch songs";
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) message = errorData.message;
+    } catch {}
+    throw new Error(message);
   }
 }
 

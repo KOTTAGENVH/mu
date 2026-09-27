@@ -1,14 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Header from "@/components/header";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { deleteAccount, verifyCookie } from "../api/client/services/auth/api";
 import { useAuth } from "@/contextApi/auth";
 import SettingCardRender from "@/components/settings/cardRender";
 import StatusDisplay from "@/components/settings/statusDisplay";
 import ManageCategories from "@/components/settings/categories";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLeftLong } from "@fortawesome/free-solid-svg-icons";
 import ManageWishList from "@/components/settings/lists";
 import { useSearch } from "@/contextApi/sematicSearch";
 import Loader from "@/components/loader";
@@ -20,6 +18,7 @@ import ManageActivty from "@/components/settings/activityManager";
 import { useVisualizer } from "@/contextApi/audioVizualizer";
 import ChangeAppModal from "@/components/settings/changeApp";
 import { downloadUploadsPdf } from "../api/client/services/report/api";
+import { ArrowLeft } from "lucide-react";
 
 function Page() {
   const router = useRouter();
@@ -57,12 +56,6 @@ function Page() {
     };
     fetchCookieStatus();
   }, [router, toggleAuth]);
-
-  const baseBtnClass =
-    "inline-flex items-center justify-center w-auto py-3 px-3 rounded-full border-none cursor-pointer  mr-4";
-
-  const defaultBtnClass =
-    "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700";
 
   const handleSettingClick = async (id: number) => {
     if (id === 3) {
@@ -131,7 +124,10 @@ function Page() {
         return (
           <>
             <StatusDisplay />
-            <SettingCardRender onSettingSelect={handleSettingClick} />
+            <SettingCardRender
+              onSettingSelect={handleSettingClick}
+              busyId={isExporting ? 11 : null}
+            />
           </>
         );
     }
@@ -172,12 +168,16 @@ function Page() {
         <div className="w-auto h-auto mt-20 mx-4 px-3 lg:mx-16 lg:px-6 py-4">
           {activeSetting !== null && (
             <button
+              type="button"
               onClick={() => setActiveSetting(null)}
-              className={`${baseBtnClass} ${defaultBtnClass}`}
               title="Back to settings overview"
-              aria-label="Back to settings overview"
+              aria-label="Back to settings"
+              className="group -ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium
+                text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white
+                transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <FontAwesomeIcon icon={faLeftLong} className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
+              Settings
             </button>
           )}
 

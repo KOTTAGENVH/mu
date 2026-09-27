@@ -1,13 +1,11 @@
+const glass =
+  "backdrop-blur-xl backdrop-saturate-150 [-webkit-backdrop-filter:blur(24px)_saturate(150%)]";
+
 export const panelSurface = (
-  isAppleWebkit: boolean,
+  _isAppleWebkit: boolean,
   shadow: string = "shadow-2xl",
 ) =>
-  isAppleWebkit
-    ? `bg-slate-100 dark:bg-slate-800 border-none dark:border-slate-700 ${shadow}`
-    : `bg-white/10 dark:bg-black/10 backdrop-blur-xl border-none dark:border-white/10 ${shadow}`;
+  `bg-transparent ${glass} border-none ${shadow}`;
 
-
-export const cardSurface = (isAppleWebkit: boolean) =>
-  isAppleWebkit
-    ? "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
-    : "bg-white/5 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10";
+export const cardSurface = (_isAppleWebkit: boolean) =>
+  `bg-white/50 dark:bg-slate-900/40 ${glass} border border-black/5 dark:border-white/10`;

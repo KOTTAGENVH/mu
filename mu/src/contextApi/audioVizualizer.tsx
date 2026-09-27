@@ -15,29 +15,29 @@ export enum VisualizerMode {
   Matrix = 3,
 }
 
-export const VISUALIZER_LABELS: Record<VisualizerMode, string> = {
-  [VisualizerMode.Off]: "Off",
-  [VisualizerMode.Bars]: "Bars",
-  [VisualizerMode.Spiral]: "Spiral",
-  [VisualizerMode.Matrix]: "Matrix",
-};
-
 interface VisualizerContextValue {
   mode: VisualizerMode;
   setMode: (mode: VisualizerMode) => void;
   cycleMode: () => void;
 }
 
-const VisualizerContext = createContext<VisualizerContextValue | null>(null);
+export const visualizerLabels: Record<VisualizerMode, string> = {
+  [VisualizerMode.Off]: "Off",
+  [VisualizerMode.Bars]: "Bars",
+  [VisualizerMode.Spiral]: "Spiral",
+  [VisualizerMode.Matrix]: "Matrix",
+};
 
-const STORAGE_KEY = "visualizer_mode";
+const visualizerContext = createContext<VisualizerContextValue | null>(null);
+
+const storageKey = "visualizer_mode";
 
 export function VisualizerProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<VisualizerMode>(VisualizerMode.Bars);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved !== null) {
         const parsed = parseInt(saved, 10);
         if (parsed in VisualizerMode) {
@@ -50,7 +50,7 @@ export function VisualizerProvider({ children }: { children: ReactNode }) {
   const setMode = (newMode: VisualizerMode) => {
     setModeState(newMode);
     try {
-      localStorage.setItem(STORAGE_KEY, String(newMode));
+      localStorage.setItem(storageKey, String(newMode));
     } catch {}
   };
 
@@ -64,14 +64,14 @@ export function VisualizerProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <VisualizerContext.Provider value={{ mode, setMode, cycleMode }}>
+    <visualizerContext.Provider value={{ mode, setMode, cycleMode }}>
       {children}
-    </VisualizerContext.Provider>
+    </visualizerContext.Provider>
   );
 }
 
 export function useVisualizer() {
-  const ctx = useContext(VisualizerContext);
+  const ctx = useContext(visualizerContext);
   if (!ctx) {
     throw new Error("useVisualizer must be used inside VisualizerProvider");
   }
