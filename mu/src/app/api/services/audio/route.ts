@@ -17,6 +17,43 @@ interface IUpdateFields {
   favourite?: boolean;
 }
 
+enum SortField {
+  Newest = "newest",
+  PlayCount = "playCount",
+  SkipCount = "skipCount",
+  LastPlayedAt = "lastPlayedAt",
+}
+
+function isSortField(v: unknown): v is SortField {
+  return (
+    typeof v === "string" && (Object.values(SortField) as string[]).includes(v)
+  );
+}
+
+function parseBool(v: unknown): boolean | undefined {
+  if (v === true || v === "true") return true;
+  if (v === false || v === "false") return false;
+  return undefined;
+}
+
+function parseDate(v: unknown, endOfDay = false): Date | null {
+  if (!v || typeof v !== "string") return null;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+  if (endOfDay && /^\d{4}-\d{2}-\d{2}$/.test(v)) d.setUTCHours(23, 59, 59, 999);
+  return d;
+}
+
+function parseCount(v: unknown): number | undefined {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 //get audio
 export async function POST(req: Request) {
   await dbConnect();
@@ -41,34 +78,97 @@ export async function POST(req: Request) {
       search = "",
       category = "",
       useVector = false,
+      favourite,
+      playedFrom,
+      playedTo,
+      neverPlayed,
+      minPlayCount,
+      maxPlayCount,
+      minSkipCount,
+      maxSkipCount,
+      sortBy = "newest",
+      sortOrder = "desc",
     } = await req.json();
 
-    const pageNumber = parseInt(page as string);
-    const limitNumber = parseInt(limit as string);
+    const pageNumber = Math.max(1, parseInt(page as string) || 1);
+    const limitNumber = Math.min(
+      100,
+      Math.max(1, parseInt(limit as string) || 10),
+    );
     const skip = (pageNumber - 1) * limitNumber;
 
-    let categoryObjectId = null;
+    const emptyResponse = () =>
+      NextResponse.json({
+        success: true,
+        pagination: {
+          totalAudio: 0,
+          totalPages: 0,
+          currentPage: pageNumber,
+          perPage: limitNumber,
+        },
+        uploads: [],
+      });
 
+    const filters: FilterQuery<typeof Upload> = {};
+
+    // Category
     if (category) {
       const categoryDoc = (await Category.findOne({ id: category })
         .select("_id")
         .lean()) as { _id: string } | null;
 
-      if (categoryDoc) {
-        categoryObjectId = categoryDoc._id;
-      } else {
-        return NextResponse.json({
-          success: true,
-          pagination: {
-            totalAudio: 0,
-            totalPages: 0,
-            currentPage: pageNumber,
-            perPage: limitNumber,
-          },
-          uploads: [],
-        });
+      if (!categoryDoc) return emptyResponse();
+      filters.category = categoryDoc._id;
+    }
+
+    const fav = parseBool(favourite);
+    if (fav !== undefined) {
+      filters.favourite = fav;
+    }
+
+    // Last played date range / never played
+    if (parseBool(neverPlayed) === true) {
+      filters.lastPlayedAt = null;
+    } else {
+      const from = parseDate(playedFrom);
+      const to = parseDate(playedTo, true);
+
+      if ((playedFrom && !from) || (playedTo && !to)) {
+        return NextResponse.json(
+          { success: false, message: "Invalid date in playedFrom/playedTo" },
+          { status: 400 },
+        );
+      }
+
+      if (from || to) {
+        const range: { $gte?: Date; $lte?: Date } = {};
+        if (from) range.$gte = from;
+        if (to) range.$lte = to;
+        filters.lastPlayedAt = range;
       }
     }
+
+    // Play / skip count ranges
+    const addRange = (
+      field: "playCount" | "skipCount",
+      min: unknown,
+      max: unknown,
+    ) => {
+      const lo = parseCount(min);
+      const hi = parseCount(max);
+      if (lo === undefined && hi === undefined) return;
+      const range: { $gte?: number; $lte?: number } = {};
+      if (lo !== undefined) range.$gte = lo;
+      if (hi !== undefined) range.$lte = hi;
+      filters[field] = range;
+    };
+    addRange("playCount", minPlayCount, maxPlayCount);
+    addRange("skipCount", minSkipCount, maxSkipCount);
+
+    const sortField: SortField = isSortField(sortBy)
+      ? sortBy
+      : SortField.Newest;
+    const direction: 1 | -1 = sortOrder === "asc" ? 1 : -1;
 
     if (search && useVector) {
       const agg: PipelineStage[] = [
@@ -97,22 +197,24 @@ export async function POST(req: Request) {
           },
         },
       ];
-      if (categoryObjectId) {
-        agg.push({
-          $match: {
-            category: categoryObjectId,
-          },
-        });
+
+      if (Object.keys(filters).length > 0) {
+        agg.push({ $match: filters });
       }
+
+      const scoreMeta = { $meta: "searchScore" } as unknown as {
+        $meta: "textScore";
+      };
+      const searchSort: PipelineStage.Sort["$sort"] =
+        sortField === SortField.Newest
+          ? { score: scoreMeta }
+          : { [sortField]: direction, score: scoreMeta, _id: -1 };
+
       agg.push({
         $facet: {
           metadata: [{ $count: "total" }],
           data: [
-            {
-              $sort: {
-                score: { $meta: "searchScore" as unknown as "textScore" },
-              },
-            },
+            { $sort: searchSort },
             { $skip: skip },
             { $limit: limitNumber },
             {
@@ -152,21 +254,23 @@ export async function POST(req: Request) {
       });
     }
 
-    const query: FilterQuery<typeof Upload> = {};
+    const query: FilterQuery<typeof Upload> = { ...filters };
 
     if (search) {
+      const safe = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { artist: { $regex: search, $options: "i" } },
+        { name: { $regex: safe, $options: "i" } },
+        { artist: { $regex: safe, $options: "i" } },
       ];
     }
 
-    if (categoryObjectId) {
-      query.category = categoryObjectId;
-    }
+    const findSort: Record<string, 1 | -1> =
+      sortField === "newest"
+        ? { _id: direction }
+        : { [sortField]: direction, _id: -1 };
 
     const uploadsPromise = Upload.find(query)
-      .sort({ _id: -1 })
+      .sort(findSort)
       .skip(skip)
       .limit(limitNumber)
       .select("-_id")
@@ -179,13 +283,6 @@ export async function POST(req: Request) {
       uploadsPromise,
       countPromise,
     ]);
-
-    // if (!uploads || uploads.length === 0) {
-    //   return NextResponse.json(
-    //     { success: true, message: "No uploads found" },
-    //     { status: 404 },
-    //   );
-    // }
 
     return NextResponse.json({
       success: true,
@@ -203,12 +300,11 @@ export async function POST(req: Request) {
         { success: false, message: error.message },
         { status: 500 },
       );
-    } else {
-      return NextResponse.json(
-        { success: false, message: "An unknown error occurred" },
-        { status: 500 },
-      );
     }
+    return NextResponse.json(
+      { success: false, message: "An unknown error occurred" },
+      { status: 500 },
+    );
   }
 }
 

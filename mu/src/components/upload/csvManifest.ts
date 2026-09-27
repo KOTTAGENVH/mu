@@ -347,7 +347,8 @@ export function indexFiles(files: File[]): FileIndex {
   return { exact, loose, aggressive };
 }
 
-const default_artist_pattern = /^(?![\s\S]*[\p{Cc}\p{Cf}\p{Co}\p{Cs}\p{Zl}\p{Zp}])[\s\S]+$/u;
+const default_artist_pattern =
+  /^(?![\s\S]*[\p{Cc}\p{Cf}\p{Co}\p{Cs}\p{Zl}\p{Zp}])[\s\S]+$/u;
 
 export function sanitizeArtist(artist: string): string {
   const cleaned = artist
@@ -619,12 +620,16 @@ function csvCell(value: string): string {
 }
 
 export function buildFailureCsv(items: PlanItem[]): string {
-  const rows = items.filter(
-    (i) => i.upload === "failed" || i.status !== "ready",
-  );
+  const rows = items.filter((i) => i.upload !== "done");
   const lines = ["Audio Name,File Name,Artist,Category,Reason"];
   for (const item of rows) {
-    const reason = item.error ?? item.status;
+    const reason =
+      item.error ??
+      (item.upload === "skipped"
+        ? "stopped before upload"
+        : item.status === "ready"
+          ? "not uploaded yet"
+          : item.status);
     lines.push(
       [item.title, item.fileName ?? "", item.artist, item.category, reason]
         .map(csvCell)

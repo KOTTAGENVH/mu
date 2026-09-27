@@ -1,5 +1,4 @@
 "use client";
-
 import React, {
   useCallback,
   useEffect,
@@ -11,6 +10,7 @@ import { uploadSong } from "@/app/api/client/services/audio/api";
 import {
   buildFailureCsv,
   isAudioFile,
+  NonRetryableError,
   parseManifestFile,
   PauseGate,
   reconcile,
@@ -29,9 +29,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppleWebkit } from "@/hooks/useAppleWebkit";
 import { panelSurface } from "@/lib/surfaceDropdown";
-
-const concurrency = 5;
-const visible_limit = 200;
+import { btn, Stat } from "./helper";
 
 type Phase = "idle" | "parsing" | "review" | "running" | "paused" | "finished";
 type Filter = "all" | "ready" | "problems" | "failed";
@@ -41,7 +39,8 @@ interface Props {
   onClose: () => void;
 }
 
-export class NonRetryableError extends Error {}
+const concurrency = 5;
+const visible_limit = 200;
 
 const status_label: Record<PlanStatus, string> = {
   ready: "Ready",
@@ -52,20 +51,15 @@ const status_label: Record<PlanStatus, string> = {
   "duplicate-row": "Duplicate row",
 };
 
-const btn =
-  "inline-flex items-center justify-center px-4 py-2.5 rounded-2xl border-none cursor-pointer bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
 const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
   const csvInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
-
   const itemsRef = useRef<PlanItem[]>([]);
   const gateRef = useRef(new PauseGate());
   const abortRef = useRef<AbortController | null>(null);
   const dirtyRef = useRef(false);
-  const runningRef = useRef(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
-
   const [phase, setPhase] = useState<Phase>("idle");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [tick, setTick] = useState(0);
@@ -261,7 +255,7 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
           },
           onFatal: (err) => {
             setFatal(
-              `Upload stopped — your session is no longer valid. Sign in again, then re-run the remaining rows. (${
+              `Upload stopped: your session is no longer valid. Sign in again, then re-run the remaining rows. (${
                 err instanceof Error ? err.message : "auth error"
               })`,
             );
@@ -276,7 +270,6 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
         }`,
       );
     } finally {
-      runningRef.current = false;
       abortRef.current = null;
       setPhase("finished");
       setTick((n) => n + 1);
@@ -312,8 +305,10 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
     const a = document.createElement("a");
     a.href = url;
     a.download = "unfinished_rows.csv";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const resolveAmbiguity = (item: PlanItem, file: File) => {
@@ -403,7 +398,6 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
           </p>
         </div>
       </div>
-
       <input
         ref={csvInputRef}
         type="file"
@@ -420,19 +414,16 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
         className="hidden"
         title="Audio folder"
       />
-
       {phase === "parsing" && (
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Reading manifest… {rowCount.toLocaleString()} rows so far.
         </p>
       )}
-
       {fatal && (
         <div className="rounded-2xl px-4 py-3 bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 text-sm">
           {fatal}
         </div>
       )}
-
       {warnings.length > 0 && (
         <ul className="m-0 pl-5 text-xs text-amber-700 dark:text-amber-300 max-h-24 overflow-y-auto">
           {warnings.slice(0, 20).map((w, i) => (
@@ -463,11 +454,10 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
                 }`}
               />
             </button>
-
             {isCategoryOpen && (
               <div
                 role="listbox"
-                className={`absolute z-50 mt-2 p-4 rounded-2xl flex flex-col gap-2 right-0 sm:right-auto
+                className={`absolute z-40 mt-2 p-4 rounded-2xl flex flex-col gap-2 right-0 sm:right-auto
     sm:left-0 w-[min(16rem,calc(100vw-3rem))] md:w-96 max-h-60 overflow-y-auto
     ${panelSurface(isAppleWebkit, "shadow-lg")}
     [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
@@ -513,6 +503,20 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
           </div>
         </div>
       )}
+      {parsedRows.length > 0 && (
+        <label
+          className={`flex  items-center gap-2 text-sm text-slate-700 dark:text-slate-300 ${busy ? "cursor-not-allowed" : "cursor-pointer"}`}
+        >
+          <input
+            type="checkbox"
+            checked={sanitizeArtists}
+            disabled={busy}
+            onChange={(e) => setSanitizeArtists(e.target.checked)}
+            className={`h-4 w-4 accent-blue-500`}
+          />
+          Clean up artist names with characters that aren&apos;t allowed
+        </label>
+      )}
       {counts && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <Stat label="Ready" value={counts.ready} tone="good" />
@@ -520,6 +524,7 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
           <Stat label="Ambiguous" value={counts["ambiguous-file"]} />
           <Stat label="Duplicate rows" value={counts["duplicate-row"]} />
           <Stat label="Bad category" value={counts["unknown-category"]} />
+          <Stat label="Bad artist name" value={counts["invalid-artist"]} />
           <Stat label="Files not in CSV" value={orphanCount} />
         </div>
       )}
@@ -547,7 +552,7 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
               onClick={start}
             >
               {phase === "finished" ? (
-                "Upload remaining"
+                `Upload remaining (${(progress.total - progress.done).toLocaleString()})`
               ) : (
                 <>
                   <FontAwesomeIcon icon={faUpload} className="w-4 h-4 mr-2" />
@@ -582,22 +587,41 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
       {itemsRef.current.length > 0 && (
         <>
           <div className="flex gap-2 text-xs">
-            {(["all", "ready", "problems", "failed"] as Filter[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-full border-none cursor-pointer ${
-                  filter === f
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
-                    : "bg-gray-100 text-black dark:bg-gray-800 dark:text-white"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+            {(["all", "ready", "problems", "failed"] as Filter[]).map((f) => {
+              const label = {
+                all: "All",
+                ready: "Ready",
+                problems: "Needs attention",
+                failed: "Failed",
+              }[f];
+              const n =
+                f === "all"
+                  ? itemsRef.current.length
+                  : f === "ready"
+                    ? (counts?.ready ?? 0)
+                    : f === "failed"
+                      ? progress.failed
+                      : itemsRef.current.length - (counts?.ready ?? 0);
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={filter === f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-full border-none cursor-pointer ${
+                    filter === f
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                      : "bg-gray-100 text-black dark:bg-gray-800 dark:text-white"
+                  }`}
+                >
+                  {label}{" "}
+                  <span className="tabular-nums opacity-70">
+                    {n.toLocaleString()}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-
           <div className="max-h-72 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-400">
             {visible.map((item) => (
               <div
@@ -665,28 +689,4 @@ const BulkCsvUpload: React.FC<Props> = ({ categories, onClose }) => {
     </div>
   );
 };
-
-const Stat: React.FC<{ label: string; value: number; tone?: "good" }> = ({
-  label,
-  value,
-  tone,
-}) => (
-  <div className="rounded-2xl px-3 py-2 bg-gray-100 dark:bg-gray-800">
-    <p
-      className={`m-0 font-mono text-base ${
-        tone === "good"
-          ? "text-green-700 dark:text-green-400"
-          : value > 0
-            ? "text-amber-700 dark:text-amber-400"
-            : "text-slate-500 dark:text-slate-400"
-      }`}
-    >
-      {value.toLocaleString()}
-    </p>
-    <p className="m-0 text-[11px] text-slate-500 dark:text-slate-400">
-      {label}
-    </p>
-  </div>
-);
-
 export default BulkCsvUpload;

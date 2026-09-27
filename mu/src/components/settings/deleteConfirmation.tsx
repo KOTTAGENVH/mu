@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 
 interface DeleteSongProps {
   handleClose: () => void;
-  handleDelete: (id: string) => void;
-  handleDeleteLeastListened: () => void;
-  handleDeleteAll: () => void;
+  handleDelete: (id: string) => Promise<void> | void;
+  handleDeleteLeastListened?: () => Promise<void> | void;
+  handleDeleteAll?: () => Promise<void> | void;
   id?: string;
   songName: string;
   leastlistened: boolean;
@@ -39,16 +39,16 @@ export default function DeleteSongModal({
     }, 200);
   };
 
-  const onConfirm = () => {
+  const onConfirm = async () => {
     setIsSubmitting(true);
-    if (id) {
-      handleDelete(id);
-    } else if (leastlistened) {
-      handleDeleteLeastListened();
-    } else {
-      handleDeleteAll();
+    try {
+      if (id) await handleDelete(id);
+      else if (leastlistened) await handleDeleteLeastListened?.();
+      else await handleDeleteAll?.();
+      closeModal();
+    } catch {
+      setIsSubmitting(false);
     }
-    closeModal();
   };
 
   return (

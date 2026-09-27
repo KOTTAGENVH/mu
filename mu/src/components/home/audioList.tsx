@@ -1,9 +1,25 @@
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import AudioCard from "./audioCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMusic } from "@fortawesome/free-solid-svg-icons";
-import { getAllSongs } from "@/app/api/client/services/audio/api";
+import {
+  getAllSongs,
+  type SongFilters,
+} from "@/app/api/client/services/audio/api";
+import FilterPanel, {
+  default_filters,
+  getFilterChips,
+  toApiFilters,
+  type Category,
+  type FilterState,
+} from "./audioFilterPanel";
 import { useSearch } from "@/contextApi/sematicSearch";
 import { getAllCategories } from "@/app/api/client/services/categories/api";
 import { Search, X, SlidersHorizontal } from "lucide-react";
@@ -12,14 +28,14 @@ import SkeletonCard from "./skelitonCard";
 import { useAppleWebkit } from "@/hooks/useAppleWebkit";
 import { panelSurface } from "@/lib/surfaceDropdown";
 
-interface AudioList {
+interface Track {
   id: string;
   name: string;
   artist: string;
-  categotry: Category;
+  category: Category | null;
   fileUrl: string;
   favourite: boolean;
-  lastPlayed: string;
+  lastPlayedAt: string | null;
   playCount: number;
   skipCount: number;
 }
@@ -31,16 +47,20 @@ interface PaginationData {
   totalPages: number;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 interface Query {
   search: string;
   categoryId: string;
+  filters: SongFilters;
   page: number;
 }
+
+const pageSize = 12;
+const initialQuery: Query = {
+  search: "",
+  categoryId: "",
+  filters: {},
+  page: 1,
+};
 
 function AudioList() {
   const [search, setSearch] = useState("");
@@ -48,24 +68,17 @@ function AudioList() {
   const [paginationData, setPaginationData] = useState<PaginationData | null>(
     null,
   );
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null,
-  );
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryPanelOpen, setCategoryPanelOpen] = useState(false);
-  const [categoryPanelMounted, setCategoryPanelMounted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [allAudio, setAllAudio] = useState<AudioList[] | null>(null);
+  const [allAudio, setAllAudio] = useState<Track[] | null>(null);
+  const [filters, setFilters] = useState<FilterState>(default_filters);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const filterButtonRef = useRef<HTMLButtonElement | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [query, setQuery] = useState<Query>({
-    search: "",
-    categoryId: "",
-    page: 1,
-  });
+  const [query, setQuery] = useState<Query>(initialQuery);
   const reqId = useRef(0);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const { sematicSearch } = useSearch();
   const isAppleWebkit = useAppleWebkit();
 
@@ -97,17 +110,18 @@ function AudioList() {
   }, [fetchCategories]);
 
   const fetchAudio = useCallback(
-    async ({ search, categoryId, page }: Query) => {
+    async ({ search, categoryId, filters: apiFilters, page }: Query) => {
       const myReq = ++reqId.current;
       const append = page > 1;
       try {
         setLoading(true);
         const response = await getAllSongs(
           page,
-          2,
+          pageSize,
           search,
           categoryId,
           sematicSearch,
+          apiFilters,
         );
         if (myReq !== reqId.current) return;
 
@@ -145,30 +159,46 @@ function AudioList() {
     fetchAudio(query);
   }, [query, fetchAudio]);
 
-  useEffect(() => {
-    if (!categoryPanelOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        dropdownRef.current?.contains(target) ||
-        (event.target as HTMLElement).closest("[data-filter-button]")
-      )
-        return;
-      setCategoryPanelOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [categoryPanelOpen]);
+  const applyFilters = useCallback((next: FilterState) => {
+    setFilters(next);
+    setQuery((q) => ({
+      ...q,
+      categoryId: next.category?.id ?? "",
+      filters: toApiFilters(next),
+      page: 1,
+    }));
+    setPanelOpen(false);
+  }, []);
 
-  useEffect(() => {
-    if (categoryPanelOpen) setCategoryPanelMounted(true);
-  }, [categoryPanelOpen]);
+  const closePanel = useCallback(() => setPanelOpen(false), []);
+  const chips = useMemo(() => getFilterChips(filters), [filters]);
 
-  const handleCategorySelect = (cat: Category | null) => {
-    setSelectedCategory(cat);
-    setQuery((q) => ({ ...q, categoryId: cat?.id ?? "", page: 1 }));
-    setCategoryPanelOpen(false);
+  const clearEverything = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setFilters(default_filters);
+    setQuery(initialQuery);
   };
+
+  const handleFavouriteChange = useCallback(
+    (trackId: string, favourite: boolean) => {
+      setAllAudio((prev) =>
+        prev
+          ? prev.map((a) => (a.id === trackId ? { ...a, favourite } : a))
+          : prev,
+      );
+    },
+    [],
+  );
+
+  const maxEngagement = useMemo(
+    () =>
+      Math.max(
+        1,
+        ...(allAudio ?? []).map((a) => (a.playCount ?? 0) + (a.skipCount ?? 0)),
+      ),
+    [allAudio],
+  );
 
   const handleSearchClear = () => {
     setSearch("");
@@ -181,18 +211,29 @@ function AudioList() {
     <div className="justify-center items-center w-auto h-auto mt-20 mx-4 px-3 lg:mx-16 lg:px-6">
       <div className="relative flex items-center gap-2 w-full">
         <button
-          data-filter-button
-          title="Filter by category"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => setCategoryPanelOpen((v) => !v)}
-          className={`flex-none inline-flex items-center justify-center w-10 h-10 rounded-full border-none cursor-pointer transition-colors
+          ref={filterButtonRef}
+          type="button"
+          onClick={() => setPanelOpen((v) => !v)}
+          aria-haspopup="dialog"
+          aria-expanded={panelOpen}
+          aria-label={
+            chips.length ? `Filters, ${chips.length} active` : "Filters"
+          }
+          title="Filters"
+          className={`relative flex-none inline-flex h-12 w-12 items-center justify-center rounded-2xl border-none cursor-pointer transition-colors
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60
             ${
-              categoryPanelOpen || selectedCategory
+              panelOpen || chips.length > 0
                 ? "bg-blue-500 text-white hover:bg-blue-600"
-                : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                : "bg-black/10 text-black hover:bg-black/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
             }`}
         >
-          <SlidersHorizontal className="w-4 h-4 stroke-[2.5]" />
+          <SlidersHorizontal className="h-4 w-4 stroke-[2.5]" />
+          {chips.length > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold text-blue-600 shadow">
+              {chips.length}
+            </span>
+          )}
         </button>
         <div className={`relative flex-1 transition-all duration-300 `}>
           <Search
@@ -247,68 +288,48 @@ function AudioList() {
             </button>
           )}
         </div>
+
+        <FilterPanel
+          open={panelOpen}
+          onClose={closePanel}
+          applied={filters}
+          onApply={applyFilters}
+          categories={categories}
+          surfaceClass={panelSurface(isAppleWebkit)}
+          anchorRef={filterButtonRef}
+        />
       </div>
 
-      {selectedCategory && (
-        <div className="rise flex items-center gap-2 mt-3 overflow-hidden">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Filtering by:
-          </span>
-          <button
-            onClick={() => handleCategorySelect(null)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-              bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300
-              hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors"
-          >
-            {selectedCategory.name}
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-      {categoryPanelMounted && (
+      {chips.length > 0 && (
         <div
-          ref={dropdownRef}
-          onAnimationEnd={() => {
-            if (!categoryPanelOpen) setCategoryPanelMounted(false);
-          }}
-          className={`absolute z-50 mt-2 p-3 w-64 md:w-80 max-h-64 overflow-y-auto rounded-2xl
-    ${categoryPanelOpen ? "pop-in" : "pop-out pointer-events-none"}
-    ${panelSurface(isAppleWebkit)}
-    [&::-webkit-scrollbar]:w-1.5
-    [&::-webkit-scrollbar-thumb]:rounded-full
-    [&::-webkit-scrollbar-thumb]:bg-gray-300
-    dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
+          className="rise -mx-3 mt-3 flex items-center gap-2 overflow-x-auto px-3 pb-1
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
         >
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
-            Categories
-          </p>
-          <div className="flex flex-col gap-1">
+          {chips.map((chip) => (
             <button
-              onClick={() => handleCategorySelect(null)}
-              className={`px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
-                ${
-                  !selectedCategory
-                    ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                    : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
+              key={chip.key}
+              type="button"
+              onClick={() => applyFilters(chip.clear(filters))}
+              aria-label={`Remove filter: ${chip.label}`}
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-none px-3 py-1.5 text-xs font-medium cursor-pointer
+                bg-blue-100 text-blue-700 transition-colors hover:bg-blue-200
+                dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900"
             >
-              All music
+              {chip.label}
+              <X className="h-3 w-3" />
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => handleCategorySelect(cat)}
-                className={`px-3 py-2 rounded-xl text-sm text-left border-none cursor-pointer transition-colors duration-150
-                  ${
-                    selectedCategory?.id === cat.id
-                      ? "bg-blue-100 text-blue-700 font-medium dark:bg-blue-900/50 dark:text-blue-300"
-                      : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          ))}
+          {chips.length > 1 && (
+            <button
+              type="button"
+              onClick={() => applyFilters(default_filters)}
+              className="shrink-0 whitespace-nowrap rounded-full border-none bg-transparent px-2 py-1.5 text-xs font-medium text-gray-500 cursor-pointer
+                hover:text-black hover:underline dark:text-gray-400 dark:hover:text-white"
+            >
+              Clear all
+            </button>
+          )}
         </div>
       )}
 
@@ -332,16 +353,13 @@ function AudioList() {
             No audio found
           </p>
           <span className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-            Try a different search term or clear the active filter
+            {chips.length > 0
+              ? "No tracks match these filters. Remove one above or clear them all."
+              : "Try a different song or artist name."}
           </span>
-          {(search || selectedCategory) && (
+          {(search || chips.length > 0) && (
             <button
-              onClick={() => {
-                setSearch("");
-                setDebouncedSearch("");
-                setSelectedCategory(null);
-                setQuery({ search: "", categoryId: "", page: 1 });
-              }}
+              onClick={clearEverything}
               className="mt-2 px-4 py-2 rounded-xl text-sm bg-gray-100 dark:bg-gray-800 text-black dark:text-white
                 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border-none cursor-pointer"
             >
@@ -368,6 +386,13 @@ function AudioList() {
                 name={audio.name}
                 artist={audio.artist}
                 handleId={(id) => setId(id)}
+                categoryName={audio.category?.name}
+                favourite={audio.favourite}
+                lastPlayedAt={audio.lastPlayedAt}
+                playCount={audio.playCount}
+                skipCount={audio.skipCount}
+                maxEngagement={maxEngagement}
+                onFavouriteChange={handleFavouriteChange}
               />
             </div>
           ))}
