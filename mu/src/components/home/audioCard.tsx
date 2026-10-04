@@ -194,7 +194,7 @@ export default function AudioCard({
             <h3
               title={displayName}
               className={`
-                line-clamp-2 break-words text-[15px] sm:text-base font-bold leading-snug
+                line-clamp-2  min-h-[2.75em] break-words text-[15px] sm:text-base font-bold leading-snug
                 transition-colors duration-200
                 ${isPlaying ? "text-blue-700 dark:text-blue-300" : "text-slate-900 dark:text-white"}
               `}

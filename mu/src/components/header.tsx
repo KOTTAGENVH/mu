@@ -3,6 +3,7 @@ import Image from "next/image";
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
+  faGamepad,
   faGear,
   faHouse,
   faMicrophone,
@@ -17,7 +18,7 @@ import NavButton from "./headerNavBtn";
 import { panelSurface } from "@/lib/surfaceDropdown";
 import { useAppleWebkit } from "@/hooks/useAppleWebkit";
 
-function Header() {
+function Header({ fixed = true }: { fixed?: boolean }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +55,7 @@ function Header() {
   const handleSettings = () => router.push("/settings");
   const handleMicTalk = () => router.push("/mictalk");
   const handleNews = () => router.push("/news");
+  const handleGames = () => router.push("/games");
 
   const handleLogout = async (all: boolean = false) => {
     try {
@@ -73,7 +75,8 @@ function Header() {
   const isActive = (path: string) => !!pathname?.includes(path);
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50">
+      <div className={`${fixed ? "fixed top-0 left-0" : "relative shrink-0"} w-full z-50`}>
+
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out
@@ -132,6 +135,14 @@ function Header() {
                 active={isActive("/mictalk")}
                 onClick={handleMicTalk}
                 ariaLabel="Mic Talk"
+              />
+
+              <NavButton
+                icon={faGamepad}
+                label="Games"
+                active={isActive("/games")}
+                onClick={handleGames}
+                ariaLabel="Games"
               />
 
               <NavButton
