@@ -46,7 +46,7 @@ export const vendors: VendorEntry[] = [
   { label: "Dahua", query: "dahua", group: "Devices & cameras" },
   { label: "ASUS", query: "asus", group: "Devices & cameras" },
   { label: "MSI", query: "msi", group: "Devices & cameras" },
-  { label: "TP-Link", query: "tp-link", group: "Devices & cameras" },
+  { label: "TPLink", query: "tplink", group: "Devices & cameras" },
   { label: "Yubico", query: "yubico", group: "Devices & cameras" },
   { label: "Solis / Ginlong", query: "solis", group: "Devices & cameras" },
   { label: "BYD", query: "byd", group: "Devices & cameras" },
