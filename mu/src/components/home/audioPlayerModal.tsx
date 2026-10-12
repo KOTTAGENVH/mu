@@ -78,7 +78,7 @@ const normalizeTrack = (track: any): AudioItem => ({
 });
 
 function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
-  const { maskStatus } = useMask();
+  const { maskStatus, toggleMask } = useMask();
   const { eqValues, pan, useCompressor } = useAudioEq();
   const [isLoading, setIsLoadingSync] = useState(false);
   const [audioList, setAudioList] = useState<AudioItem[]>([]);
@@ -119,6 +119,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
   const lastLoadedIdRef = useRef<string | null>(null);
   const isAppleWebkit = useAppleWebkit();
   const currentTrackId = audioList[currentAudioIndex]?.id;
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+
+  const speeds = [0.75, 1, 1.25, 1.5, 2];
+
+  const cycleSpeed = () => {
+    setPlaybackRate((prev) => {
+      const i = speeds.indexOf(prev);
+      return speeds[(i + 1) % speeds.length];
+    });
+  };
 
   const activeCategoryName =
     categories.find((cat) => cat.id === selectedCategory)?.name || "";
@@ -157,6 +167,14 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
     if (!audioRef.current) return;
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.defaultPlaybackRate = playbackRate;
+    el.playbackRate = playbackRate;
+    el.preservesPitch = true;
+  }, [playbackRate, currentTrackUrl]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -933,7 +951,6 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       : ((rawCat as any)?.name ?? "");
   const gradientClass = getGradientClass(currentTrack?.name ?? "");
 
-
   //-*-** dynamic meta data so each song and the icon would be updated based on play
   const default_title = "Home";
 
@@ -992,9 +1009,15 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               className={`w-10 h-10 rounded-lg ${gradientClass} flex items-center justify-center flex-shrink-0`}
             >
               {isLoading || isBuffering ? (
-                <div className="w-full h-full bg-black/10 dark:bg-white/10 rounded-lg" />
+                <div
+                  className="w-full h-full bg-black/10 dark:bg-white/10 rounded-lg"
+                  onClick={() => toggleMask(!maskStatus)}
+                />
               ) : (
-                <Music2 className="w-5 h-5 text-black dark:text-white" />
+                <Music2
+                  className="w-5 h-5 text-black dark:text-white cursor-pointer"
+                  onClick={() => toggleMask(!maskStatus)}
+                />
               )}
             </div>
 
@@ -1091,17 +1114,30 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <ControlBtn
-              label="shuffle"
-              title="Shuffle"
-              disabled={isLoading || isBuffering || audioList.length === 0}
-              active={isShuffling}
-              onClick={() => setIsShuffling(!isShuffling)}
-              small
-            >
-              <Shuffle className="w-4 h-4" />
-            </ControlBtn>
-
+            <div className="flex items-center gap-1">
+              <ControlBtn
+                label="shuffle"
+                title="Shuffle"
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                active={isShuffling}
+                onClick={() => setIsShuffling(!isShuffling)}
+                small
+              >
+                <Shuffle className="w-4 h-4" />
+              </ControlBtn>
+              <ControlBtn
+                label="playback speed"
+                title={`Speed: ${playbackRate}x`}
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                active={playbackRate !== 1}
+                onClick={cycleSpeed}
+                small
+              >
+                <span className="text-[10px] font-bold tabular-nums">
+                  {playbackRate}x
+                </span>
+              </ControlBtn>
+            </div>
             <div className="flex items-center gap-1">
               <ControlBtn
                 label="previous"
@@ -1240,10 +1276,16 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
                 }}
               >
                 {isLoading ? (
-                  <div className="w-full h-full bg-black/10 dark:bg-white/10" />
+                  <div
+                    className="w-full h-full bg-black/10 dark:bg-white/10"
+                    onClick={() => toggleMask(!maskStatus)}
+                  />
                 ) : (
                   <>
-                    <Music2 className="w-6 h-6 text-black dark:text-white" />
+                    <Music2
+                      className="w-6 h-6 text-black dark:text-white cursor-pointer"
+                      onClick={() => toggleMask(!maskStatus)}
+                    />
                   </>
                 )}
               </div>
@@ -1309,7 +1351,18 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
               >
                 <Shuffle className="w-4 h-4" />
               </ControlBtn>
-
+              <ControlBtn
+                label="playback speed"
+                title={`Speed: ${playbackRate}x`}
+                disabled={isLoading || isBuffering || audioList.length === 0}
+                active={playbackRate !== 1}
+                onClick={cycleSpeed}
+                small
+              >
+                <span className="text-[10px] font-bold tabular-nums">
+                  {playbackRate}x
+                </span>
+              </ControlBtn>
               <ControlBtn
                 label="previous"
                 title="Previous"
