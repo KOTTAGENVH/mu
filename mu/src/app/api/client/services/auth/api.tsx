@@ -25,7 +25,7 @@ export async function verifyAuthToken(token: string) {
 export async function verifyCookie() {
   const response = await fetch("/api/services/cookieChecker", {
     method: "POST",
-    credentials: "include", 
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
   });
   if (response.ok) {
@@ -73,19 +73,19 @@ export async function deleteAccount() {
 export async function getAuthInsights() {
   const response = await fetch("/api/services/authInsights", {
     method: "GET",
-    credentials: "include",   
-    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    cache: "no-store",
   });
   if (response.ok) return await response.json();
   throw new Error("Failed to fetch auth insights");
 }
 
 // revoke a single session by id
-export async function revokeSession(sessionId: string) {
+export async function revokeSession(id: string) {
   const response = await fetch("/api/services/authInsights", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId }),
+    body: JSON.stringify({ id }),
   });
   return await response.json();
 }

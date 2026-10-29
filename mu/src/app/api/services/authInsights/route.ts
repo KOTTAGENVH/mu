@@ -4,7 +4,8 @@ import { isAllowed } from "@/helper/origin_helper";
 import dbConnect from "@/config/dbConnect";
 import Session from "@/models/session";
 import AuthLog, { AuthEvent } from "@/models/authLog";
-
+import { Types } from "mongoose";
+import { JwtPayload } from "jsonwebtoken";
 
 function assessIntrusion(
   logs: { event: string; ip?: string; createdAt: Date }[],
@@ -18,26 +19,25 @@ function assessIntrusion(
       now - new Date(l.createdAt).getTime() < window,
   ).length;
 
- 
   const knownIps = new Set(
     logs.filter((l) => l.event === AuthEvent.LOGIN && l.ip).map((l) => l.ip),
   );
 
-
   const lastSuccess = logs.find((l) => l.event === AuthEvent.LOGIN);
 
-
-const failuresBeforeLastSuccess = lastSuccess
+  const failuresBeforeLastSuccess = lastSuccess
     ? logs.filter(
         (l) =>
           l.event === AuthEvent.FAILED_LOGIN &&
-          new Date(l.createdAt).getTime() < new Date(lastSuccess.createdAt).getTime() &&
-          new Date(lastSuccess.createdAt).getTime() - new Date(l.createdAt).getTime() <= window
+          new Date(l.createdAt).getTime() <
+            new Date(lastSuccess.createdAt).getTime() &&
+          new Date(lastSuccess.createdAt).getTime() -
+            new Date(l.createdAt).getTime() <=
+            window,
       ).length
     : 0;
 
-  const suspicious =
-    recentFailures >= 3 || failuresBeforeLastSuccess >= 2;
+  const suspicious = recentFailures >= 3 || failuresBeforeLastSuccess >= 2;
 
   return {
     suspicious,
@@ -73,8 +73,15 @@ export async function GET(req: Request) {
 
     // active sessions
     const sessions = await Session.find({ email })
-      .sort({ createdAt: -1 })
+      .sort({ lastSeenAt: -1, createdAt: -1 })
       .lean();
+
+    // which session is making this request ("This device")
+    const decoded = validationResult.decoded;
+    const currentSessionId =
+      decoded && typeof decoded === "object"
+        ? (decoded as JwtPayload).sessionId
+        : undefined;
 
     // daily counts of login vs failed_login
     const dailyMap: Record<string, { logins: number; failures: number }> = {};
@@ -100,9 +107,17 @@ export async function GET(req: Request) {
       success: true,
       graph,
       sessions: sessions.map((s) => ({
-        sessionId: s.sessionId,
+        id: s._id.toString(),
         ip: s.ip || "unknown",
         createdAt: s.createdAt,
+        lastSeenAt: s.lastSeenAt ?? s.createdAt,
+        ipHistory: [...(s.ipHistory ?? [])]
+          .reverse() // newest first
+          .map((h: { ip: string; seenAt: Date }) => ({
+            ip: h.ip,
+            seenAt: h.seenAt,
+          })),
+        current: s.sessionId === currentSessionId,
       })),
       assessment,
     });
@@ -139,16 +154,26 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const { sessionId } = body;
-    if (!sessionId || typeof sessionId !== "string") {
+    const { id } = body;
+    if (!id || typeof id !== "string" || !Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "sessionId required" },
+        { success: false, message: "Valid session id required" },
         { status: 400 },
       );
     }
-
+    
     await dbConnect();
-    await Session.deleteOne({ sessionId });
+    const result = await Session.deleteOne({
+      _id: id,
+      email: process.env.EMAIL || "",
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { success: false, message: "Session not found" },
+        { status: 404 },
+      );
+    }
 
     return NextResponse.json({ success: true, message: "Session revoked" });
   } catch (error) {
