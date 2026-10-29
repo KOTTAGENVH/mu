@@ -3,6 +3,7 @@ import Session from "@/models/session";
 import { serialize } from "cookie";
 import { sign } from "jsonwebtoken";
 import crypto from "crypto";
+import { encrypt } from "@/config/encryption";
 
 //Generate a jwt token
 export async function CookieGenerator(email: string, ip?: string) {
@@ -25,11 +26,20 @@ export async function CookieGenerator(email: string, ip?: string) {
     const sessionId = crypto.randomBytes(32).toString("hex");
 
     await dbConnect();
-    await Session.create({ sessionId, email, ip });
+    const now = new Date();
+    await Session.create({
+      sessionId,
+      email,
+      ip,
+      lastSeenAt: now,
+      ipHistory: ip ? [{ ip, seenAt: now }] : [],
+    });
 
     const token = sign({ sessionId }, secret, { expiresIn: max_age });
 
-    const serialized = serialize(cookieName, token, {
+    const encryptedToken = encrypt(token);
+
+    const serialized = serialize(cookieName, encryptedToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

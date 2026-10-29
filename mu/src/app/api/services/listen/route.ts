@@ -79,7 +79,7 @@ export async function GET(req: Request) {
     const categoryid = searchParams.get("categoryid");
 
     const limit = Math.min(
-      parseInt(searchParams.get("limit") || "20", 10) || 20,
+      parseInt(searchParams.get("limit") || "40", 10) || 40,
       50,
     );
 

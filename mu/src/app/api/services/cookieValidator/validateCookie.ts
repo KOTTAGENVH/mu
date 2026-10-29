@@ -2,6 +2,8 @@ import { verify, JwtPayload } from "jsonwebtoken";
 import { parse } from "cookie";
 import dbConnect from "@/config/dbConnect";
 import Session from "@/models/session";
+import { decrypt } from "@/config/decryption";
+import { getClientIp } from "@/helper/ipChecker";
 
 interface CookieValidationResult {
   valid: boolean;
@@ -15,6 +17,7 @@ export async function validateCookie(
   try {
     const cookieName = process.env.COOKIE_NAME;
     const secret = process.env.JWT_SECRET;
+    const touch_interval_ms = 5 * 60 * 1000;
 
     if (!secret) {
       return {
@@ -36,12 +39,21 @@ export async function validateCookie(
     }
 
     const cookies = parse(cookieHeader);
-    const token = cookies[cookieName];
-    if (!token) {
+    const encryptedToken = cookies[cookieName];
+    if (!encryptedToken) {
       return { valid: false, error: "No token found" };
     }
 
-    const decoded = verify(token, secret) as JwtPayload;
+    let token: string;
+    try {
+      token = decrypt(encryptedToken);
+    } catch {
+      return { valid: false, error: "Cookie decryption failed" };
+    }
+
+    const decoded = verify(token, secret, {
+      algorithms: ["HS256"],
+    }) as JwtPayload;
 
     if (!decoded.sessionId) {
       return { valid: false, error: "Malformed session token" };
@@ -51,6 +63,32 @@ export async function validateCookie(
     const session = await Session.findOne({ sessionId: decoded.sessionId });
     if (!session) {
       return { valid: false, error: "Session revoked or expired" };
+    }
+
+    try {
+      const { ip } = await getClientIp(req);
+      const now = new Date();
+      const lastSeen = session.lastSeenAt
+        ? new Date(session.lastSeenAt).getTime()
+        : 0;
+      const ipChanged = Boolean(ip) && session.ip !== ip;
+
+      if (ipChanged) {
+        await Session.updateOne(
+          { _id: session._id },
+          {
+            $set: { ip, lastSeenAt: now },
+            $push: { ipHistory: { $each: [{ ip, seenAt: now }], $slice: -10 } },
+          },
+        );
+      } else if (now.getTime() - lastSeen > touch_interval_ms) {
+        await Session.updateOne(
+          { _id: session._id },
+          { $set: { lastSeenAt: now } },
+        );
+      }
+    } catch (updateError) {
+      console.error("Failed to update session activity:", updateError);
     }
 
     return { valid: true, decoded };

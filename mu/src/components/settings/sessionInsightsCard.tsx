@@ -32,10 +32,18 @@ Chart.register(
   Legend,
 );
 
+interface IpEntry {
+  ip: string;
+  seenAt: string;
+}
+
 interface SessionRow {
-  sessionId: string;
+  id: string;
   ip: string;
   createdAt: string;
+  lastSeenAt: string;
+  ipHistory: IpEntry[];
+  current: boolean;
 }
 
 interface GraphPoint {
@@ -70,6 +78,17 @@ function formatWhen(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatAgo(iso: string) {
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return "Last active unknown";
+  const mins = Math.floor((Date.now() - t) / 60000);
+  if (mins < 5) return "Active now";
+  if (mins < 60) return `Active ${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Active ${hrs}h ago`;
+  return `Active ${Math.floor(hrs / 24)}d ago`;
 }
 
 function SessionInsightsCard() {
@@ -166,12 +185,17 @@ function SessionInsightsCard() {
     };
   }, [loading, view, graph]);
 
-  const handleRevoke = async (sessionId: string) => {
-    setRevokingId(sessionId);
+  const handleRevoke = async (id: string) => {
+    const wasCurrent = sessions.find((s) => s.id === id)?.current;
+    setRevokingId(id);
     try {
-      const res = await revokeSession(sessionId);
+      const res = await revokeSession(id);
       if (!res?.success) throw new Error("Revoke failed");
-      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      if (wasCurrent) {
+        window.location.reload();
+        return;
+      }
+      setSessions((prev) => prev.filter((s) => s.id !== id));
       setConfirmingId(null);
     } catch {
       alert("Couldn't revoke that session. Please try again.");
@@ -324,11 +348,11 @@ function SessionInsightsCard() {
                 [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600"
             >
               {sessions.map((s) => {
-                const confirming = confirmingId === s.sessionId;
-                const revoking = revokingId === s.sessionId;
+                const confirming = confirmingId === s.id;
+                const revoking = revokingId === s.id;
                 return (
                   <li
-                    key={s.sessionId}
+                    key={s.id}
                     className={`rounded-xl px-3 py-2.5 transition-colors ${
                       confirming
                         ? "bg-red-50 dark:bg-red-950/40"
@@ -337,17 +361,27 @@ function SessionInsightsCard() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-mono text-sm font-medium text-slate-900 dark:text-white">
-                          {s.ip}
-                        </p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-mono text-sm font-medium text-slate-900 dark:text-white">
+                            {s.ip}
+                          </p>
+                          {s.current && (
+                            <span
+                              className={`${pill} bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300`}
+                            >
+                              This device
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Signed in {formatWhen(s.createdAt)}
+                          {formatAgo(s.lastSeenAt)} · Signed in{" "}
+                          {formatWhen(s.createdAt)}
                         </p>
                       </div>
                       {!confirming && (
                         <button
                           type="button"
-                          onClick={() => setConfirmingId(s.sessionId)}
+                          onClick={() => setConfirmingId(s.id)}
                           title="Revoke session"
                           aria-label={`Revoke session from ${s.ip}`}
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-none bg-red-100 text-red-600 transition-colors cursor-pointer
@@ -357,6 +391,26 @@ function SessionInsightsCard() {
                         </button>
                       )}
                     </div>
+                    {s.ipHistory.length > 1 && (
+                      <details className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        <summary className="cursor-pointer select-none">
+                          {s.ipHistory.length} IPs used
+                        </summary>
+                        <ul className="mt-1.5 space-y-1 pl-1">
+                          {s.ipHistory.map((h, i) => (
+                            <li
+                              key={`${h.ip}-${i}`}
+                              className="flex justify-between gap-3"
+                            >
+                              <span className="truncate font-mono">{h.ip}</span>
+                              <span className="shrink-0">
+                                {formatWhen(h.seenAt)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     {confirming && (
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <p className="min-w-0 flex-1 text-xs text-red-700 dark:text-red-300">
@@ -373,7 +427,7 @@ function SessionInsightsCard() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleRevoke(s.sessionId)}
+                          onClick={() => handleRevoke(s.id)}
                           disabled={revoking}
                           className="rounded-full border-none bg-red-500 px-3 py-1.5 text-xs font-semibold text-white cursor-pointer
                             hover:bg-red-600 disabled:opacity-60"
