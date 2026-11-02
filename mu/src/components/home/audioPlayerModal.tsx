@@ -60,6 +60,7 @@ export interface AudioItem {
 interface AudioPlayerModalProps {
   id: string;
   handleId: (id: string) => void;
+  onFavouriteChange?: (trackId: string, favourite: boolean) => void;
 }
 
 const url_fresh_ms = 50 * 60 * 1000;
@@ -77,7 +78,11 @@ const normalizeTrack = (track: any): AudioItem => ({
   fetchedAt: track.fetchedAt ?? Date.now(),
 });
 
-function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
+function AudioPlayerModal({
+  id,
+  handleId,
+  onFavouriteChange,
+}: AudioPlayerModalProps) {
   const { maskStatus, toggleMask } = useMask();
   const { eqValues, pan, useCompressor } = useAudioEq();
   const [isLoading, setIsLoadingSync] = useState(false);
@@ -922,11 +927,13 @@ function AudioPlayerModal({ id, handleId }: AudioPlayerModalProps) {
       };
       return newList;
     });
+     onFavouriteChange?.(trackId, newFavoriteStatus);
     try {
       await updateSong(trackId, { favourite: newFavoriteStatus });
     } catch (error) {
       alert("Failed to update favorite status.");
       setIsFavorite(!newFavoriteStatus);
+       onFavouriteChange?.(trackId, !newFavoriteStatus);
       setAudioList((prev) => {
         const newList = [...prev];
         newList[currentAudioIndex] = {

@@ -450,7 +450,11 @@ function AudioList() {
         aria-hidden="true"
       />
 
-      <AudioPlayerModal id={id!} handleId={(id) => setId(id)} />
+      <AudioPlayerModal
+        id={id!}
+        handleId={(id) => setId(id)}
+        onFavouriteChange={handleFavouriteChange} //callback function pass the whole func to via prop to child
+      />
     </div>
   );
 }
