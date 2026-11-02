@@ -49,8 +49,8 @@ export async function GET(req: Request) {
         const cookieHeader = req.headers.get("cookie") || "";
         const token = parse(cookieHeader)[cookieName];
         if (token) {
-          const decoded = verify(token, secret) as JwtPayload;
-          if (decoded.sessionId) {
+          const decoded = validationResult.decoded;
+          if (decoded && typeof decoded !== "string" && decoded.sessionId) {
             await Session.deleteOne({ sessionId: decoded.sessionId });
           }
         }
