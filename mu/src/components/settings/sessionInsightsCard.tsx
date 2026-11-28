@@ -281,8 +281,8 @@ function SessionInsightsCard() {
                 {assessment.suspicious ? (
                   <>
                     <strong className="font-semibold">Review needed.</strong>{" "}
-                    {assessment.recentFailures} failed sign-in
-                    {assessment.recentFailures === 1 ? "" : "s"} recently
+                    {assessment.recentFailures} failed sign in
+                    {assessment.recentFailures === 1 ? "" : "'s"} recently
                     {assessment.failuresBeforeLastSuccess > 0 &&
                       `, ${assessment.failuresBeforeLastSuccess} right before your last successful sign-in`}
                     .
